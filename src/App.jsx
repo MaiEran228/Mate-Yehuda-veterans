@@ -1,19 +1,22 @@
-// src/App.jsx
 import React, { useState, useEffect } from 'react';
-import { addProfile, getProfiles } from './firebase'; // פונקציות מקובץ firebase.js
+import { addProfile, getProfilesOver25 } from './firebase';
 
 const App = () => {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [email, setEmail] = useState('');
+  const [filteredProfiles, setFilteredProfiles] = useState([]);
 
   useEffect(() => {
-    // קריאת כל הפרופילים ברגע שהקומפוננטה נטענת
-    getProfiles();
+    const fetchFiltered = async () => {
+      const results = await getProfilesOver25();
+      setFilteredProfiles(results);
+    };
+
+    fetchFiltered();
   }, []);
 
   const handleAddProfile = () => {
-    // בדיקה אם כל השדות מלאים
     if (!name || !age || !email) {
       alert("נא למלא את כל השדות");
       return;
@@ -21,11 +24,11 @@ const App = () => {
 
     const newProfile = {
       name,
-      age: parseInt(age), // המרת גיל למספר
+      age: parseInt(age),
       email,
     };
+
     addProfile(newProfile);
-    // ניקוי השדות אחרי הוספת פרופיל
     setName('');
     setAge('');
     setEmail('');
@@ -34,7 +37,7 @@ const App = () => {
   return (
     <div>
       <h1>ברוך הבא לאפליקציה שלי</h1>
-      
+
       <div>
         <label>שם:</label>
         <input 
@@ -66,6 +69,17 @@ const App = () => {
       </div>
 
       <button onClick={handleAddProfile}>הוסף פרופיל</button>
+
+      <hr />
+
+      <h2>פרופילים שגילם מעל 25:</h2>
+      <ul>
+        {filteredProfiles.map((profile) => (
+          <li key={profile.id}>
+            {profile.name} ({profile.age}) - {profile.email}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, query, where } from "firebase/firestore";
+
 
 // הגדרת קונפיגורציה של Firebase
 const firebaseConfig = {
@@ -32,4 +33,22 @@ export const getProfiles = async () => {
   querySnapshot.forEach((doc) => {
     console.log(doc.id, " => ", doc.data());
   });
+};
+
+ 
+// פונקציה להבאת פרופילים בגיל מעל 25
+export const getProfilesOver25 = async () => {
+  const q = query(
+    collection(db, "profiles"),
+    where("age", ">=", 24)
+  );
+
+  const querySnapshot = await getDocs(q);
+  const results = [];
+
+  querySnapshot.forEach((doc) => {
+    results.push({ id: doc.id, ...doc.data() });
+  });
+
+  return results;
 };

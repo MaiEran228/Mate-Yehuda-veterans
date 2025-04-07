@@ -24,5 +24,18 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
     "vite": "^6.2.0"
-  }
+  },
+  "description": "",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaiEran228/Mate-Yehuda-veterans.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MaiEran228/Mate-Yehuda-veterans/issues"
+  },
+  "homepage": "https://github.com/MaiEran228/Mate-Yehuda-veterans#readme"
 }
