@@ -37,7 +37,7 @@ export const getProfiles = async () => {
 
  
 // פונקציה להבאת פרופילים בגיל מעל 25
-export const getProfilesOver25 = async () => {
+export const getProfilesOver24 = async () => {
   const q = query(
     collection(db, "profiles"),
     where("age", ">=", 24)
@@ -50,5 +50,23 @@ export const getProfilesOver25 = async () => {
     results.push({ id: doc.id, ...doc.data() });
   });
 
+  
+  return results;
+};
+
+export const getProfilesunder25 = async () => {
+  const q = query(
+    collection(db, "profiles"),
+    where("age", "<=", 24)
+  );
+
+  const querySnapshot = await getDocs(q);
+  const results = [];
+
+  querySnapshot.forEach((doc) => {
+    results.push({ id: doc.id, ...doc.data() });
+  });
+
+  
   return results;
 };

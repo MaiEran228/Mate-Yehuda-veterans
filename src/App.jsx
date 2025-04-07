@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { addProfile, getProfilesOver25 } from './firebase';
+import { addProfile, getProfilesOver24, getProfilesunder25 } from './firebase';
 
 const App = () => {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [email, setEmail] = useState('');
-  const [filteredProfiles, setFilteredProfiles] = useState([]);
+  const [filteredProfiles, setFilteredProfiles] = useState({
+    over25: [],
+    under25: []
+  });
 
   useEffect(() => {
     const fetchFiltered = async () => {
-      const results = await getProfilesOver25();
-      setFilteredProfiles(results);
+      const resultsOver25 = await getProfilesOver24();
+      const resultsUnder25 = await getProfilesunder25();
+      
+      setFilteredProfiles({
+        over25: resultsOver25,
+        under25: resultsUnder25
+      });
     };
 
     fetchFiltered();
@@ -74,7 +82,16 @@ const App = () => {
 
       <h2>פרופילים שגילם מעל 25:</h2>
       <ul>
-        {filteredProfiles.map((profile) => (
+        {filteredProfiles.over25.map((profile) => (
+          <li key={profile.id}>
+            {profile.name} ({profile.age}) - {profile.email}
+          </li>
+        ))}
+      </ul>
+
+      <h2>פרופילים שגילם מתחת ל-25:</h2>
+      <ul>
+        {filteredProfiles.under25.map((profile) => (
           <li key={profile.id}>
             {profile.name} ({profile.age}) - {profile.email}
           </li>
@@ -85,3 +102,4 @@ const App = () => {
 };
 
 export default App;
+
