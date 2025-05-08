@@ -1,6 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { addProfile, getProfilesOver24, getProfilesunder25 } from './firebase';
 
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import ToolbarMUI from './components/ToolBarMUI';
+import Home from './pages/Home';
+import Schedule from './pages/Schedule';
+import Profiles from './pages/Profiles';
+import Transport from './pages/Transport';
+import Reports from './pages/Reports';
+
+
+function App() {
+  return (
+    <BrowserRouter>
+      <ToolbarMUI />
+      <div style={{ marginTop: '64px', padding: '20px' }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/schedule" element={<Schedule />} />
+          <Route path="/Profiles" element={<Profiles />} />
+          <Route path="/Transport" element={<Transport />} />
+          <Route path="/Reports" element={<Reports />} />
+
+
+
+          {/* אפשר להוסיף עוד <Route> בהמשך */}
+        </Routes>
+      </div>
+    </BrowserRouter>
+  );
+}
+/*
 const App = () => {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
@@ -99,7 +129,8 @@ const App = () => {
       </ul>
     </div>
   );
-};
+};*/
+
+
 
 export default App;
-
