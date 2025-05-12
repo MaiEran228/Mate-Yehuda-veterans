@@ -6,11 +6,10 @@ import { Link } from 'react-router-dom';
 function ToolbarMUI() {
   return (
     <AppBar position="fixed" color="default" sx={{ direction: 'rtl' }}>
-      <Toolbar sx={{ justifyContent: 'flex-end' }}>
+      <Toolbar sx={{ justifyContent: 'flex-start' }}>
       <Button color="inherit" component={Link} to="/">מסך הבית</Button>
       <Button color="inherit" component={Link} to="/Profiles">פרופילים</Button>
       <Button color="inherit" component={Link} to="/Schedule">מערכת שעות</Button>
-
       <Button color="inherit" component={Link} to="/Transport">הסעות</Button>
       <Button color="inherit" component={Link} to="/Reports">דו"חות</Button>
       </Toolbar>

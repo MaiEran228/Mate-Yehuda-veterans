@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, getDocs, query, where } from "firebase/firestore";
 
 
+
 // הגדרת קונפיגורציה של Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyByiLjQUyWVEUcApza0f6yXjnkxckBqwoo",
@@ -17,6 +18,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+
+// read the profiles and show in the attendance table
+export const fetchAllProfiles = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'profiles'));
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("שגיאה בשליפת פרופילים:", error);
+    return [];
+  }
+};
+
+/*
 // פונקציה להוספת פרופיל
 export const addProfile = async (profile) => {
   try {
@@ -70,3 +87,4 @@ export const getProfilesunder25 = async () => {
   
   return results;
 };
+*/

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { addProfile, getProfilesOver24, getProfilesunder25 } from './firebase';
+import { fetchAllProfiles } from './firebase';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ToolbarMUI from './components/ToolBarMUI';
