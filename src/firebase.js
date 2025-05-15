@@ -1,7 +1,6 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, query, where } from "firebase/firestore";
-
+import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, getDoc } from "firebase/firestore";
 
 
 // הגדרת קונפיגורציה של Firebase
@@ -33,7 +32,7 @@ export const fetchAllProfiles = async () => {
   }
 };
 
-/*
+
 // פונקציה להוספת פרופיל
 export const addProfile = async (profile) => {
   try {
@@ -44,6 +43,21 @@ export const addProfile = async (profile) => {
   }
 };
 
+export const deleteProfile = async (profileId) => {
+  try {
+    await deleteDoc(doc(db, 'profiles', profileId)); // ✅ זה מוחק מ-Firestore
+    console.log("Deleted user with ID:", profileId);
+  } catch (error) {
+    console.error("Error deleting profile:", error);
+  }
+};
+/*
+export const addProfile = async (profileData) => {
+  await addDoc(collection(db, 'profiles'), profileData);
+};
+*/
+
+/*
 // פונקציה לקרוא את כל הפרופילים
 export const getProfiles = async () => {
   const querySnapshot = await getDocs(collection(db, "profiles"));

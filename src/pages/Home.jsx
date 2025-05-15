@@ -48,7 +48,7 @@ function Home() {
                     </TextField>
 
                     <TextField
-                        label="חיפוש לפי שם"
+                        label="חיפוש"
                         variant="outlined"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
