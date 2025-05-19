@@ -1,4 +1,4 @@
-import {Table,TableBody,TableCell,TableContainer,TableHead,TableRow,Checkbox,TextField,Paper,MenuItem,Box} from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Checkbox, TextField, Paper, MenuItem, Box } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { fetchAllProfiles } from '../firebase';
 
@@ -20,7 +20,7 @@ export default function AttendanceTable({ search, sortBy }) {
             }));
             setRows(dataWithDefaults);
         };
-    
+
         loadData();
     }, []);
 
@@ -63,81 +63,104 @@ export default function AttendanceTable({ search, sortBy }) {
         return (fieldA || '').localeCompare(fieldB || '');
     });
 
-    return ( // display
+    return (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 0 }}>
-            <TableContainer component={Paper}>
-                <Table size="small"  sx={{ '& td, & th': { py: 0, px: 1, height: '40px', fontSize: '0.75rem' },}} >
-                    <TableHead>
-                        <TableRow>
-                            <TableCell align="right">שם</TableCell>
-                            <TableCell align="right">אזור מגורים</TableCell>
-                            <TableCell align="right">נוכח</TableCell>
-                            <TableCell align="right">מטפל</TableCell>
-                            <TableCell align="right" sx={{ width: 90 }}>סיבה להיעדרות</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {sortedRows.map((profile) => (
-                            <TableRow key={profile.id}>
-                                <TableCell align="right">{profile.name}</TableCell>
-                                <TableCell align="right">{profile.city}</TableCell>
-                                <TableCell align="right">
-                                    <Checkbox
-                                        checked={profile.attended}
-                                        onChange={(e) =>
-                                            handleAttendanceChange(profile.id, e.target.checked)
-                                        }
-                                        size="small" sx={{p: 0.2, '& .MuiSvgIcon-root': {fontSize: 18,},} }                          />
-                                </TableCell>
-                                <TableCell align="right">
-                                    <Checkbox
-                                        checked={profile.caregiver}
-                                        onChange={(e) =>
-                                            handleCaregiverChange(profile.id, e.target.checked)
-                                        }
-                                        size="small" sx={{p: 0.2, '& .MuiSvgIcon-root': {fontSize: 18,},} }  
-                                    />
-                                </TableCell>
-                                <TableCell align="right">
-                                    {!profile.attended && (
-                                        <TextField
-                                            select
-                                            label="סיבה להיעדרות"
-                                            variant="standard"
-                                            value={profile.reason}
-                                            onChange={(e) =>
-                                                handleReasonChange(profile.id, e.target.value)
-                                            }
-                                            fullWidth
-                                            sx={{
-                                                fontSize: '0.8rem',
-                                                '& .MuiInputBase-root': {
-                                                  height: '28px',         // גובה כולל של השדה
-                                                  fontSize: '0.8rem',
-                                                },
-                                                '& .MuiInputLabel-root': {
-                                                  fontSize: '0.7rem',     // גודל הטקסט של התווית
-                                                },
-                                                '& .MuiSelect-select': {
-                                                  paddingTop: '4px',
-                                                  paddingBottom: '2px',
-                                                  fontSize: '0.8rem',
-                                                },
-                                              }}
-                                        >
-                                            {reasonOptions.map((option) => (
-                                                <MenuItem key={option} value={option}>
-                                                    {option}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-                                    )}
-                                </TableCell>
+            <Paper sx={{ width: '100%' }}>
+                <TableContainer
+                    sx={{
+                        maxHeight: 350,
+                        overflowY: 'auto',
+                        direction: 'ltr', // 1️⃣ זה מציב את הגלילה בצד ימין
+                    }}
+                >
+                    <Table size="small"
+                        stickyHeader
+                        sx={{
+                            direction: 'rtl',
+                            '& td, & th': {
+                                py: 0,
+                                px: 1,
+                                height: '10px', // ← גובה השורה
+                                fontSize: '0.75rem', // ← גודל הפונט אם רוצים גם אותו קטן
+                            },
+                        }}> {/* 2️⃣ אבל התוכן RTL */}
+                        <TableHead>
+                            <TableRow>
+                                <TableCell align="right">שם</TableCell>
+                                <TableCell align="right">אזור מגורים</TableCell>
+                                <TableCell align="right">נוכח</TableCell>
+                                <TableCell align="right">מטפל</TableCell>
+                                <TableCell align="right" sx={{ width: 90 }}>סיבה להיעדרות</TableCell>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                        </TableHead>
+                        <TableBody>
+                            {sortedRows.map((profile) => (
+                                <TableRow key={profile.id}>
+                                    <TableCell align="right">{profile.name}</TableCell>
+                                    <TableCell align="right">{profile.city}</TableCell>
+                                    <TableCell align="right">
+                                        <Checkbox
+                                            checked={profile.attended}
+                                            onChange={(e) =>
+                                                handleAttendanceChange(profile.id, e.target.checked)
+                                            }
+                                            size="small"
+                                            sx={{ p: 0.2, '& .MuiSvgIcon-root': { fontSize: 18 } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Checkbox
+                                            checked={profile.caregiver}
+                                            onChange={(e) =>
+                                                handleCaregiverChange(profile.id, e.target.checked)
+                                            }
+                                            size="small"
+                                            sx={{ p: 0.2, '& .MuiSvgIcon-root': { fontSize: 18 } }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        {!profile.attended && (
+                                            <TextField
+                                                select
+                                                label="סיבה להיעדרות"
+                                                variant="standard"
+                                                value={profile.reason}
+                                                onChange={(e) =>
+                                                    handleReasonChange(profile.id, e.target.value)
+                                                }
+                                                fullWidth
+                                                sx={{
+                                                    fontSize: '0.8rem',
+                                                    '& .MuiInputBase-root': {
+                                                        height: '28px',
+                                                        fontSize: '0.8rem',
+                                                    },
+                                                    '& .MuiInputLabel-root': {
+                                                        fontSize: '0.7rem',
+                                                    },
+                                                    '& .MuiSelect-select': {
+                                                        paddingTop: '4px',
+                                                        paddingBottom: '2px',
+                                                        fontSize: '0.8rem',
+                                                    },
+                                                }}
+                                            >
+                                                {reasonOptions.map((option) => (
+                                                    <MenuItem key={option} value={option}>
+                                                        {option}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Paper>
         </Box>
     );
+
+
 }
