@@ -5,13 +5,13 @@ import { fetchAllProfiles } from '../firebase';
 
 const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל'];
 
-export default function AttendanceTable({ search, sortBy }) {
+
+export default function AttendanceTable({ search, sortBy, onAttendanceChange }) {
     const [rows, setRows] = useState([]);
 
-    useEffect(() => { // the connection to the database
+    useEffect(() => {
         const loadData = async () => {
             const profiles = await fetchAllProfiles();
-            console.log("📦 הנתונים שהגיעו מה-DB:", profiles); // ← הדפסת הנתונים
             const dataWithDefaults = profiles.map(profile => ({
                 ...profile,
                 attended: false,
@@ -24,31 +24,53 @@ export default function AttendanceTable({ search, sortBy }) {
         loadData();
     }, []);
 
-    const handleAttendanceChange = (id, checked) => { // check box for attendance
+    // ☑️ עדכון נוכחות
+    const handleAttendanceChange = (id, checked) => {
         setRows(prev =>
             prev.map(row =>
                 row.id === id
-                    ? { ...row, attended: checked, reason: checked ? '' : row.reason }
+                    ? {
+                        ...row,
+                        attended: checked,
+                        caregiver: checked ? row.caregiver : false,
+                        reason: checked ? '' : row.reason,
+                    }
                     : row
             )
         );
     };
 
-    const handleCaregiverChange = (id, checked) => { // check box for caregiver
+    // ☑️ עדכון מטפל (רק אם נוכח מסומן)
+    const handleCaregiverChange = (id, checked) => {
         setRows(prev =>
             prev.map(row =>
-                row.id === id ? { ...row, caregiver: checked } : row
+                row.id === id && row.attended
+                    ? { ...row, caregiver: checked }
+                    : row
             )
         );
     };
 
-    const handleReasonChange = (id, value) => { // box for the reason
+    const handleReasonChange = (id, value) => {
         setRows(prev =>
             prev.map(row =>
                 row.id === id ? { ...row, reason: value } : row
             )
         );
     };
+
+    // 🧮 מחשבים נוכחות כוללת
+    useEffect(() => {
+    if (onAttendanceChange) {
+        const count = rows.reduce((acc, row) => {
+            let rowCount = 0;
+            if (row.attended) rowCount += 1;
+            if (row.caregiver) rowCount += 1;
+            return acc + rowCount;
+        }, 0);
+        onAttendanceChange(count);
+    }
+}, [rows, onAttendanceChange]);
 
     // search by name
     const filteredRows = rows.filter(row =>
@@ -111,6 +133,7 @@ export default function AttendanceTable({ search, sortBy }) {
                                     <TableCell align="right">
                                         <Checkbox
                                             checked={profile.caregiver}
+                                            disabled={!profile.attended} // מונע סימון ידני כשהאדם לא נוכח
                                             onChange={(e) =>
                                                 handleCaregiverChange(profile.id, e.target.checked)
                                             }
@@ -119,15 +142,15 @@ export default function AttendanceTable({ search, sortBy }) {
                                         />
                                     </TableCell>
                                     <TableCell align="right">
-                                        {!profile.attended && (
+                                        {profile.attended ? (
+                                            <Box sx={{ height: 44 }} />  // div ריק לשמירת גובה
+                                        ) : (
                                             <TextField
                                                 select
                                                 label="סיבה להיעדרות"
                                                 variant="standard"
                                                 value={profile.reason}
-                                                onChange={(e) =>
-                                                    handleReasonChange(profile.id, e.target.value)
-                                                }
+                                                onChange={(e) => handleReasonChange(profile.id, e.target.value)}
                                                 fullWidth
                                                 sx={{
                                                     fontSize: '0.8rem',

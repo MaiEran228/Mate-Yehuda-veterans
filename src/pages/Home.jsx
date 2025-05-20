@@ -30,11 +30,6 @@ function Home() {
                 {/* שורת חיפוש + כפתורים + COUNTER */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
 
-                    {/* COUNTER */}
-                    <Box sx={{ minWidth: '80px', fontWeight: 'bold', fontSize: '1rem' }}>
-                        נוכחים: {attendanceCount}
-                    </Box>
-
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         <TextField
                             label="מיון לפי"
@@ -80,6 +75,10 @@ function Home() {
 
                         <Button variant="contained" color="primary">שמירה</Button>
                         <Button variant="outlined" color="secondary">הפק דוח יומי</Button>
+                    </Box>
+                    {/* COUNTER */}
+                    <Box sx={{ minWidth: '80px', fontWeight: 'bold', fontSize: '1rem' }}>
+                        נוכחים: {attendanceCount}
                     </Box>
                 </Box>
             </Container>
