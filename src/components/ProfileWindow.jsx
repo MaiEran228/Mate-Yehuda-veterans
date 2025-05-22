@@ -1,17 +1,8 @@
 import { useState } from "react";
 import { deleteProfile } from "../firebase";
-import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    Typography,
-    Button,
-    TextField,
-    MenuItem,
-    Checkbox,
-    FormControlLabel,
-    Box,
-} from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, Typography, Button, TextField, MenuItem, Checkbox, FormControlLabel, Box, } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import IconButton from "@mui/material/IconButton";
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
 const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
@@ -71,7 +62,22 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                     maxWidth: 'none',   // חשוב! כדי לא להגביל אותך ל-"sm/md/lg"
                 }
             }}
-        >            <DialogTitle>{profile.name}</DialogTitle>
+        >
+            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                {profile.name}
+                <IconButton
+                    aria-label="סגור"
+                    onClick={onClose}
+                    sx={{
+                        position: "absolute",
+                        left: 8,
+                        top: 8,
+                        color: (theme) => theme.palette.grey[500],
+                    }}
+                >
+                    <CloseIcon />
+                </IconButton>
+            </DialogTitle>
             <DialogContent>
                 {!isEditing ? (
                     <>
@@ -157,8 +163,6 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                             >
                                 מחק
                             </Button>
-
-                            <Button onClick={onClose}>סגור</Button>
                         </Box>
                     </>
                 ) : (

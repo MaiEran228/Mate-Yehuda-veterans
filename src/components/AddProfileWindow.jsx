@@ -156,10 +156,16 @@ function AddProfileWindow({ open, onClose, onSave }) {
                     </Select>
                 </FormControl>
 
-                <TextField
-                    fullWidth label="מין" name="gender"
-                    value={formData.gender} onChange={handleChange} margin="dense"
-                />
+                <FormControl fullWidth margin="dense">
+                    <InputLabel>מין</InputLabel>
+                    <Select
+                        name="gender" value={formData.gender} onChange={handleChange}
+                    >
+                        <MenuItem value="זכר">זכר</MenuItem>
+                        <MenuItem value="נקבה">נקבה</MenuItem>
+                        <MenuItem value="אחר">אחר</MenuItem>
+                    </Select>
+                </FormControl>
 
                 <Typography variant="subtitle1" sx={{ mt: 2 }}>ימי הגעה</Typography>
                 <FormControl component="fieldset" sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>

@@ -1,15 +1,19 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Checkbox, TextField, Paper, MenuItem, Box } from '@mui/material';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { fetchAllProfiles } from '../firebase';
 
 
 const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל'];
 
 
-export default function AttendanceTable({ search, sortBy, onAttendanceChange }) {
+export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanceChange }, ref) {    
     const [rows, setRows] = useState([]);
 
-    useEffect(() => {
+     useImperativeHandle(ref, () => ({
+        getAttendanceData: () => rows,
+    }));
+
+     useEffect(() => {
         const loadData = async () => {
             const profiles = await fetchAllProfiles();
             const dataWithDefaults = profiles.map(profile => ({
@@ -186,4 +190,5 @@ export default function AttendanceTable({ search, sortBy, onAttendanceChange }) 
     );
 
 
-}
+});
+

@@ -1,19 +1,38 @@
-import { useState } from 'react';
+import { useState, useRef  } from 'react';
 import { Container, Typography, Box, Button, TextField } from '@mui/material';
 import Header from '../components/ToolBarMUI'; // סרגל כלים קבוע
 import AttendanceTable from '../components/AttendanceTable'; // הטבלה
 import dayjs from 'dayjs';
+import { saveAttendanceForDate } from '../firebase'; // יבוא הפונקציה החדשה
+
 
 function Home() {
     const [search, setSearch] = useState('');
     const [sortBy, setSortBy] = useState('שם'); // או אזור מגורים וכו'
     const [attendanceCount, setAttendanceCount] = useState(0);
+    const attendanceRef = useRef();
 
-    const today = dayjs().format('DD/MM/YYYY');
-
+    const today = dayjs().format('YYYY-MM-DD');
     // פונקציה שתקבל את המידע על הנוכחות מהטבלה
     const handleAttendanceUpdate = (count) => {
         setAttendanceCount(count);
+    };
+
+    const handleSave = async () => {
+        const rawData = attendanceRef.current?.getAttendanceData?.();
+        if (!rawData) return;
+
+        const attendanceList = rawData.map(person => ({
+            id: person.id,
+            name: person.name,
+            city: person.city,
+            attended: person.attended,
+            caregiver: person.caregiver,
+            reason: person.reason
+        }));
+
+        await saveAttendanceForDate(today, attendanceList);
+        alert('נוכחות נשמרה בהצלחה!');
     };
 
     return (
@@ -73,7 +92,7 @@ function Home() {
                             }}
                         />
 
-                        <Button variant="contained" color="primary">שמירה</Button>
+                        <Button variant="contained" color="primary" onClick={handleSave}>שמירה</Button>
                         <Button variant="outlined" color="secondary">הפק דוח יומי</Button>
                     </Box>
                     {/* COUNTER */}
@@ -85,8 +104,12 @@ function Home() {
 
             {/* הטבלה */}
             <Box sx={{ width: '700px', mt: 0, px: 3 }}>
-                <AttendanceTable search={search} sortBy={sortBy} onAttendanceChange={handleAttendanceUpdate} />
-            </Box>
+                <AttendanceTable
+                    ref={attendanceRef}
+                    search={search}
+                    sortBy={sortBy}
+                    onAttendanceChange={handleAttendanceUpdate}
+                />            </Box>
         </>
     );
 }

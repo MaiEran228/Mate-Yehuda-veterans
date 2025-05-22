@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, getDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // קונפיגורציה ואתחול
@@ -48,5 +48,21 @@ export const deleteProfile = async (profileId) => {
     console.log("Deleted user with ID:", profileId);
   } catch (error) {
     console.error("Error deleting profile:", error);
+  }
+};
+
+
+// שמירת נוכחות ליום מסוים
+export const saveAttendanceForDate = async (dateStr, attendanceList) => {
+  try {
+    await setDoc(doc(db, 'attendance', dateStr), {
+      date: dateStr,
+      attendanceList: attendanceList,
+      timestamp: new Date()
+    });
+
+    console.log("נוכחות נשמרה לתאריך:", dateStr);
+  } catch (error) {
+    console.error("שגיאה בשמירת נוכחות:", error);
   }
 };
