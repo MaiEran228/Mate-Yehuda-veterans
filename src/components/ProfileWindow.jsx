@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { deleteProfile } from "../firebase";
-import { Dialog, DialogTitle, DialogContent, Typography, Button, TextField, MenuItem, Checkbox, FormControlLabel, Box, } from "@mui/material";
+import {
+    Dialog, DialogTitle, DialogContent, Typography, Button, TextField, MenuItem, Checkbox, FormControlLabel,
+    Box, Avatar
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 
@@ -57,14 +60,23 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
             fullWidth
             sx={{
                 '& .MuiDialog-paper': {
-                    width: '400px',     // רוחב מותאם אישית - שנו לפי הצורך
+                    width: '500px',     // רוחב מותאם אישית - שנו לפי הצורך
                     height: 'auto',     // או למשל '600px' אם את רוצה גם גובה קבוע
                     maxWidth: 'none',   // חשוב! כדי לא להגביל אותך ל-"sm/md/lg"
                 }
             }}
         >
-            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                {profile.name}
+            <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                    alt={profile.name}
+                    src={profile.imageUrl || ""}
+                    sx={{ width: 130, height: 130 }}
+                >
+                    {(!profile.imageUrl && profile.name) ? profile.name[0] : ""}
+                </Avatar>
+                <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                    {profile.name}
+                </Typography>
                 <IconButton
                     aria-label="סגור"
                     onClick={onClose}
@@ -81,10 +93,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
             <DialogContent>
                 {!isEditing ? (
                     <>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">שם: </Box>
-                            <Box component="span">{profile.name}</Box>
-                        </Typography>
+                        
                         <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">גיל: </Box>
                             <Box component="span">{profile.age}</Box>

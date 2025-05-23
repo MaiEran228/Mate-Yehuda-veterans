@@ -3,7 +3,7 @@ import { Card, CardContent, Typography, Box } from '@mui/material';
 
 function ProfileCard({ profile, onClick }) {
   return (
-    <Box sx={{ position: 'relative', width: 159, m: 2, mb: 5 }}>
+    <Box sx={{ position: 'relative', width: 159, m: 2, mb: 5, }}>
       {/* עיגול של הפרופיל - צף מעל הכרטיס */}
       <Box
         sx={{
@@ -32,6 +32,7 @@ function ProfileCard({ profile, onClick }) {
         sx={{
           pt: 4, // רווח למעלה כדי לפנות מקום לעיגול
           textAlign: 'center',
+          height: 100,
           cursor: 'pointer',
           borderRadius: 2,
         }}
