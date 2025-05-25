@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import r3 from '../assets/Sky.jpg';
+import backgtoundLoginpage from '../assets/backgtoundLoginpage.jpg';
 import { auth } from '../firebase';
 import {
     signInWithEmailAndPassword,
@@ -43,7 +43,7 @@ export default function Login({ onLogin }) {
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                backgroundImage: `linear-gradient(rgba(255,255,255,0.6), rgba(255,255,255,0.6)), url(${r3})`,
+                backgroundImage: `linear-gradient(rgba(255,255,255,0.6), rgba(255,255,255,0.6)), url(${backgtoundLoginpage})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
             }}
@@ -73,25 +73,27 @@ export default function Login({ onLogin }) {
                     flexDirection: 'column',
                     alignItems: 'center',
                 }}>
-                    <svg width={70} height={50} style={{
-                        transformOrigin: '35px 40px',
-                        transform: authOK
-                            ? 'translateY(-20px) rotate(-25deg)'
-                            : 'none',
-                        transition: 'transform 0.4s ease',
-                    }}>
-                        <path
-                            d="M20 45 v-20 a15 15 0 0 1 30 0 v20"
-                            fill="none"
-                            stroke="#aaa"
-                            strokeWidth="6"
-                            strokeLinecap="round"
-                        />
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        height="90"
+                        viewBox="0 0 24 24"
+                        fill="#888"
+                    >
+                        <g
+                            style={{
+                                transformOrigin: '12px 8px',
+                                transform: authOK ? 'rotate(-25deg) translateY(-4px)' : 'none',
+                                transition: 'transform 0.4s ease',
+                            }}
+                        >
+                            {/* Arc (shackle) */}
+                            <path d="M16 8V6a4 4 0 00-8 0v2h2V6a2 2 0 014 0v2h2z" />
+                        </g>
+
+                        {/* Lock body */}
+                        <path d="M5 8h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2zm7 10a2 2 0 100-4 2 2 0 000 4z" />
                     </svg>
 
-                    <svg xmlns="http://www.w3.org/2000/svg" height="70" viewBox="0 0 24 24" fill="#444" style={{ marginTop: '-16px' }}>
-                        <path d="M6 10h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8a2 2 0 012-2zm6 6a2 2 0 100-4 2 2 0 000 4z" />
-                    </svg>
                 </Box>
 
                 {/* תוכן התחברות */}
@@ -138,12 +140,14 @@ export default function Login({ onLogin }) {
                     variant="contained"
                     onClick={handleLogin}
                     sx={{
-                        backgroundColor: '#aaa',
-                        height:50,
+                        backgroundColor: 'rgba(147, 142, 142, 0.62)',
+                        height: 50,
                         boxShadow: '0px 6px 15px rgba(0,0,0,0.5)',
+                        fontWeight: 'bold',
+                        fontSize: '1.1rem',
                         color: 'white',
                         '&:hover': {
-                            backgroundColor: '#888',
+                            backgroundColor: '#rgba(114, 111, 111, 0.62)',
                         }
                     }}
                 >

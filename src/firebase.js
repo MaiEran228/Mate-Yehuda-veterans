@@ -35,10 +35,10 @@ export const fetchAllProfiles = async () => {
 // פונקציה להוספת פרופיל
 export const addProfile = async (profile) => {
   try {
-    const docRef = await addDoc(collection(db, "profiles"), profile);
-    console.log("Document written with ID: ", docRef.id);
+    await setDoc(doc(db, "profiles", profile.id), profile); // ❗ שימוש בתעודת זהות כ־Document ID
+    console.log("Document saved with ID:", profile.id);
   } catch (e) {
-    console.error("Error adding document: ", e);
+    console.error("Error saving profile:", e);
   }
 };
 

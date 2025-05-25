@@ -1,22 +1,11 @@
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
-    Button,
-    FormControlLabel,
-    Checkbox,
-    MenuItem,
-    Select,
-    InputLabel,
-    FormControl,
-    Typography 
+    Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, FormControlLabel, Checkbox, MenuItem,
+    Select, InputLabel, FormControl, Typography
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function AddProfileWindow({ open, onClose, onSave }) {
-    const [formData, setFormData] = useState({
+    const initialFormData = {
         name: "",
         age: "",
         id: "",
@@ -33,9 +22,17 @@ function AddProfileWindow({ open, onClose, onSave }) {
         isHolocaustSurvivor: false,
         hasCaregiver: false,
         membership: "",
-    });
+    };
 
+    const [formData, setFormData] = useState(initialFormData);
     const [errors, setErrors] = useState({});
+
+    useEffect(() => {
+        if (open) {
+            setFormData(initialFormData);
+            setErrors({});
+        }
+    }, [open]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -47,7 +44,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
     };
 
     const handleSubmit = () => {
-        const requiredFields = ["name", "id", "city", "phone"];
+        const requiredFields = ["name", "id", "city", "birthDate"];
         const newErrors = {};
         requiredFields.forEach((field) => {
             if (!formData[field]) newErrors[field] = true;
@@ -60,7 +57,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
 
         const newProfile = {
             ...formData,
-        
+
         };
         onSave(newProfile);
         setFormData({
@@ -86,83 +83,80 @@ function AddProfileWindow({ open, onClose, onSave }) {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} dir="rtl">
+        <Dialog open={open} onClose={onClose} dir="rtl" >
             <DialogTitle>הוספת פרופיל חדש</DialogTitle>
             <DialogContent>
 
                 <TextField
-                    fullWidth label="שם" name="name"
+                    fullWidth label="שם" name="name" sx={{ maxWidth: "170px", ml: 1 }}
                     value={formData.name} onChange={handleChange} margin="dense"
                     error={errors.name} helperText={errors.name && "שדה חובה"}
                 />
 
                 <TextField
-                    fullWidth label="גיל" name="age"
-                    value={formData.age} onChange={handleChange} margin="dense"
-                />
-
-                <TextField
-                    fullWidth label="תעודת זהות" name="id"
+                    fullWidth label="תעודת זהות" name="id" sx={{ maxWidth: "170px", ml: 1 }}
                     value={formData.id} onChange={handleChange} margin="dense"
                     error={errors.id} helperText={errors.id && "שדה חובה"}
                 />
 
                 <TextField
-                    fullWidth label="כתובת" name="address"
-                    value={formData.address} onChange={handleChange} margin="dense"
+                    fullWidth
+                    label="תאריך לידה"
+                    name="birthDate"
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={handleChange}
+                    sx={{ maxWidth: "170px" }}
+                    margin="dense"
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                    error={!!errors?.birthDate}
+                    helperText={errors?.birthDate && "שדה חובה"}
                 />
 
-                <TextField
-                    fullWidth label="יישוב" name="city"
-                    value={formData.city} onChange={handleChange} margin="dense"
-                    error={errors.city} helperText={errors.city && "שדה חובה"}
-                />
-
-                <TextField
-                    fullWidth label="תאריך לידה" name="birthDate"
-                    value={formData.birthDate} onChange={handleChange} margin="dense"
-                />
-
-                <TextField
-                    fullWidth label="טלפון" name="phone"
-                    value={formData.phone} onChange={handleChange} margin="dense"
-                    error={errors.phone} helperText={errors.phone && "שדה חובה"}
-                />
-
-                <TextField
-                    fullWidth label="אימייל" name="email"
-                    value={formData.email} onChange={handleChange} margin="dense"
-                />
-
-                <FormControl fullWidth margin="dense">
-                    <InputLabel>הסעה</InputLabel>
-                    <Select
-                        name="transport" value={formData.transport} onChange={handleChange}
-                    >
-                        <MenuItem value="מונית">מונית</MenuItem>
-                        <MenuItem value="הסעה">הסעה</MenuItem>
-                        <MenuItem value="אחר">אחר</MenuItem>
-                    </Select>
-                </FormControl>
-
-                <FormControl fullWidth margin="dense">
-                    <InputLabel>רמת תפקוד</InputLabel>
-                    <Select
-                        name="functionLevel" value={formData.functionLevel} onChange={handleChange}
-                    >
-                        {[1, 2, 3, 4, 5, 6].map((n) => (
-                            <MenuItem key={n} value={n}>{n}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-
-                <FormControl fullWidth margin="dense">
+                <FormControl fullWidth margin="dense" sx={{ maxWidth: "170px", ml: 1 }}>
                     <InputLabel>מין</InputLabel>
                     <Select
                         name="gender" value={formData.gender} onChange={handleChange}
                     >
                         <MenuItem value="זכר">זכר</MenuItem>
                         <MenuItem value="נקבה">נקבה</MenuItem>
+                        <MenuItem value="אחר">אחר</MenuItem>
+                    </Select>
+                </FormControl>
+
+                <TextField
+                    fullWidth label="טלפון" name="phone" sx={{ maxWidth: "170px", ml: 1 }}
+                    value={formData.phone} onChange={handleChange} margin="dense"
+
+                />
+
+                <TextField
+                    fullWidth label="אימייל" name="email" sx={{ maxWidth: "170px", ml: 1 }}
+                    value={formData.email} onChange={handleChange} margin="dense"
+                />
+
+                <TextField
+                    fullWidth label="כתובת" name="address" sx={{ maxWidth: "170px", ml: 1 }}
+                    value={formData.address} onChange={handleChange} margin="dense"
+                />
+
+                <TextField
+                    fullWidth label="יישוב" name="city" sx={{ maxWidth: "170px", ml: 1 }}
+                    value={formData.city} onChange={handleChange} margin="dense"
+                    error={errors.city} helperText={errors.city && "שדה חובה"}
+                />
+
+
+
+                <FormControl fullWidth margin="dense" sx={{ maxWidth: "170px", ml: 1 }}>
+                    <InputLabel>הסעה</InputLabel>
+                    <Select
+                        name="transport" value={formData.transport} onChange={handleChange}
+                    >
+                        <MenuItem value="מונית">מונית</MenuItem>
+                        <MenuItem value="הסעה">הסעה</MenuItem>
                         <MenuItem value="אחר">אחר</MenuItem>
                     </Select>
                 </FormControl>
@@ -191,7 +185,21 @@ function AddProfileWindow({ open, onClose, onSave }) {
                     ))}
                 </FormControl>
 
-                <FormControl fullWidth margin="dense">
+                <FormControl fullWidth margin="dense" sx={{ maxWidth: "170px", ml: 1 }}>
+                    <InputLabel>רמת תפקוד</InputLabel>
+                    <Select
+                        name="functionLevel" value={formData.functionLevel} onChange={handleChange}
+                    >
+                        {[1, 2, 3, 4, 5, 6].map((n) => (
+                            <MenuItem key={n} value={n}>{n}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+
+
+
+                <FormControl fullWidth margin="dense" sx={{ maxWidth: "170px", ml: 1 }}>
                     <InputLabel>זכאות</InputLabel>
                     <Select
                         name="eligibility" value={formData.eligibility} onChange={handleChange}
@@ -202,7 +210,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                     </Select>
                 </FormControl>
 
-                <FormControl fullWidth margin="dense">
+                <FormControl fullWidth margin="dense" sx={{ maxWidth: "170px", ml: 1 }}>
                     <InputLabel>חבר ב־</InputLabel>
                     <Select
                         name="membership" value={formData.membership} onChange={handleChange}

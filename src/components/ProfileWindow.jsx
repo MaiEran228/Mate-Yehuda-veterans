@@ -51,6 +51,18 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
         setIsEditing(false);
     };
 
+    function calculateAge(birthDateStr) {
+    if (!birthDateStr) return "";
+    const today = new Date();
+    const birthDate = new Date(birthDateStr);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
     return (
         <Dialog
             open={open}
@@ -96,7 +108,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                         
                         <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">גיל: </Box>
-                            <Box component="span">{profile.age}</Box>
+                            <Box component="span">{calculateAge(profile.birthDate)}</Box>
                         </Typography>
                         <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">תעודת זהות: </Box>
