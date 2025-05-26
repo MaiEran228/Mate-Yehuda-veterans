@@ -6,9 +6,9 @@ import dayjs from 'dayjs';
 import { saveAttendanceForDate } from '../firebase'; // יבוא הפונקציה החדשה
 
 
-function Home() {
+function Home({ onLogout }) {
     const [search, setSearch] = useState('');
-    const [sortBy, setSortBy] = useState('שם'); // או אזור מגורים וכו'
+    const [sortBy, setSortBy] = useState('אזור מגורים'); // או אזור מגורים וכו'
     const [attendanceCount, setAttendanceCount] = useState(0);
     const attendanceRef = useRef();
 
@@ -37,7 +37,7 @@ function Home() {
 
     return (
         <>
-            <Header />
+            <Header onLogout={onLogout} />
 
             {/* חלק עליון - בתוך Container צר */}
             <Container maxWidth="lg" sx={{ mt: 4 }}>

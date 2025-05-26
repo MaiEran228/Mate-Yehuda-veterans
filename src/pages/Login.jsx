@@ -11,12 +11,18 @@ import {
     signInWithEmailAndPassword,
     onAuthStateChanged,
 } from 'firebase/auth';
+import SignupModal from '../components/SignupModal';
+import ForgotPassword from '../components/ForgotPassword';
+
 
 export default function Login({ onLogin }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [authOK, setAuthOK] = useState(false);
+    const [showSignup, setShowSignup] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+
 
     const handleLogin = async () => {
         try {
@@ -131,8 +137,18 @@ export default function Login({ onLogin }) {
                     variant="body2"
                     align="right"
                     sx={{ mb: 2, cursor: 'pointer', color: 'grey' }}
+                    onClick={() => setShowForgotPassword(true)}
                 >
                     שכחת סיסמא?
+                </Typography>
+
+                <Typography
+                    variant="body2"
+                    align="right"
+                    sx={{ mb: 2, cursor: 'pointer', color: 'grey' }}
+                    onClick={() => setShowSignup(true)}
+                >
+                    משתמש חדש?
                 </Typography>
 
                 <Button
@@ -154,6 +170,14 @@ export default function Login({ onLogin }) {
                     היכנס
                 </Button>
             </Paper>
+            <SignupModal
+                open={showSignup}
+                onClose={() => setShowSignup(false)}
+            />
+            {showForgotPassword && (
+                <ForgotPassword onClose={() => setShowForgotPassword(false)} />
+            )}
         </Box>
+
     );
 }

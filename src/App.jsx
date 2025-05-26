@@ -34,7 +34,7 @@ function AppWrapper() {
           <ToolbarMUI onLogout={handleLogout} />
           <div style={{ marginTop: '64px', padding: '20px' }}>
             <Routes>
-              <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home onLogout={handleLogout} />} />
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/Profiles" element={<Profiles />} />
               <Route path="/Transport" element={<Transport />} />
