@@ -1,28 +1,38 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Checkbox, TextField, Paper, MenuItem, Box } from '@mui/material';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { fetchAllProfiles } from '../firebase';
+import { fetchAllProfiles, fetchAttendanceByDate } from '../firebase';
+import dayjs from 'dayjs';
 
 
 const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל'];
 
 
-export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanceChange }, ref) {    
+export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanceChange }, ref) {
     const [rows, setRows] = useState([]);
 
-     useImperativeHandle(ref, () => ({
+    useImperativeHandle(ref, () => ({
         getAttendanceData: () => rows,
     }));
 
-     useEffect(() => {
+    useEffect(() => {
         const loadData = async () => {
-            const profiles = await fetchAllProfiles();
-            const dataWithDefaults = profiles.map(profile => ({
-                ...profile,
-                attended: false,
-                caregiver: false,
-                reason: '',
-            }));
-            setRows(dataWithDefaults);
+            const today = dayjs().format('YYYY-MM-DD');
+            const attendanceData = await fetchAttendanceByDate(today);
+
+            if (attendanceData && attendanceData.attendanceList?.length) {
+                // טוען מהנוכחות השמורה
+                setRows(attendanceData.attendanceList);
+            } else {
+                // טוען מהפרופילים אם אין נוכחות
+                const profiles = await fetchAllProfiles();
+                const dataWithDefaults = profiles.map(profile => ({
+                    ...profile,
+                    attended: false,
+                    caregiver: false,
+                    reason: '',
+                }));
+                setRows(dataWithDefaults);
+            }
         };
 
         loadData();
@@ -65,16 +75,16 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
 
     // 🧮 מחשבים נוכחות כוללת
     useEffect(() => {
-    if (onAttendanceChange) {
-        const count = rows.reduce((acc, row) => {
-            let rowCount = 0;
-            if (row.attended) rowCount += 1;
-            if (row.caregiver) rowCount += 1;
-            return acc + rowCount;
-        }, 0);
-        onAttendanceChange(count);
-    }
-}, [rows, onAttendanceChange]);
+        if (onAttendanceChange) {
+            const count = rows.reduce((acc, row) => {
+                let rowCount = 0;
+                if (row.attended) rowCount += 1;
+                if (row.caregiver) rowCount += 1;
+                return acc + rowCount;
+            }, 0);
+            onAttendanceChange(count);
+        }
+    }, [rows, onAttendanceChange]);
 
     // search by name
     const filteredRows = rows.filter(row =>
@@ -191,4 +201,3 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
 
 
 });
-

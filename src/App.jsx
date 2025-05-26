@@ -5,8 +5,15 @@ import Home from './pages/Home';
 import Schedule from './pages/Schedule';
 import Profiles from './pages/Profiles';
 import Transport from './pages/Transport';
-import Reports from './pages/Reports';
+import Reports from './pages/AllReports/Reports';
 import Login from './pages/Login';
+import DailyAttendance from './pages/AllReports/DailyAttendance';
+import Birthday from './pages/AllReports/Birthday';
+import AbsencePeople from './pages/AllReports/AbsencePeople';
+import MonthlyAttendance from './pages/AllReports/MonthlyAttendance';
+import DaysLeft from './pages/AllReports/DaysLeft';
+
+
 
 function AppWrapper() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -39,6 +46,11 @@ function AppWrapper() {
               <Route path="/Profiles" element={<Profiles />} />
               <Route path="/Transport" element={<Transport />} />
               <Route path="/Reports" element={<Reports />} />
+              <Route path="/AllReports/DailyAttendance" element={<DailyAttendance />} />
+              <Route path="/AllReports/Birthday" element={<Birthday />} />
+              <Route path="/AllReports/AbsencePeople" element={<AbsencePeople />} />
+              <Route path="/AllReports/MonthlyAttendance" element={<MonthlyAttendance />} />
+              <Route path="/AllReports/DaysLeft" element={<DaysLeft />} />
               <Route path="/login" element={<Navigate to="/" />} />
             </Routes>
           </div>

@@ -66,3 +66,21 @@ export const saveAttendanceForDate = async (dateStr, attendanceList) => {
     console.error("שגיאה בשמירת נוכחות:", error);
   }
 };
+
+export const fetchAttendanceByDate = async (dateStr) => {
+  try {
+    const docRef = doc(db, "attendance", dateStr);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data(); // מחזיר את האובייקט עם attendanceList ו־date
+    } else {
+      console.log("אין נוכחות לתאריך הזה");
+      return null;
+    }
+  } catch (error) {
+    console.error("שגיאה בשליפת נוכחות:", error);
+    return null;
+  }
+};
+
