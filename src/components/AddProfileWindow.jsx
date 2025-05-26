@@ -42,6 +42,26 @@ function AddProfileWindow({ open, onClose, onSave }) {
         }));
         setErrors((prev) => ({ ...prev, [name]: false }));
     };
+    const isValidPhoneNumber = (phone) => {
+        // בודק שהטלפון מכיל רק ספרות
+        if (!/^\d+$/.test(phone)) {
+            return false;
+        }
+
+        const landlinePrefixes = ["02", "03", "04", "08", "09"];
+        const mobilePrefixes = [
+            "050", "051", "052", "053", "054", "055", "056", "057", "058", "059",
+            "072", "073", "074", "075", "076", "077", "078"
+        ];
+
+        if (phone.length === 9) {
+            return landlinePrefixes.includes(phone.slice(0, 2));
+        } else if (phone.length === 10) {
+            return mobilePrefixes.includes(phone.slice(0, 3));
+        }
+
+        return false;
+    };
 
     const handleSubmit = () => {
         const requiredFields = ["name", "id", "city", "birthDate"];
@@ -49,6 +69,10 @@ function AddProfileWindow({ open, onClose, onSave }) {
         requiredFields.forEach((field) => {
             if (!formData[field]) newErrors[field] = true;
         });
+
+        if (formData.phone && !isValidPhoneNumber(formData.phone)) {
+            newErrors.phone = "מספר טלפון לא תקין";
+        }
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -127,9 +151,15 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 </FormControl>
 
                 <TextField
-                    fullWidth label="טלפון" name="phone" sx={{ maxWidth: "170px", ml: 1 }}
-                    value={formData.phone} onChange={handleChange} margin="dense"
-
+                    fullWidth
+                    label="טלפון"
+                    name="phone"
+                    sx={{ maxWidth: "170px", ml: 1 }}
+                    value={formData.phone}
+                    onChange={handleChange}
+                    margin="dense"
+                    error={!!errors.phone}
+                    helperText={errors.phone || ""}
                 />
 
                 <TextField
