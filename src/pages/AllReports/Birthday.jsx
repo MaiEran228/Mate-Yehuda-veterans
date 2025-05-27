@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import jsPDF from 'jspdf';
 import 'dayjs/locale/he';
-import { Card, CardContent, Typography, Button } from '@mui/material';
+import { Card, CardContent, Typography, Button, Box, Container } from '@mui/material';
 import CakeIcon from '@mui/icons-material/Cake';
 
 dayjs.extend(isBetween);
@@ -57,33 +57,40 @@ const Birthday = () => {
   };
 
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px', background: '#f0f8ff', minHeight: '100vh', padding: '40px' }}>
-      <Typography variant="h4" gutterBottom>
-        🎈 ימי הולדת בשבוע הקרוב
-      </Typography>
+    <Container maxWidth="lg" sx={{ mt: 0.5 }}>
+      <Box sx={{ mb: 1 }}>
+        <Button variant="outlined" color="primary" onClick={() => navigate('Reports')}>
+          חזור 
+        </Button>
+        <Button variant="contained" onClick={exportToPDF} sx={{ mb: 0.2, mr: 5 }}>
+          ייצוא ל־PDF
+        </Button>
+      </Box>
+      <div style={{ textAlign: 'center', marginTop: '20px', background: '#f0f8ff', minHeight: '100vh', padding: '40px' }}>
+        <Typography variant="h4" gutterBottom>
+          🎈 ימי הולדת בשבוע הקרוב
+        </Typography>
+        {birthdays.length === 0 ? (
+          <Typography variant="h6">אין ימי הולדת השבוע.</Typography>
+        ) : (
+          <div style={{ maxWidth: '600px', margin: 'auto' }}>
+            {birthdays.map((person, index) => (
+              <Card key={index} variant="outlined" sx={{ margin: 2, backgroundColor: '#fff3e0' }}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <Typography variant="h6">{person.name}</Typography>
+                    <Typography color="text.secondary">תאריך לידה: {person.fullBirthdate}</Typography>
+                  </div>
+                  <CakeIcon color="secondary" sx={{ fontSize: 40 }} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-      {birthdays.length === 0 ? (
-        <Typography variant="h6">אין ימי הולדת השבוע.</Typography>
-      ) : (
-        <div style={{ maxWidth: '600px', margin: 'auto' }}>
-          {birthdays.map((person, index) => (
-            <Card key={index} variant="outlined" sx={{ margin: 2, backgroundColor: '#fff3e0' }}>
-              <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <Typography variant="h6">{person.name}</Typography>
-                  <Typography color="text.secondary">תאריך לידה: {person.fullBirthdate}</Typography>
-                </div>
-                <CakeIcon color="secondary" sx={{ fontSize: 40 }} />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      </div>
+    </Container>
 
-      <Button variant="contained" onClick={exportToPDF} sx={{ marginTop: 4 }}>
-        ייצוא ל־PDF
-      </Button>
-    </div>
   );
 };
 

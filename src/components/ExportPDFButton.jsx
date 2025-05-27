@@ -18,7 +18,7 @@ const ExportPDFButton = ({ targetId, fileName = 'report.pdf' }) => {
   };
 
   return (
-    <Button variant="outlined" color="secondary" onClick={handleExport}>
+    <Button variant="contained"  onClick={handleExport}>
       ייצוא ל־PDF
     </Button>
   );

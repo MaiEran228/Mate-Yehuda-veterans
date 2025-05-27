@@ -8,7 +8,7 @@ import {
 
 const hours = [
   '09:00', '10:00', '11:00', '12:00',
-  '13:00', '14:00', '15:00', '16:00', '17:00',
+  '13:00', '14:00', 
 ];
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
@@ -20,9 +20,13 @@ const SchedulePage = () => {
     return saved ? JSON.parse(saved) : {};
   });
 
-  const handleChange = (key, value) => {
+  const handleChange = (key, field, value) => {
     setActivities((prev) => {
-      const updated = { ...prev, [key]: value };
+      const prevEntry = prev[key] || {};
+      const updated = {
+        ...prev,
+        [key]: { ...prevEntry, [field]: value },
+      };
       localStorage.setItem('schedule', JSON.stringify(updated));
       return updated;
     });
@@ -40,7 +44,6 @@ const SchedulePage = () => {
         overflowX: 'auto',
       }}
     >
-      {/* 🔘 כותרת + כפתור עריכה בצד שמאל */}
       <Box
         sx={{
           display: 'flex',
@@ -62,7 +65,6 @@ const SchedulePage = () => {
         </Button>
       </Box>
 
-      {/* טבלה */}
       <Box sx={{ display: 'flex', height: 'calc(100vh - 130px)' }}>
         {/* עמודת שעות */}
         <Box
@@ -71,7 +73,7 @@ const SchedulePage = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            border: '1px solid #ddd',
+            border: '2px solid #ddd',
             backgroundColor: '#fff',
             borderRadius: 2,
             mx: 0.5,
@@ -79,42 +81,27 @@ const SchedulePage = () => {
         >
           <Box
             sx={{
-              py: 1,
-              width: '100%',
-              textAlign: 'center',
-              fontWeight: 'bold',
-              borderBottom: '1px solid #ddd',
-              backgroundColor: '#f8f8f8',
-            }}
-          >
-            שעות
-          </Box>
-          <Box
-            sx={{
               flex: 1,
               width: '100%',
               p: 1,
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-around',
+              justifyContent: 'flex-start',
+              mt: 4,
             }}
           >
-            {hours.map((hour, index) => (
+            {hours.map((hour) => (
               <Box
-                key={index}
+                key={hour}
                 sx={{
-                  mb: 1,
-                  textAlign: 'center',
-                  border: '1px solid #ddd',
-                  borderRadius: 1,
-                  backgroundColor: '#fff',
-                  height: '50px',
+                  height: '70px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  borderBottom: '3px solid #eee',
                 }}
               >
-                <Typography>{hour}</Typography>
+                <Typography variant="h7" fontWeight="bold"  >{hour}</Typography>
               </Box>
             ))}
           </Box>
@@ -142,7 +129,7 @@ const SchedulePage = () => {
                 py: 0.5,
                 width: '100%',
                 textAlign: 'center',
-                fontSize: '1.3rem', 
+                fontSize: '1.3rem',
                 fontWeight: 'bold',
                 borderBottom: '1px solid #ddd',
               }}
@@ -151,44 +138,54 @@ const SchedulePage = () => {
             </Box>
 
             {/* שורות פעילות */}
-            <Box sx={{ flex: 1, width: '100%', p: 1 }}>
+            <Box sx={{ flex: 1, width: '100%' }}>
               {hours.map((hour) => {
                 const key = `${day}-${hour}`;
-                const value = activities[key] || '';
+                const value = activities[key] || { activity: '', instructor: '' };
 
                 return (
                   <Box
                     key={key}
                     sx={{
-                      height: '50px',
-                      mb: 1,
+                     height: isEditing ? '100px' : '70px',
+
                       px: 1,
                       display: 'flex',
-                      alignItems: 'center',
-
+                      flexDirection: 'column',
+                      justifyContent: isEditing ? 'flex-start' : 'center',
+                      borderBottom: '3px solid #eee',
+                       ...(isEditing && { mb: 2 })
+                  
                     }}
                   >
                     {isEditing ? (
-                      <TextField
-                        fullWidth
-                        size="small"
-                        variant="outlined"
-                        value={value}
-                        onChange={(e) => handleChange(key, e.target.value)}
-                      />
+                      <>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          placeholder="פעילות"
+                          value={value.activity}
+                          onChange={(e) => handleChange(key, 'activity', e.target.value)}
+                        />
+                        <TextField
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          placeholder="שם מדריך"
+                          value={value.instructor}
+                          onChange={(e) => handleChange(key, 'instructor', e.target.value)}
+                        />
+                      </>
                     ) : (
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          width: '100%',
-                          textAlign: 'center',
-                          fontWeight: 'bold',
-                          fontSize: '1.1rem',
-                          lineHeight: '50px', // גובה התא
-                        }}
-                      >
-                        {value}
-                      </Typography>
+                      <Box sx={{ textAlign: 'center' ,
+
+                      }}>
+                        <Typography fontWeight="bold">{value.activity}</Typography>
+                        <Typography fontSize="0.85rem" color="text.secondary">
+                          {value.instructor}
+                        </Typography>
+                      </Box>
                     )}
                   </Box>
                 );
