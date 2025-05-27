@@ -13,6 +13,7 @@ function ProfileCard({ profile, onClick }) {
           transform: 'translateX(-50%)',
           width: 80,
           height: 80,
+          bgcolor: '#ffffffcc',
           borderRadius: '60%',
           backgroundColor: '#dbeafe',
           display: 'flex',
