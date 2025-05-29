@@ -6,22 +6,9 @@ import { useState, useEffect } from "react";
 
 function AddProfileWindow({ open, onClose, onSave }) {
     const initialFormData = {
-        name: "",
-        age: "",
-        id: "",
-        address: "",
-        city: "",
-        birthDate: "",
-        phone: "",
-        email: "",
-        transport: "",
-        functionLevel: "",
-        gender: "",
-        arrivalDays: [],
-        eligibility: "",
-        isHolocaustSurvivor: false,
-        hasCaregiver: false,
-        membership: "",
+        name: "", age: "", id: "", address: "", city: "", birthDate: "", phone: "", email: "",
+        transport: "", functionLevel: "", gender: "", arrivalDays: [], eligibility: "", isHolocaustSurvivor: false,
+        hasCaregiver: false, membership: "", nursingCompany: "",
     };
 
     const [formData, setFormData] = useState(initialFormData);
@@ -40,6 +27,9 @@ function AddProfileWindow({ open, onClose, onSave }) {
             ...prev,
             [name]: type === "checkbox" ? checked : value,
         }));
+        if (name === "eligibility" && value !== "סיעוד") {
+            setFormData((prev) => ({ ...prev, nursingCompany: "" }));
+        }
         setErrors((prev) => ({ ...prev, [name]: false }));
     };
     const isValidPhoneNumber = (phone) => {
@@ -227,15 +217,43 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 </FormControl>
 
 
-
-
+                {/* זכאות */}
                 <FormControl fullWidth margin="dense" sx={{ maxWidth: "170px", ml: 1 }}>
                     <InputLabel>זכאות</InputLabel>
                     <Select
-                        name="eligibility" value={formData.eligibility} onChange={handleChange}
+                        name="eligibility"
+                        value={formData.eligibility}
+                        onChange={handleChange}
                     >
                         <MenuItem value="רווחה">רווחה</MenuItem>
                         <MenuItem value="סיעוד">סיעוד</MenuItem>
+                        <MenuItem value="אחר">אחר</MenuItem>
+                    </Select>
+                </FormControl>
+
+                {/* סוג סיעוד - תמיד מופיע, מושבת אם לא נבחרה סיעוד */}
+                <FormControl
+                    fullWidth
+                    margin="dense"
+                    sx={{ maxWidth: "170px", ml: 1 }}
+                    disabled={formData.eligibility !== "סיעוד"}
+                >
+                    <InputLabel>חברת סיעוד</InputLabel>
+                    <Select
+                        name="nursingCompany"
+                        value={formData.nursingCompany}
+                        onChange={handleChange}
+                    >
+                        <MenuItem value="מטב">מט"ב</MenuItem>
+                        <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
+                        <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
+                        <MenuItem value="א.ש ירושלים">א.ש ירושלים</MenuItem>
+                        <MenuItem value="ראנד">ראנד</MenuItem>
+                        <MenuItem value="תגבור">תגבור</MenuItem>
+                        <MenuItem value="נתן">נתן</MenuItem>
+                        <MenuItem value="עמל- בית שמש">עמל- בית שמש</MenuItem>
+                        <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
+                        <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
                         <MenuItem value="אחר">אחר</MenuItem>
                     </Select>
                 </FormControl>

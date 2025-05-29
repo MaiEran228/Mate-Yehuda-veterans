@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // קונפיגורציה ואתחול
@@ -81,6 +81,23 @@ export const fetchAttendanceByDate = async (dateStr) => {
   } catch (error) {
     console.error("שגיאה בשליפת נוכחות:", error);
     return null;
+  }
+};
+
+// פונקציה לעדכון פרופיל קיים
+export const updateProfile = async (profileId, updatedData) => {
+  try {
+    // יצירת רפרנס למסמך
+    const profileRef = doc(db, 'profiles', profileId);
+    
+    // עדכון המסמך
+    await updateDoc(profileRef, updatedData);
+    
+    console.log('Profile updated successfully');
+    return true;
+  } catch (error) {
+    console.error('Error updating profile: ', error);
+    throw error;
   }
 };
 

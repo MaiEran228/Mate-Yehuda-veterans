@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { deleteProfile } from "../firebase";
 import {
     Dialog, DialogTitle, DialogContent, Typography, Button, TextField, MenuItem, Checkbox, FormControlLabel,
@@ -6,6 +6,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
+import EditProfileWindow from "./EditProfileWindow";
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
 const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
@@ -16,17 +17,43 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
     const [isEditing, setIsEditing] = useState(false);
     const [profile, setProfile] = useState(initialProfile || {});
 
-    const handleChange = (field) => (e) => {
-        const value =
-            e.target.type === "checkbox" ? e.target.checked : e.target.value;
-        setProfile({ ...profile, [field]: value });
-    };
+    // עדכון הפרופיל כאשר initialProfile משתנה
+    useEffect(() => {
+        if (initialProfile) {
+            setProfile(initialProfile);
+        }
+    }, [initialProfile]);
 
     const handleDelete = async () => {
         const confirm = window.confirm(`האם למחוק את ${profile.name}?`);
         if (confirm) {
-            await onDelete(profile.id); // מחיקה דרך ההורה
+            await onDelete(profile.id);
         }
+    };
+
+    // פונקציה לשמירת שינויים
+    const handleSave = async (updatedProfile) => {
+        try {
+            if (onSave) {
+                await onSave(updatedProfile);
+            }
+            setIsEditing(false);
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            alert('שגיאה בשמירת הפרופיל');
+        }
+    };
+
+    // פונקציה לביטול עריכה
+    const handleCancelEdit = () => {
+        setProfile(initialProfile);
+        setIsEditing(false);
+    };
+
+    // פונקציות לטיפול בשינויים בעריכה
+    const handleChange = (field) => (e) => {
+        const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+        setProfile({ ...profile, [field]: value });
     };
 
     const handleDayChange = (day) => (e) => {
@@ -41,40 +68,30 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
         }
     };
 
-    const handleSave = () => {
-        onSave(profile);
-        setIsEditing(false);
-    };
-
-    const handleCancelEdit = () => {
-        setProfile(initialProfile);
-        setIsEditing(false);
-    };
-
     function calculateAge(birthDateStr) {
-    if (!birthDateStr) return "";
-    const today = new Date();
-    const birthDate = new Date(birthDateStr);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
+        if (!birthDateStr) return "";
+        const today = new Date();
+        const birthDate = new Date(birthDateStr);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
     }
-    return age;
-}
 
     return (
         <Dialog
             open={open}
             onClose={onClose}
             dir="rtl"
-            maxWidth="md"        // אפשר גם "lg" אם את רוצה יותר רחב
+            maxWidth="md"
             fullWidth
             sx={{
                 '& .MuiDialog-paper': {
-                    width: '500px',     // רוחב מותאם אישית - שנו לפי הצורך
-                    height: 'auto',     // או למשל '600px' אם את רוצה גם גובה קבוע
-                    maxWidth: 'none',   // חשוב! כדי לא להגביל אותך ל-"sm/md/lg"
+                    width: '500px',
+                    height: 'auto',
+                    maxWidth: 'none',
                 }
             }}
         >
@@ -105,7 +122,6 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
             <DialogContent>
                 {!isEditing ? (
                     <>
-                        
                         <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">גיל: </Box>
                             <Box component="span">{calculateAge(profile.birthDate)}</Box>
@@ -154,6 +170,12 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">זכאות: </Box>
                             <Box component="span">{profile.eligibility}</Box>
                         </Typography>
+                        {profile.eligibility === "סיעוד" && (
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">חברת סיעוד: </Box>
+                                <Box component="span">{profile.nursingCompany || "לא צויין"}</Box>
+                            </Typography>
+                        )}
                         <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">ניצול שואה: </Box>
                             <Box component="span">{profile.isHolocaustSurvivor ? "כן" : "לא"}</Box>
@@ -187,178 +209,13 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                         </Box>
                     </>
                 ) : (
-                    <>
-                        <TextField
-                            fullWidth
-                            label="שם"
-                            value={profile.name}
-                            onChange={handleChange("name")}
-                            sx={{ my: 1 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="גיל"
-                            type="number"
-                            value={profile.age}
-                            onChange={handleChange("age")}
-                            sx={{ my: 1 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="תעודת זהות"
-                            value={profile.id}
-                            onChange={handleChange("id")}
-                            sx={{ my: 1 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="כתובת"
-                            value={profile.address}
-                            onChange={handleChange("address")}
-                            sx={{ my: 1 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="יישוב"
-                            value={profile.city}
-                            onChange={handleChange("city")}
-                            sx={{ my: 1 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="תאריך לידה"
-                            type="date"
-                            value={profile.birthDate}
-                            onChange={handleChange("birthDate")}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{ my: 1 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="טלפון"
-                            value={profile.phone}
-                            onChange={handleChange("phone")}
-                            sx={{ my: 1 }}
-                        />
-                        <TextField
-                            fullWidth
-                            label="מייל"
-                            value={profile.email}
-                            onChange={handleChange("email")}
-                            sx={{ my: 1 }}
-                        />
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="מין"
-                            value={profile.gender}
-                            onChange={handleChange("gender")}
-                            sx={{ my: 1 }}
-                        >
-                            {GENDERS.map((g) => (
-                                <MenuItem key={g} value={g}>
-                                    {g}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-
-                        <Box>
-                            <Typography>ימי הגעה:</Typography>
-                            {DAYS.map((day) => (
-                                <FormControlLabel
-                                    key={day}
-                                    control={
-                                        <Checkbox
-                                            checked={profile.arrivalDays?.includes(day) || false}
-                                            onChange={handleDayChange(day)}
-                                        />
-                                    }
-                                    label={day}
-                                />
-                            ))}
-                        </Box>
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="הסעה"
-                            value={profile.transport}
-                            onChange={handleChange("transport")}
-                            sx={{ my: 1 }}
-                        >
-                            <MenuItem value="מונית">מונית</MenuItem>
-                            <MenuItem value="הסעה">הסעה</MenuItem>
-                            <MenuItem value="אחר">אחר</MenuItem>
-                        </TextField>
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="רמת תפקוד"
-                            value={profile.functionLevel}
-                            onChange={handleChange("functionLevel")}
-                            sx={{ my: 1 }}
-                        >
-                            {[1, 2, 3, 4, 5, 6].map((level) => (
-                                <MenuItem key={level} value={level}>
-                                    {level}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="זכאות"
-                            value={profile.eligibility}
-                            onChange={handleChange("eligibility")}
-                            sx={{ my: 1 }}
-                        >
-                            <MenuItem value="רווחה">רווחה</MenuItem>
-                            <MenuItem value="סיעוד">סיעוד</MenuItem>
-                            <MenuItem value="אחר">אחר</MenuItem>
-                        </TextField>
-
-                        <TextField
-                            select
-                            fullWidth
-                            label="חבר ב-"
-                            value={profile.membership}
-                            onChange={handleChange("membership")}
-                            sx={{ my: 1 }}
-                        >
-                            <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
-                            <MenuItem value="מרכז יום">מרכז יום</MenuItem>
-                            <MenuItem value="אחר">אחר</MenuItem>
-                        </TextField>
-
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={profile.isHolocaustSurvivor}
-                                    onChange={handleChange("isHolocaustSurvivor")}
-                                />
-                            }
-                            label="ניצול שואה"
-                        />
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={profile.hasCaregiver}
-                                    onChange={handleChange("hasCaregiver")}
-                                />
-                            }
-                            label="מטפל"
-                        />
-
-                        <Box mt={2}>
-                            <Button onClick={handleCancelEdit}>ביטול</Button>
-                            <Button onClick={handleSave} variant="contained" sx={{ ml: 2 }}>
-                                שמור
-                            </Button>
-                        </Box>
-                    </>
+                    <EditProfileWindow
+                        profile={profile}
+                        handleChange={handleChange}
+                        handleDayChange={handleDayChange}
+                        handleCancelEdit={handleCancelEdit}
+                        handleSave={() => handleSave(profile)}
+                    />
                 )}
             </DialogContent>
         </Dialog>
