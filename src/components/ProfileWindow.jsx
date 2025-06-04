@@ -147,6 +147,10 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                             <Box component="span">{profile.phone}</Box>
                         </Typography>
                         <Typography sx={{ my: 0 }}>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">טלפון נוסף: </Box>
+                            <Box component="span">{profile.phone2}</Box>
+                        </Typography>
+                        <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">מייל: </Box>
                             <Box component="span">{profile.email}</Box>
                         </Typography>

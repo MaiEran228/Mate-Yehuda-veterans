@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchSchedule, saveSchedule } from '../firebase'; // הנתיב לקובץ שלך
+
 import {
   Box,
   Typography,
@@ -8,27 +10,34 @@ import {
 
 const hours = [
   '09:00', '10:00', '11:00', '12:00',
-  '13:00', '14:00', 
+  '13:00', '14:00',
 ];
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 
 const SchedulePage = () => {
   const [isEditing, setIsEditing] = useState(false);
-  const [activities, setActivities] = useState(() => {
-    const saved = localStorage.getItem('schedule');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [activities, setActivities] = useState({});
+
+  useEffect(() => {
+    const loadSchedule = async () => {
+      try {
+        const data = await fetchSchedule();
+        console.log("Loaded schedule from Firebase:", data);
+        setActivities(data || {});  // למקרה שאין נתונים
+      } catch (err) {
+        console.error("Error loading schedule:", err);
+      }
+    };
+    loadSchedule();
+  }, []);
 
   const handleChange = (key, field, value) => {
-    setActivities((prev) => {
-      const prevEntry = prev[key] || {};
-      const updated = {
-        ...prev,
-        [key]: { ...prevEntry, [field]: value },
-      };
-      localStorage.setItem('schedule', JSON.stringify(updated));
-      return updated;
+    const prevEntry = activities[key] || {};
+    const updated = { ...activities, [key]: { ...prevEntry, [field]: value } };
+    setActivities(updated);
+    saveSchedule(updated).catch(err => {
+      console.error("Error saving schedule:", err);
     });
   };
 
@@ -59,7 +68,7 @@ const SchedulePage = () => {
         <Button
           variant={isEditing ? 'outlined' : 'contained'}
           color="primary"
-          onClick={() => setIsEditing((prev) => !prev)}
+          onClick={() => setIsEditing(prev => !prev)}
         >
           {isEditing ? 'סיים עריכה' : 'ערוך מערכת שעות'}
         </Button>
@@ -78,7 +87,8 @@ const SchedulePage = () => {
             borderRadius: 2,
             mx: 0.5,
           }}
-        >
+        >שעות
+         <Box sx={{ flex: 1, width: '100%' }}></Box>
           <Box
             sx={{
               flex: 1,
@@ -87,21 +97,73 @@ const SchedulePage = () => {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'flex-start',
-              mt: 4,
+          
             }}
           >
             {hours.map((hour) => (
-              <Box
+              <Box//תאי השעות
                 key={hour}
                 sx={{
-                  height: '70px',
+                  height: '130px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderBottom: '3px solid #eee',
                 }}
               >
-                <Typography variant="h7" fontWeight="bold"  >{hour}</Typography>
+             
+                <Typography variant="h7" fontWeight="bold">
+                  {hour}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+        {/* עמודת מיקום קבועה */}
+        <Box
+          sx={{
+            width: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            border: '2px solid #ddd',
+            backgroundColor: '#fff',
+            borderRadius: 2,
+            mx: 0.5,
+          }}
+        >
+          <Box
+            sx={{
+              py: 0.5,
+              width: '100%',
+              textAlign: 'center',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              borderBottom: '1px solid #ddd',
+            }}
+          >
+            מיקום
+          </Box>
+          <Box sx={{ flex: 1, width: '100%' }}>
+            {[
+              'חדר הרצאות',
+              'לובי',
+              'חדר אומנות',
+              'חדר תעסוקה',
+              'בית מדרש',
+              'חדר פיזיותרפיה',
+            ].map((location, index) => (
+              <Box
+                key={index}
+                sx={{
+                  height: '130px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderBottom: '3px solid #eee',
+                }}
+              >
+                <Typography variant="body1">{location}</Typography>
               </Box>
             ))}
           </Box>
@@ -123,7 +185,6 @@ const SchedulePage = () => {
               minWidth: '140px',
             }}
           >
-            {/* כותרת יום */}
             <Box
               sx={{
                 py: 0.5,
@@ -137,25 +198,27 @@ const SchedulePage = () => {
               {day}
             </Box>
 
-            {/* שורות פעילות */}
             <Box sx={{ flex: 1, width: '100%' }}>
               {hours.map((hour) => {
                 const key = `${day}-${hour}`;
-                const value = activities[key] || { activity: '', instructor: '' };
+                const value = activities[key] || {
+                  activity: '',
+                  instructor: '',
+                  location: '',
+                  time: '',
+                };
 
                 return (
                   <Box
                     key={key}
                     sx={{
-                     height: isEditing ? '100px' : '70px',
-
-                      px: 1,
+                      height: isEditing ? '130px' : '130px',
+                      px: 2,
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: isEditing ? 'flex-start' : 'center',
                       borderBottom: '3px solid #eee',
-                       ...(isEditing && { mb: 2 })
-                  
+                      ...(isEditing && { mb: 2 }),
                     }}
                   >
                     {isEditing ? (
@@ -167,6 +230,7 @@ const SchedulePage = () => {
                           placeholder="פעילות"
                           value={value.activity}
                           onChange={(e) => handleChange(key, 'activity', e.target.value)}
+                          sx={{ mb: 0.3, height: '25px', '& .MuiInputBase-root': { height: '25px' } }}
                         />
                         <TextField
                           fullWidth
@@ -175,15 +239,38 @@ const SchedulePage = () => {
                           placeholder="שם מדריך"
                           value={value.instructor}
                           onChange={(e) => handleChange(key, 'instructor', e.target.value)}
+                          sx={{ mb: 0.3, height: '25px', '& .MuiInputBase-root': { height: '25px' } }}
+                        />
+                        <TextField
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          placeholder="מיקום"
+                          value={value.location}
+                          onChange={(e) => handleChange(key, 'location', e.target.value)}
+                          sx={{ mb: 0.3, height: '25px', '& .MuiInputBase-root': { height: '25px' } }}
+                        />
+                        <TextField
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          placeholder="שעה"
+                          value={value.time}
+                          onChange={(e) => handleChange(key, 'time', e.target.value)}
+                          sx={{ mb: 0.3, height: '25px', '& .MuiInputBase-root': { height: '25px' } }}
                         />
                       </>
                     ) : (
-                      <Box sx={{ textAlign: 'center' ,
-
-                      }}>
+                      <Box sx={{ textAlign: 'center' }}>
                         <Typography fontWeight="bold">{value.activity}</Typography>
-                        <Typography fontSize="0.85rem" color="text.secondary">
+                        <Typography fontSize="1rem" color="text.secondary">
                           {value.instructor}
+                        </Typography>
+                        <Typography fontSize="1rem" color="text.secondary">
+                          {value.location}
+                        </Typography>
+                        <Typography fontSize="1rem" color="text.secondary">
+                          {value.time}
                         </Typography>
                       </Box>
                     )}

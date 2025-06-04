@@ -40,7 +40,7 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
             try {
                 setLoading(true);
                 setError(null);
-                
+
                 const today = dayjs().format('YYYY-MM-DD');
                 const attendanceData = await fetchAttendanceByDate(today);
 
@@ -132,9 +132,9 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 4 }}>
                 <Box sx={{ textAlign: 'center', p: 3 }}>
                     <Typography color="error" variant="h6">{error}</Typography>
-                    <Button 
-                        variant="contained" 
-                        onClick={() => window.location.reload()} 
+                    <Button
+                        variant="contained"
+                        onClick={() => window.location.reload()}
                         sx={{ mt: 2 }}
                     >
                         נסה שוב
@@ -145,33 +145,75 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
     }
 
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 0 }}>
-            <Paper sx={{ width: '100%' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Paper
+                sx={{
+                    width: '1300px',
+                    background: 'linear-gradient(135deg,rgb(229, 237, 245),rgb(218, 232, 243),rgb(213, 227, 240))', // אומברה אלכסונית בגווני תכלת
+                    borderRadius: '12px 12px 8px 8px',
+                    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)',
+                    overflow: 'hidden',
+                    boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.27)'
+
+
+                }}
+            >
                 <TableContainer
                     sx={{
-                        maxHeight: 350,
+                        maxHeight: 430,
                         overflowY: 'auto',
                         direction: 'ltr',
+                        '&::-webkit-scrollbar': {
+                            width: '8px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            backgroundColor: 'rgb(201, 218, 232)', // צבע כמו הטבלה
+                            borderRadius: '4px',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: 'rgb(134, 145, 156)',
+                            borderRadius: '4px',
+                        },
+                        '&::-webkit-scrollbar-thumb:hover': {
+                            backgroundColor: 'rgb(134, 136, 139)#',
+                        },
                     }}
                 >
-                    <Table size="small"
+                        
+                    <Table
+                        size="small"
                         stickyHeader
                         sx={{
                             direction: 'rtl',
-                            '& td, & th': {
-                                py: 0,
+                            borderCollapse: 'collapse',  // חשוב לשנות ל collapse כדי שיהיו קווים רציפים
+                            '& th, & td': {
+                                py: 1,
                                 px: 1,
-                                height: '10px',
-                                fontSize: '0.75rem',
+                                fontSize: '1rem',
                             },
-                        }}>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell align="right">אזור מגורים</TableCell>
-                                <TableCell align="right">שם</TableCell>
-                                <TableCell align="right">נוכח</TableCell>
-                                <TableCell align="right">מטפל</TableCell>
-                                <TableCell align="right" sx={{ width: 90 }}>סיבה להיעדרות</TableCell>
+                            '& thead th': {
+                                backgroundColor: 'rgb(200, 219, 234) !important',  // צבע רקע תכלת בהיר עם !important
+                                fontSize: '1.1rem',
+                                fontWeight: 'bold',
+
+                            },
+                        }}
+                    >
+                        <TableHead sx={{ pt: 1 }}>
+                            <TableRow sx={{
+                                height: '52px',          // גובה שורה מוגדל
+                                backgroundColor: '#e0f7fa ',
+                                '& th': {
+                                    fontSize: '1.1rem',    // גודל גופן מוגדל
+
+                                },
+                            }}
+                            >
+                                <TableCell align="right" sx={{ width: '20%', }}>אזור מגורים</TableCell>
+                                <TableCell align="right" sx={{ width: '20%' }}>שם</TableCell>
+                                <TableCell align="right" sx={{ width: '10%' }}>נוכח</TableCell>
+                                <TableCell align="right" sx={{ width: '10%' }}>מטפל</TableCell>
+                                <TableCell align="right" sx={{ width: '15%' }}>סיבה להיעדרות</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -185,7 +227,7 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                                     <TableRow key={profile.id}>
                                         <TableCell align="right">{profile.city}</TableCell>
                                         <TableCell align="right">{profile.name}</TableCell>
-        
+
                                         <TableCell align="right">
                                             <Checkbox
                                                 checked={profile.attended}
@@ -249,6 +291,6 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                     </Table>
                 </TableContainer>
             </Paper>
-        </Box>
+        </Box >
     );
 });
