@@ -94,7 +94,7 @@ const SchedulePage = () => {
               flex: 1,
               width: '100%',
               p: 1,
-              display: 'flex',
+              display: 'flex', 
               flexDirection: 'column',
               justifyContent: 'flex-start',
           
