@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchAllProfiles, addProfile, deleteProfile } from '../firebase';
+import { fetchAllProfiles, addProfile, deleteProfile, updateProfile } from '../firebase';
 import ProfileCard from '../components/ProfileCard';
 import ProfileWindow from '../components/ProfileWindow';
 import AddProfileWindow from '../components/AddProfileWindow';
@@ -9,7 +9,7 @@ function Profiles() {
   const [profiles, setProfiles] = useState([]);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(''); // 🔍 חדש
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const loadProfiles = async () => {
@@ -27,12 +27,21 @@ function Profiles() {
 
   const handleDeleteProfile = async (profileId) => {
     await deleteProfile(profileId);
-    const data = await fetchAllProfiles(); // טען מחדש את הפרופילים אחרי מחיקה
+    const data = await fetchAllProfiles();
     setProfiles(data);
-    setSelectedProfile(null); // סגור את החלונית
+    setSelectedProfile(null);
   };
 
-  // 🔍 סינון לפי שם או יישוב
+  // פונקציה חדשה לעדכון פרופיל
+  const handleUpdateProfile = async (updatedProfile) => {
+    await updateProfile(updatedProfile.id, updatedProfile);
+    const data = await fetchAllProfiles();
+    setProfiles(data);
+    // עדכון הפרופיל הנבחר כדי שהחלון יציג את הנתונים החדשים
+    setSelectedProfile(updatedProfile);
+  };
+
+  // סינון לפי שם או יישוב
   const filteredProfiles = profiles.filter(profile => {
     const term = searchTerm.toLowerCase();
     return (
@@ -41,19 +50,16 @@ function Profiles() {
     );
   });
 
-
-  // בתוך return:
   return (
     <Box sx={{ p: 2 }}>
       {/* חלק עליון - חיפוש וכפתור */}
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: 2,
-          mb: 3,
+          mb: 6,
         }}
       >
         <TextField
@@ -62,21 +68,20 @@ function Profiles() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           dir="rtl"
-          sx={{ width: { xs: '100%', sm: '300px' } }}
+          sx={{ width: '300px', ml: '700px' }}
         />
 
+        <Button
+          variant="contained"
+          onClick={() => setAddDialogOpen(true)}
+          sx={{ height: 40 }}
+        >
+          הוספת פרופיל
+        </Button>
       </Box>
 
-      <Button
-        variant="contained"
-        onClick={() => setAddDialogOpen(true)}
-        sx={{ height: 40, mb: 5 }}
-      >
-        הוספת פרופיל
-      </Button>
-
       {/* אזור הפרופילים בלבד */}
-      <Box sx={{ minHeight: 400 }}> {/* שמור על גובה קבוע פחות או יותר */}
+      <Box sx={{ minHeight: 400 }}>
         <Grid container spacing={0}>
           {filteredProfiles.map(profile => (
             <ProfileCard
@@ -100,6 +105,7 @@ function Profiles() {
         profile={selectedProfile}
         onClose={() => setSelectedProfile(null)}
         onDelete={handleDeleteProfile}
+        onSave={handleUpdateProfile}
       />
 
       <AddProfileWindow
@@ -109,7 +115,6 @@ function Profiles() {
       />
     </Box>
   );
-
 }
 
 export default Profiles;
