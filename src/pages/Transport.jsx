@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { Box, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
 import TransportTable from '../components/TransportTable';
 import AddTransportDialog from '../components/AddTransportDialog';
 import EditTransportDialog from '../components/EditTransportDialog';
 import ViewPassengersDialog from '../components/ViewPassengersDialog';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { transportService } from '../firebase';
 
 function Transport() {
   const [data, setData] = useState([]);
@@ -16,28 +15,23 @@ function Transport() {
   // Dialog states
   const [addDialog, setAddDialog] = useState(false);
   const [editDialog, setEditDialog] = useState({ open: false, index: null, data: null });
-  const [viewDialog, setViewDialog] = useState({ open: false, passengers: [] });
+  const [viewDialog, setViewDialog] = useState({ open: false, passengers: [], days: [] });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, index: null });
 
-  // Fetch transports from Firebase
+  // Subscribe to transports
   useEffect(() => {
-    const fetchTransports = async () => {
-      try {
-        const transportCollection = collection(db, 'transport');
-        const transportSnapshot = await getDocs(transportCollection);
-        const transportList = transportSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+    const unsubscribe = transportService.subscribeToTransports(
+      (transportList) => {
         setData(transportList);
-      } catch (error) {
+        if (loading) setLoading(false);
+      },
+      (error) => {
         console.error("Error fetching transports:", error);
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchTransports();
+    return () => unsubscribe();
   }, []);
 
   // Add handlers
@@ -45,14 +39,7 @@ function Transport() {
   const handleAddClose = () => setAddDialog(false);
   const handleAddSave = async (newTransport) => {
     try {
-      const transportCollection = collection(db, 'transport');
-      const docRef = await addDoc(transportCollection, {
-        ...newTransport,
-        createdAt: new Date(),
-        passengers: []
-      });
-      
-      setData(prev => [...prev, { id: docRef.id, ...newTransport, passengers: [] }]);
+      await transportService.addTransport(newTransport);
       setAddDialog(false);
     } catch (error) {
       console.error("Error adding transport:", error);
@@ -68,12 +55,7 @@ function Transport() {
   };
   const handleEditSave = async (updatedTransport) => {
     try {
-      const transportDoc = doc(db, 'transport', updatedTransport.id);
-      await updateDoc(transportDoc, updatedTransport);
-      
-      const newData = [...data];
-      newData[editDialog.index] = updatedTransport;
-      setData(newData);
+      await transportService.updateTransport(updatedTransport.id, updatedTransport);
       handleEditClose();
     } catch (error) {
       console.error("Error updating transport:", error);
@@ -92,10 +74,7 @@ function Transport() {
   const handleDeleteConfirm = async () => {
     try {
       const transportToDelete = data[deleteDialog.index];
-      await deleteDoc(doc(db, 'transport', transportToDelete.id));
-      
-      const newData = data.filter((_, i) => i !== deleteDialog.index);
-      setData(newData);
+      await transportService.deleteTransport(transportToDelete.id);
       handleDeleteClose();
     } catch (error) {
       console.error("Error deleting transport:", error);
@@ -103,11 +82,11 @@ function Transport() {
   };
 
   // View handlers
-  const handleViewOpen = (passengers) => {
-    setViewDialog({ open: true, passengers });
+  const handleViewOpen = (passengers, days) => {
+    setViewDialog({ open: true, passengers, days });
   };
   const handleViewClose = () => {
-    setViewDialog({ open: false, passengers: [] });
+    setViewDialog({ open: false, passengers: [], days: [] });
   };
 
   if (loading) {
@@ -119,22 +98,86 @@ function Transport() {
   }
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" fontWeight="bold" mb={4}>
-        רשימת הסעות
-      </Typography>
+    <>
+      {/* שורת חיפוש */}
+      <Box sx={{ display: 'flex', gap: 2, mt: -30, mb: 5, mr: 3, ml: 3 }}>
+        <TextField
+          label="חיפוש לפי יישוב"
+          variant="outlined"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          size="small"
+          sx={{ 
+            width: 280,
+            '& .MuiOutlinedInput-root': {
+              height: 36,
+              fontSize: '0.8rem',
+              color: 'rgb(85, 105, 125)',
+              '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
+              '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
+            },
+            '& .MuiInputLabel-root': {
+              fontSize: '0.75rem',
+              top: '-6px',
+              color: 'rgb(85, 105, 125)',
+              '&.Mui-focused': { color: '#7b8f99' }
+            }
+          }}
+        />
 
-      <TransportTable
-        data={data}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        sortField={sortField}
-        setSortField={setSortField}
-        onAddClick={handleAddOpen}
-        onViewPassengers={handleViewOpen}
-        onEditClick={handleEditOpen}
-        onDeleteClick={handleDeleteOpen}
-      />
+        <TextField
+          label="מיון לפי"
+          select
+          SelectProps={{ native: true }}
+          value={sortField}
+          onChange={(e) => setSortField(e.target.value)}
+          size="small"
+          sx={{
+            width: 200,
+            '& .MuiOutlinedInput-root': {
+              height: 36,
+              fontSize: '0.8rem',
+              color: 'rgb(85, 105, 125)',
+              '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
+              '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
+            },
+            '& .MuiInputLabel-root': {
+              fontSize: '0.75rem',
+              top: '-6px',
+              color: 'rgb(85, 105, 125)',
+              '&.Mui-focused': { color: '#7b8f99' }
+            }
+          }}
+        >
+          <option value="">ללא מיון</option>
+          <option value="days">ימים</option>
+          <option value="cities">יישובים</option>
+          <option value="seats">מקומות פנויים</option>
+          <option value="type">סוג הסעה</option>
+        </TextField>
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAddOpen}
+          size="small"
+          sx={{ height: 36 }}
+        >
+          הוספת הסעה
+        </Button>
+      </Box>
+
+      {/* אזור הטבלה */}
+      <Box sx={{ mx: 3, flex: 1 }}>
+        <TransportTable
+          data={data}
+          searchTerm={searchTerm}
+          sortField={sortField}
+          onViewPassengers={handleViewOpen}
+          onEditClick={handleEditOpen}
+          onDeleteClick={handleDeleteOpen}
+        />
+      </Box>
 
       <AddTransportDialog
         open={addDialog}
@@ -160,6 +203,7 @@ function Transport() {
         open={viewDialog.open}
         onClose={handleViewClose}
         passengers={viewDialog.passengers}
+        transportDays={viewDialog.days}
       />
 
       {/* דיאלוג אישור מחיקה */}
@@ -179,7 +223,7 @@ function Transport() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
 

@@ -149,147 +149,141 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
             <Paper
                 sx={{
                     width: '1300px',
-                    background: 'linear-gradient(135deg,rgb(229, 237, 245),rgb(218, 232, 243),rgb(213, 227, 240))', // אומברה אלכסונית בגווני תכלת
                     borderRadius: '12px 12px 8px 8px',
-                    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.05)',
+                    boxShadow: '0px 0px 4px rgba(0, 0, 0, 0.27)',
                     overflow: 'hidden',
-                    boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.27)'
-
-
+                    border: '1px solid rgb(118, 126, 136)',
                 }}
             >
-                <TableContainer
-                    sx={{
-                        maxHeight: 430,
-                        overflowY: 'auto',
-                        direction: 'ltr',
-                        '&::-webkit-scrollbar': {
-                            width: '8px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                            backgroundColor: 'rgb(201, 218, 232)', // צבע כמו הטבלה
-                            borderRadius: '4px',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: 'rgb(134, 145, 156)',
-                            borderRadius: '4px',
-                        },
-                        '&::-webkit-scrollbar-thumb:hover': {
-                            backgroundColor: 'rgb(134, 136, 139)#',
-                        },
-                    }}
-                >
-                        
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Table
                         size="small"
-                        stickyHeader
                         sx={{
                             direction: 'rtl',
-                            borderCollapse: 'collapse',  // חשוב לשנות ל collapse כדי שיהיו קווים רציפים
+                            borderCollapse: 'collapse',
                             '& th, & td': {
                                 py: 1,
                                 px: 1,
                                 fontSize: '1rem',
                             },
-                            '& thead th': {
-                                backgroundColor: 'rgb(200, 219, 234) !important',  // צבע רקע תכלת בהיר עם !important
-                                fontSize: '1.1rem',
-                                fontWeight: 'bold',
-
+                        }}
+                    >
+                        <TableHead>
+                            <TableRow>
+                                <TableCell align="right" sx={{ width: '20%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>אזור מגורים</TableCell>
+                                <TableCell align="right" sx={{ width: '20%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>שם</TableCell>
+                                <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>נוכח</TableCell>
+                                <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>מטפל</TableCell>
+                                <TableCell align="right" sx={{ width: '15%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>סיבה להיעדרות</TableCell>
+                            </TableRow>
+                        </TableHead>
+                    </Table>
+                    <TableContainer
+                        sx={{
+                            maxHeight: 385,
+                            overflowY: 'auto',
+                            direction: 'ltr',
+                            '&::-webkit-scrollbar': {
+                                width: '8px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                backgroundColor: '#ffffff',
+                                borderRadius: '4px',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                backgroundColor: 'rgb(134, 145, 156)',
+                                borderRadius: '4px',
+                            },
+                            '&::-webkit-scrollbar-thumb:hover': {
+                                backgroundColor: 'rgb(134, 136, 139)',
                             },
                         }}
                     >
-                        <TableHead sx={{ pt: 1 }}>
-                            <TableRow sx={{
-                                height: '52px',          // גובה שורה מוגדל
-                                backgroundColor: '#e0f7fa ',
-                                '& th': {
-                                    fontSize: '1.1rem',    // גודל גופן מוגדל
-
+                        <Table
+                            size="small"
+                            sx={{
+                                direction: 'rtl',
+                                borderCollapse: 'collapse',
+                                '& th, & td': {
+                                    py: 1,
+                                    px: 1,
+                                    fontSize: '1rem',
                                 },
                             }}
-                            >
-                                <TableCell align="right" sx={{ width: '20%', }}>אזור מגורים</TableCell>
-                                <TableCell align="right" sx={{ width: '20%' }}>שם</TableCell>
-                                <TableCell align="right" sx={{ width: '10%' }}>נוכח</TableCell>
-                                <TableCell align="right" sx={{ width: '10%' }}>מטפל</TableCell>
-                                <TableCell align="right" sx={{ width: '15%' }}>סיבה להיעדרות</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {loading ? (
-                                // מציג שורות Skeleton במקום טבלה ריקה
-                                Array.from({ length: 8 }).map((_, index) => (
-                                    <SkeletonRow key={index} />
-                                ))
-                            ) : (
-                                sortedRows.map((profile) => (
-                                    <TableRow key={profile.id}>
-                                        <TableCell align="right">{profile.city}</TableCell>
-                                        <TableCell align="right">{profile.name}</TableCell>
-
-                                        <TableCell align="right">
-                                            <Checkbox
-                                                checked={profile.attended}
-                                                onChange={(e) =>
-                                                    handleAttendanceChange(profile.id, e.target.checked)
-                                                }
-                                                size="small"
-                                                sx={{ p: 0.2, '& .MuiSvgIcon-root': { fontSize: 18 } }}
-                                            />
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            <Checkbox
-                                                checked={profile.caregiver}
-                                                disabled={!profile.attended}
-                                                onChange={(e) =>
-                                                    handleCaregiverChange(profile.id, e.target.checked)
-                                                }
-                                                size="small"
-                                                sx={{ p: 0.2, '& .MuiSvgIcon-root': { fontSize: 18 } }}
-                                            />
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            {profile.attended ? (
-                                                <Box sx={{ height: 44 }} />
-                                            ) : (
-                                                <TextField
-                                                    select
-                                                    label="סיבה להיעדרות"
-                                                    variant="standard"
-                                                    value={profile.reason}
-                                                    onChange={(e) => handleReasonChange(profile.id, e.target.value)}
-                                                    fullWidth
-                                                    sx={{
-                                                        fontSize: '0.8rem',
-                                                        '& .MuiInputBase-root': {
-                                                            height: '28px',
+                        >
+                            <TableBody>
+                                {loading ? (
+                                    Array.from({ length: 8 }).map((_, index) => (
+                                        <SkeletonRow key={index} />
+                                    ))
+                                ) : (
+                                    sortedRows.map((profile) => (
+                                        <TableRow key={profile.id}>
+                                            <TableCell align="right" sx={{ width: '20%' }}>{profile.city}</TableCell>
+                                            <TableCell align="right" sx={{ width: '20%' }}>{profile.name}</TableCell>
+                                            <TableCell align="right" sx={{ width: '10%' }}>
+                                                <Checkbox
+                                                    checked={profile.attended}
+                                                    onChange={(e) =>
+                                                        handleAttendanceChange(profile.id, e.target.checked)
+                                                    }
+                                                    size="small"
+                                                    sx={{ p: 0.2, '& .MuiSvgIcon-root': { fontSize: 18 } }}
+                                                />
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ width: '10%' }}>
+                                                <Checkbox
+                                                    checked={profile.caregiver}
+                                                    disabled={!profile.attended}
+                                                    onChange={(e) =>
+                                                        handleCaregiverChange(profile.id, e.target.checked)
+                                                    }
+                                                    size="small"
+                                                    sx={{ p: 0.2, '& .MuiSvgIcon-root': { fontSize: 18 } }}
+                                                />
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ width: '15%' }}>
+                                                {profile.attended ? (
+                                                    <Box sx={{ height: 44 }} />
+                                                ) : (
+                                                    <TextField
+                                                        select
+                                                        label="סיבה להיעדרות"
+                                                        variant="standard"
+                                                        value={profile.reason}
+                                                        onChange={(e) => handleReasonChange(profile.id, e.target.value)}
+                                                        fullWidth
+                                                        sx={{
                                                             fontSize: '0.8rem',
-                                                        },
-                                                        '& .MuiInputLabel-root': {
-                                                            fontSize: '0.7rem',
-                                                        },
-                                                        '& .MuiSelect-select': {
-                                                            paddingTop: '4px',
-                                                            paddingBottom: '2px',
-                                                            fontSize: '0.8rem',
-                                                        },
-                                                    }}
-                                                >
-                                                    {reasonOptions.map((option) => (
-                                                        <MenuItem key={option} value={option}>
-                                                            {option}
-                                                        </MenuItem>
-                                                    ))}
-                                                </TextField>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                                            '& .MuiInputBase-root': {
+                                                                height: '28px',
+                                                                fontSize: '0.8rem',
+                                                            },
+                                                            '& .MuiInputLabel-root': {
+                                                                fontSize: '0.7rem',
+                                                            },
+                                                            '& .MuiSelect-select': {
+                                                                paddingTop: '4px',
+                                                                paddingBottom: '2px',
+                                                                fontSize: '0.8rem',
+                                                            },
+                                                        }}
+                                                    >
+                                                        {reasonOptions.map((option) => (
+                                                            <MenuItem key={option} value={option}>
+                                                                {option}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </TextField>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Box>
             </Paper>
         </Box >
     );

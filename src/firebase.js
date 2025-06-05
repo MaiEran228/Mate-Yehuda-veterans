@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { calculateAvailableSeatsByDay } from './utils/transportUtils';
 
 // קונפיגורציה ואתחול
 const firebaseConfig = {
@@ -131,19 +132,23 @@ export const saveSchedule = async (schedule) => {
 
 // פונקציות עבור הסעות
 export const transportService = {
-  // הבאת כל ההסעות
-  getAllTransports: async () => {
-    try {
-      const transportCollection = collection(db, 'transport');
-      const transportSnapshot = await getDocs(transportCollection);
-      return transportSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-    } catch (error) {
-      console.error("Error fetching transports:", error);
-      throw error;
-    }
+  // הבאת כל ההסעות והאזנה לשינויים
+  subscribeToTransports: (onUpdate, onError) => {
+    const transportCollection = collection(db, 'transport');
+    return onSnapshot(transportCollection, 
+      (snapshot) => {
+        const transportList = snapshot.docs.map((doc, index) => ({
+          id: doc.id,
+          serialNumber: index + 1,  // מוסיף מספר סידורי
+          ...doc.data()
+        }));
+        onUpdate(transportList);
+      },
+      (error) => {
+        console.error("Error fetching transports:", error);
+        if (onError) onError(error);
+      }
+    );
   },
 
   // הוספת הסעה חדשה
@@ -153,8 +158,7 @@ export const transportService = {
       const docRef = await addDoc(transportCollection, {
         ...transportData,
         createdAt: serverTimestamp(),
-        passengers: [],
-        availableSeats: transportData.seats
+        passengers: []
       });
       return { id: docRef.id, ...transportData };
     } catch (error) {
@@ -164,11 +168,28 @@ export const transportService = {
   },
 
   // עדכון הסעה קיימת
-  updateTransport: async (transportId, transportData) => {
+  updateTransport: async (transportId, updatedTransport) => {
     try {
       const transportDoc = doc(db, 'transport', transportId);
-      await updateDoc(transportDoc, transportData);
-      return { id: transportId, ...transportData };
+      
+      // מביא את המידע הנוכחי של ההסעה כדי לשמור על הנוסעים
+      const currentTransportDoc = await getDoc(transportDoc);
+      const currentTransport = currentTransportDoc.data();
+      
+      // מיזוג המידע המעודכן עם המידע הקיים, שמירה על הנוסעים
+      const mergedTransport = {
+        ...updatedTransport,
+        passengers: currentTransport.passengers || [],
+        // חישוב מחדש של המקומות הפנויים לפי יום
+        availableSeatsByDay: calculateAvailableSeatsByDay(
+          updatedTransport.type,
+          currentTransport.passengers || [],
+          updatedTransport.days
+        )
+      };
+
+      await updateDoc(transportDoc, mergedTransport);
+      return mergedTransport;
     } catch (error) {
       console.error("Error updating transport:", error);
       throw error;
@@ -186,121 +207,41 @@ export const transportService = {
     }
   },
 
-  // חיפוש הסעות מתאימות לפרופיל
-  findMatchingTransports: async (profileData) => {
+  // עדכון נוסע בהסעה כאשר הפרופיל שלו משתנה
+  updatePassengerInTransports: async (passengerId, updatedPassengerData) => {
     try {
-      const transportQuery = query(
-        collection(db, 'transport'),
-        where('cities', 'array-contains', profileData.city),
-        where('type', '==', profileData.transportType),
-        where('availableSeats', '>', 0)
-      );
+      const transportsRef = collection(db, 'transport');
+      const transportsSnapshot = await getDocs(transportsRef);
+      
+      const updatePromises = transportsSnapshot.docs
+        .filter(doc => {
+          const transport = doc.data();
+          return transport.passengers?.some(p => p.id === passengerId);
+        })
+        .map(async doc => {
+          const transport = doc.data();
+          const updatedPassengers = transport.passengers.map(p => 
+            p.id === passengerId 
+              ? { ...p, ...updatedPassengerData }
+              : p
+          );
 
-      const matchingTransports = await getDocs(transportQuery);
-      return matchingTransports.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(transport => 
-          transport.days.some(day => profileData.transportDays.includes(day))
-        );
-    } catch (error) {
-      console.error("Error finding matching transports:", error);
-      throw error;
-    }
-  },
+          // מעדכן את המקומות הפנויים לפי יום
+          const availableSeatsByDay = calculateAvailableSeatsByDay(
+            transport.type,
+            updatedPassengers,
+            transport.days
+          );
 
-  // שיבוץ פרופיל להסעות מתאימות
-  assignProfileToTransports: async (profileId) => {
-    try {
-      // מביאים את פרטי הפרופיל
-      const profileDoc = await getDoc(doc(db, 'profiles', profileId));
-      const profile = profileDoc.data();
-
-      // מוצאים הסעות מתאימות
-      const matchingTransports = await transportService.findMatchingTransports(profile);
-      const assignedTransports = [];
-
-      // מוסיפים את הפרופיל לכל הסעה מתאימה
-      for (const transport of matchingTransports) {
-        // מוסיפים את הנוסע להסעה
-        await updateDoc(doc(db, 'transport', transport.id), {
-          passengers: arrayUnion({
-            profileId: profileId,
-            name: profile.name,
-            city: profile.city
-          }),
-          availableSeats: transport.availableSeats - 1
+          return updateDoc(doc.ref, {
+            passengers: updatedPassengers,
+            availableSeatsByDay
+          });
         });
 
-        assignedTransports.push(transport.id);
-      }
-
-      // מעדכנים את הפרופיל עם ההסעות שהוקצו
-      if (assignedTransports.length > 0) {
-        await updateDoc(doc(db, 'profiles', profileId), {
-          assignedTransports: arrayUnion(...assignedTransports)
-        });
-      }
-
-      return assignedTransports;
+      await Promise.all(updatePromises);
     } catch (error) {
-      console.error("Error assigning profile to transports:", error);
-      throw error;
-    }
-  },
-
-  // הסרת נוסע מהסעה
-  removePassengerFromTransport: async (transportId, profileId) => {
-    try {
-      const transportDoc = doc(db, 'transport', transportId);
-      const transport = await getDoc(transportDoc);
-      const transportData = transport.data();
-
-      // מסירים את הנוסע מההסעה
-      const updatedPassengers = transportData.passengers.filter(
-        p => p.profileId !== profileId
-      );
-
-      await updateDoc(transportDoc, {
-        passengers: updatedPassengers,
-        availableSeats: transportData.availableSeats + 1
-      });
-
-      // מסירים את ההסעה מהפרופיל
-      await updateDoc(doc(db, 'profiles', profileId), {
-        assignedTransports: arrayRemove(transportId)
-      });
-
-      return { transportId, profileId };
-    } catch (error) {
-      console.error("Error removing passenger from transport:", error);
-      throw error;
-    }
-  },
-
-  // בדיקה אם פרופיל יכול להצטרף להסעה
-  canJoinTransport: async (transportId, profileId) => {
-    try {
-      const [transport, profile] = await Promise.all([
-        getDoc(doc(db, 'transport', transportId)),
-        getDoc(doc(db, 'profiles', profileId))
-      ]);
-
-      const transportData = transport.data();
-      const profileData = profile.data();
-
-      return {
-        canJoin: 
-          transportData.availableSeats > 0 &&
-          transportData.cities.includes(profileData.city) &&
-          transportData.type === profileData.transportType &&
-          transportData.days.some(day => profileData.transportDays.includes(day)),
-        reason: transportData.availableSeats === 0 ? 'אין מקומות פנויים' :
-                !transportData.cities.includes(profileData.city) ? 'היישוב לא נמצא במסלול ההסעה' :
-                transportData.type !== profileData.transportType ? 'סוג ההסעה לא מתאים' :
-                !transportData.days.some(day => profileData.transportDays.includes(day)) ? 'אין התאמה בימים' : ''
-      };
-    } catch (error) {
-      console.error("Error checking if profile can join transport:", error);
+      console.error("Error updating passenger in transports:", error);
       throw error;
     }
   }

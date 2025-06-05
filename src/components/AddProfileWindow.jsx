@@ -1,8 +1,9 @@
 import {
     Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, FormControlLabel, Checkbox, MenuItem,
-    Select, InputLabel, FormControl, Typography, Box
+    Select, InputLabel, FormControl, Typography, Box, Alert
 } from "@mui/material";
 import { useState, useEffect } from "react";
+import { findMatchingTransports, addPassengerToTransport } from '../utils/transportUtils';
 
 function AddProfileWindow({ open, onClose, onSave }) {
     const initialFormData = {
@@ -13,11 +14,18 @@ function AddProfileWindow({ open, onClose, onSave }) {
 
     const [formData, setFormData] = useState(initialFormData);
     const [errors, setErrors] = useState({});
+    const [transportMessage, setTransportMessage] = useState(null);
+    const [matchingTransports, setMatchingTransports] = useState([]);
+    const [showTransportDialog, setShowTransportDialog] = useState(false);
+    const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
 
     useEffect(() => {
         if (open) {
             setFormData(initialFormData);
             setErrors({});
+            setTransportMessage(null);
+            setMatchingTransports([]);
+            setShowTransportDialog(false);
         }
     }, [open]);
 
@@ -53,11 +61,13 @@ function AddProfileWindow({ open, onClose, onSave }) {
         return false;
     };
 
-    const handleSubmit = () => {
-        const requiredFields = ["name", "id", "city", "birthDate", "phone"];
+    const handleSubmit = async () => {
+        const requiredFields = ["name", "id", "city", "birthDate", "phone", "transport", "arrivalDays"];
         const newErrors = {};
         requiredFields.forEach((field) => {
-            if (!formData[field]) newErrors[field] = true;
+            if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
+                newErrors[field] = true;
+            }
         });
 
         if (formData.phone && !isValidPhoneNumber(formData.phone)) {
@@ -69,279 +79,411 @@ function AddProfileWindow({ open, onClose, onSave }) {
             return;
         }
 
-        onSave(formData);
-        setFormData(initialFormData);
-        setErrors({});
+        try {
+            const transports = await findMatchingTransports(
+                formData.arrivalDays,
+                formData.city,
+                formData.transport,
+                formData.hasCaregiver
+            );
+
+            if (transports.length === 0) {
+                setTransportMessage({
+                    type: 'warning',
+                    text: 'לא נמצאה הסעה מתאימה. יש להוסיף הסעה חדשה.'
+                });
+                await onSave(formData);
+            } else if (transports.length === 1) {
+                await addPassengerToTransport(transports[0].id, {
+                    id: formData.id,
+                    name: formData.name,
+                    phone: formData.phone,
+                    city: formData.city,
+                    hasCaregiver: formData.hasCaregiver,
+                    arrivalDays: formData.arrivalDays
+                });
+
+                const successMessage = `${formData.name} שובץ להסעה מספר ${transports[0].serialNumber} - ${transports[0].cities.join(' -> ')}`;
+                setSuccessDialog({ open: true, message: successMessage });
+                await onSave(formData);
+                setFormData(initialFormData);
+                setErrors({});
+            } else {
+                setMatchingTransports(transports);
+                setShowTransportDialog(true);
+                return;
+            }
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            setTransportMessage({
+                type: 'error',
+                text: 'אירעה שגיאה בשמירת הפרופיל. אנא נסו שנית.'
+            });
+        }
+    };
+
+    const handleTransportSelect = async (transport) => {
+        try {
+            await addPassengerToTransport(transport.id, {
+                id: formData.id,
+                name: formData.name,
+                phone: formData.phone,
+                city: formData.city,
+                hasCaregiver: formData.hasCaregiver,
+                arrivalDays: formData.arrivalDays
+            });
+
+            const successMessage = `${formData.name} שובץ להסעה מספר ${transport.serialNumber} - ${transport.cities.join(' -> ')}`;
+            setSuccessDialog({ open: true, message: successMessage });
+            
+            await onSave(formData);
+            setFormData(initialFormData);
+            setErrors({});
+            setShowTransportDialog(false);
+        } catch (error) {
+            console.error('Error assigning to transport:', error);
+            setTransportMessage({
+                type: 'error',
+                text: 'אירעה שגיאה בשיבוץ להסעה. אנא נסו שנית.'
+            });
+        }
+    };
+
+    const handleCloseSuccessDialog = () => {
+        setSuccessDialog({ open: false, message: '' });
         onClose();
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            dir="rtl"
-            maxWidth="md"
-            fullWidth
-            sx={{
-                '& .MuiDialog-paper': {
-                    width: '800px',
-                    height: 'auto',
-                    maxWidth: 'none',
-                }
-            }}
-        >
-            <DialogTitle sx={{
-                backgroundColor: '#f5f5f5',
-                borderBottom: '1px solid #e0e0e0',
-                mb: 1
-            }}>
-                הוספת פרופיל חדש
-            </DialogTitle>
-            <DialogContent>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-                    {/* שדות טקסט */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                        <TextField
-                            fullWidth
-                            label="שם"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required
-                            error={errors.name}
-                            helperText={errors.name && "שדה חובה"}
-                            sx={{ maxWidth: "170px" }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="תעודת זהות"
-                            name="id"
-                            value={formData.id}
-                            onChange={handleChange}
-                            required
-                            error={errors.id}
-                            helperText={errors.id && "שדה חובה"}
-                            sx={{ maxWidth: "170px" }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="תאריך לידה"
-                            name="birthDate"
-                            type="date"
-                            value={formData.birthDate}
-                            onChange={handleChange}
-                            required
-                            error={!!errors?.birthDate}
-                            helperText={errors?.birthDate && "שדה חובה"}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{ maxWidth: "170px" }}
-                        />
-
-                        <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                            <InputLabel>מין</InputLabel>
-                            <Select
-                                name="gender"
-                                value={formData.gender}
+        <>
+            <Dialog
+                open={open}
+                onClose={onClose}
+                dir="rtl"
+                maxWidth="md"
+                fullWidth
+                sx={{
+                    '& .MuiDialog-paper': {
+                        width: '800px',
+                        height: 'auto',
+                        maxWidth: 'none',
+                    }
+                }}
+            >
+                <DialogTitle sx={{
+                    backgroundColor: '#f5f5f5',
+                    borderBottom: '1px solid #e0e0e0',
+                    mb: 1
+                }}>
+                    הוספת פרופיל חדש
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                        {transportMessage && (
+                            <Alert severity={transportMessage.type} sx={{ mb: 2 }}>
+                                {transportMessage.text}
+                            </Alert>
+                        )}
+                        
+                        {/* שדות טקסט */}
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                            <TextField
+                                fullWidth
+                                label="שם"
+                                name="name"
+                                value={formData.name}
                                 onChange={handleChange}
-                            >
-                                <MenuItem value="זכר">זכר</MenuItem>
-                                <MenuItem value="נקבה">נקבה</MenuItem>
-                                <MenuItem value="אחר">אחר</MenuItem>
-                            </Select>
-                        </FormControl>
+                                required
+                                error={errors.name}
+                                helperText={errors.name && "שדה חובה"}
+                                sx={{ maxWidth: "170px" }}
+                            />
 
-                        <TextField
-                            fullWidth
-                            label="טלפון"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            required
-                            error={!!errors.phone}
-                            helperText={errors.phone === true ? "שדה חובה" : errors.phone}
-                            sx={{ maxWidth: "170px" }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="טלפון נוסף"
-                            name="phone2"
-                            value={formData.phone2}
-                            onChange={handleChange}
-                            sx={{ maxWidth: "170px" }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="מייל"
-                            name="email"
-                            value={formData.email || ''}
-                            onChange={handleChange}
-                            sx={{ maxWidth: "170px" }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="כתובת"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleChange}
-                            sx={{ maxWidth: "170px" }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="יישוב"
-                            name="city"
-                            value={formData.city}
-                            onChange={handleChange}
-                            required
-                            error={errors.city}
-                            helperText={errors.city && "שדה חובה"}
-                            sx={{ maxWidth: "170px" }}
-                        />
-
-                        <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                            <InputLabel>הסעה</InputLabel>
-                            <Select
-                                name="transport"
-                                value={formData.transport}
+                            <TextField
+                                fullWidth
+                                label="תעודת זהות"
+                                name="id"
+                                value={formData.id}
                                 onChange={handleChange}
-                            >
-                                <MenuItem value="מונית">מונית</MenuItem>
-                                <MenuItem value="הסעה">הסעה</MenuItem>
-                                <MenuItem value="אחר">אחר</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Box>
+                                required
+                                error={errors.id}
+                                helperText={errors.id && "שדה חובה"}
+                                sx={{ maxWidth: "170px" }}
+                            />
 
-                    {/* ימי הגעה בשורה נפרדת */}
-                    <Box sx={{ mt: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap' }}>ימי הגעה:</Typography>
-                            {["ראשון", "שני", "שלישי", "רביעי", "חמישי"].map((day) => (
-                                <FormControlLabel
-                                    key={day}
-                                    control={
-                                        <Checkbox
-                                            checked={formData.arrivalDays.includes(day)}
-                                            onChange={() => {
-                                                setFormData((prev) => {
-                                                    const isSelected = prev.arrivalDays.includes(day);
-                                                    const newDays = isSelected
-                                                        ? prev.arrivalDays.filter((d) => d !== day)
-                                                        : [...prev.arrivalDays, day];
-                                                    return { ...prev, arrivalDays: newDays };
-                                                });
-                                            }}
-                                        />
-                                    }
-                                    label={day}
-                                />
-                            ))}
+                            <TextField
+                                fullWidth
+                                label="תאריך לידה"
+                                name="birthDate"
+                                type="date"
+                                value={formData.birthDate}
+                                onChange={handleChange}
+                                required
+                                error={!!errors?.birthDate}
+                                helperText={errors?.birthDate && "שדה חובה"}
+                                InputLabelProps={{ shrink: true }}
+                                sx={{ maxWidth: "170px" }}
+                            />
+
+                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
+                                <InputLabel>מין</InputLabel>
+                                <Select
+                                    name="gender"
+                                    value={formData.gender}
+                                    onChange={handleChange}
+                                >
+                                    <MenuItem value="זכר">זכר</MenuItem>
+                                    <MenuItem value="נקבה">נקבה</MenuItem>
+                                    <MenuItem value="אחר">אחר</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <TextField
+                                fullWidth
+                                label="טלפון"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                required
+                                error={!!errors.phone}
+                                helperText={errors.phone === true ? "שדה חובה" : errors.phone}
+                                sx={{ maxWidth: "170px" }}
+                            />
+
+                            <TextField
+                                fullWidth
+                                label="טלפון נוסף"
+                                name="phone2"
+                                value={formData.phone2}
+                                onChange={handleChange}
+                                sx={{ maxWidth: "170px" }}
+                            />
+
+                            <TextField
+                                fullWidth
+                                label="מייל"
+                                name="email"
+                                value={formData.email || ''}
+                                onChange={handleChange}
+                                sx={{ maxWidth: "170px" }}
+                            />
+
+                            <TextField
+                                fullWidth
+                                label="כתובת"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                sx={{ maxWidth: "170px" }}
+                            />
+
+                            <TextField
+                                fullWidth
+                                label="יישוב"
+                                name="city"
+                                value={formData.city}
+                                onChange={handleChange}
+                                required
+                                error={errors.city}
+                                helperText={errors.city && "שדה חובה"}
+                                sx={{ maxWidth: "170px" }}
+                            />
+
+                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
+                                <InputLabel>הסעה</InputLabel>
+                                <Select
+                                    name="transport"
+                                    value={formData.transport}
+                                    onChange={handleChange}
+                                >
+                                    <MenuItem value="מונית">מונית</MenuItem>
+                                    <MenuItem value="מיניבוס">מיניבוס</MenuItem>
+                                    <MenuItem value="אחר">אחר</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+
+                        {/* ימי הגעה בשורה נפרדת */}
+                        <Box sx={{ mt: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap' }}>ימי הגעה:</Typography>
+                                {["ראשון", "שני", "שלישי", "רביעי", "חמישי"].map((day) => (
+                                    <FormControlLabel
+                                        key={day}
+                                        control={
+                                            <Checkbox
+                                                checked={formData.arrivalDays.includes(day)}
+                                                onChange={() => {
+                                                    setFormData((prev) => {
+                                                        const isSelected = prev.arrivalDays.includes(day);
+                                                        const newDays = isSelected
+                                                            ? prev.arrivalDays.filter((d) => d !== day)
+                                                            : [...prev.arrivalDays, day];
+                                                        return { ...prev, arrivalDays: newDays };
+                                                    });
+                                                }}
+                                            />
+                                        }
+                                        label={day}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+
+                        {/* שדות נוספים */}
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
+                                <InputLabel>רמת תפקוד</InputLabel>
+                                <Select
+                                    name="functionLevel"
+                                    value={formData.functionLevel}
+                                    onChange={handleChange}
+                                >
+                                    {[1, 2, 3, 4, 5, 6].map((n) => (
+                                        <MenuItem key={n} value={n}>{n}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
+                                <InputLabel>זכאות</InputLabel>
+                                <Select
+                                    name="eligibility"
+                                    value={formData.eligibility}
+                                    onChange={handleChange}
+                                >
+                                    <MenuItem value="רווחה">רווחה</MenuItem>
+                                    <MenuItem value="סיעוד">סיעוד</MenuItem>
+                                    <MenuItem value="אחר">אחר</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <FormControl
+                                fullWidth
+                                sx={{ maxWidth: "170px" }}
+                                disabled={formData.eligibility !== "סיעוד"}
+                            >
+                                <InputLabel>חברת סיעוד</InputLabel>
+                                <Select
+                                    name="nursingCompany"
+                                    value={formData.nursingCompany}
+                                    onChange={handleChange}
+                                >
+                                    <MenuItem value="מטב">מט"ב</MenuItem>
+                                    <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
+                                    <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
+                                    <MenuItem value="א.ש ירושלים">א.ש ירושלים</MenuItem>
+                                    <MenuItem value="ראנד">ראנד</MenuItem>
+                                    <MenuItem value="תגבור">תגבור</MenuItem>
+                                    <MenuItem value="נתן">נתן</MenuItem>
+                                    <MenuItem value="עמל- בית שמש">עמל- בית שמש</MenuItem>
+                                    <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
+                                    <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
+                                    <MenuItem value="אחר">אחר</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
+                                <InputLabel>חבר ב־</InputLabel>
+                                <Select
+                                    name="membership"
+                                    value={formData.membership}
+                                    onChange={handleChange}
+                                >
+                                    <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
+                                    <MenuItem value="מרכז יום">מרכז יום</MenuItem>
+                                    <MenuItem value="אחר">אחר</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+
+                        {/* צ'קבוקסים */}
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={formData.isHolocaustSurvivor}
+                                        onChange={handleChange}
+                                        name="isHolocaustSurvivor"
+                                    />
+                                }
+                                label="ניצול שואה"
+                            />
+
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={formData.hasCaregiver}
+                                        onChange={handleChange}
+                                        name="hasCaregiver"
+                                    />
+                                }
+                                label="מטפל"
+                            />
                         </Box>
                     </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose}>ביטול</Button>
+                    <Button onClick={handleSubmit} variant="contained" color="primary">
+                        שמור
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
-                    {/* שדות נוספים */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                        <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                            <InputLabel>רמת תפקוד</InputLabel>
-                            <Select
-                                name="functionLevel"
-                                value={formData.functionLevel}
-                                onChange={handleChange}
+            {/* דיאלוג בחירת הסעה */}
+            <Dialog
+                open={showTransportDialog}
+                onClose={() => setShowTransportDialog(false)}
+                dir="rtl"
+            >
+                <DialogTitle>בחירת הסעה</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                        נמצאו מספר הסעות מתאימות. אנא בחר הסעה:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {matchingTransports.map((transport, index) => (
+                            <Button
+                                key={transport.id}
+                                variant="outlined"
+                                onClick={() => handleTransportSelect(transport)}
+                                sx={{ justifyContent: 'flex-start', px: 2 }}
                             >
-                                {[1, 2, 3, 4, 5, 6].map((n) => (
-                                    <MenuItem key={n} value={n}>{n}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                            <InputLabel>זכאות</InputLabel>
-                            <Select
-                                name="eligibility"
-                                value={formData.eligibility}
-                                onChange={handleChange}
-                            >
-                                <MenuItem value="רווחה">רווחה</MenuItem>
-                                <MenuItem value="סיעוד">סיעוד</MenuItem>
-                                <MenuItem value="אחר">אחר</MenuItem>
-                            </Select>
-                        </FormControl>
-
-                        <FormControl
-                            fullWidth
-                            sx={{ maxWidth: "170px" }}
-                            disabled={formData.eligibility !== "סיעוד"}
-                        >
-                            <InputLabel>חברת סיעוד</InputLabel>
-                            <Select
-                                name="nursingCompany"
-                                value={formData.nursingCompany}
-                                onChange={handleChange}
-                            >
-                                <MenuItem value="מטב">מט"ב</MenuItem>
-                                <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
-                                <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
-                                <MenuItem value="א.ש ירושלים">א.ש ירושלים</MenuItem>
-                                <MenuItem value="ראנד">ראנד</MenuItem>
-                                <MenuItem value="תגבור">תגבור</MenuItem>
-                                <MenuItem value="נתן">נתן</MenuItem>
-                                <MenuItem value="עמל- בית שמש">עמל- בית שמש</MenuItem>
-                                <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
-                                <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
-                                <MenuItem value="אחר">אחר</MenuItem>
-                            </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                            <InputLabel>חבר ב־</InputLabel>
-                            <Select
-                                name="membership"
-                                value={formData.membership}
-                                onChange={handleChange}
-                            >
-                                <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
-                                <MenuItem value="מרכז יום">מרכז יום</MenuItem>
-                                <MenuItem value="אחר">אחר</MenuItem>
-                            </Select>
-                        </FormControl>
+                                הסעה {index + 1}: {transport.cities.join(' -> ')}
+                                {transport.passengers ? ` (${transport.passengers.length} נוסעים)` : ' (ריקה)'}
+                            </Button>
+                        ))}
                     </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowTransportDialog(false)}>ביטול</Button>
+                </DialogActions>
+            </Dialog>
 
-                    {/* צ'קבוקסים */}
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={formData.isHolocaustSurvivor}
-                                    onChange={handleChange}
-                                    name="isHolocaustSurvivor"
-                                />
-                            }
-                            label="ניצול שואה"
-                        />
-
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={formData.hasCaregiver}
-                                    onChange={handleChange}
-                                    name="hasCaregiver"
-                                />
-                            }
-                            label="מטפל"
-                        />
-                    </Box>
-                </Box>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>ביטול</Button>
-                <Button onClick={handleSubmit} variant="contained">שמור</Button>
-            </DialogActions>
-        </Dialog>
+            {/* דיאלוג הודעת הצלחה */}
+            <Dialog
+                open={successDialog.open}
+                onClose={handleCloseSuccessDialog}
+                dir="rtl"
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0' }}>
+                    שיבוץ להסעה
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    <Typography>
+                        {successDialog.message}
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseSuccessDialog} variant="contained" color="primary">
+                        סגור
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
     );
 }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { deleteProfile } from "../firebase";
+import { removePassengerFromTransports, getPassengerTransport } from "../utils/transportUtils";
 import {
     Dialog, DialogTitle, DialogContent, Typography, Button, TextField, MenuItem, Checkbox, FormControlLabel,
     Box, Avatar
@@ -16,18 +17,37 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
 
     const [isEditing, setIsEditing] = useState(false);
     const [profile, setProfile] = useState(initialProfile || {});
+    const [transportDetails, setTransportDetails] = useState(null);
 
-    // עדכון הפרופיל כאשר initialProfile משתנה
+    // עדכון הפרופיל והסעה כאשר initialProfile משתנה
     useEffect(() => {
         if (initialProfile) {
             setProfile(initialProfile);
+            // מביא את פרטי ההסעה של הנוסע
+            const fetchTransportDetails = async () => {
+                try {
+                    const transport = await getPassengerTransport(initialProfile.id);
+                    setTransportDetails(transport);
+                } catch (error) {
+                    console.error('Error fetching transport details:', error);
+                }
+            };
+            fetchTransportDetails();
         }
     }, [initialProfile]);
 
     const handleDelete = async () => {
         const confirm = window.confirm(`האם למחוק את ${profile.name}?`);
         if (confirm) {
-            await onDelete(profile.id);
+            try {
+                // קודם מוחקים את הנוסע מכל ההסעות
+                await removePassengerFromTransports(profile.id);
+                // אחר כך מוחקים את הפרופיל
+                await onDelete(profile.id);
+            } catch (error) {
+                console.error('Error deleting profile:', error);
+                alert('שגיאה במחיקת הפרופיל');
+            }
         }
     };
 
@@ -123,24 +143,20 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                 {!isEditing ? (
                     <>
                         <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">גיל: </Box>
-                            <Box component="span">{calculateAge(profile.birthDate)}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">תעודת זהות: </Box>
                             <Box component="span">{profile.id}</Box>
                         </Typography>
                         <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">כתובת: </Box>
-                            <Box component="span">{profile.address}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">יישוב: </Box>
-                            <Box component="span">{profile.city}</Box>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">גיל: </Box>
+                            <Box component="span">{calculateAge(profile.birthDate)}</Box>
                         </Typography>
                         <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">תאריך לידה: </Box>
                             <Box component="span">{profile.birthDate}</Box>
+                        </Typography>
+                        <Typography sx={{ my: 0 }}>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">מין: </Box>
+                            <Box component="span">{profile.gender}</Box>
                         </Typography>
                         <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">טלפון: </Box>
@@ -154,22 +170,53 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">מייל: </Box>
                             <Box component="span">{profile.email}</Box>
                         </Typography>
+
                         <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">הסעה: </Box>
-                            <Box component="span">{profile.transport}</Box>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">כתובת: </Box>
+                            <Box component="span">{profile.address}</Box>
                         </Typography>
                         <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">רמת תפקוד: </Box>
-                            <Box component="span">{profile.functionLevel}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">מין: </Box>
-                            <Box component="span">{profile.gender}</Box>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">יישוב: </Box>
+                            <Box component="span">{profile.city}</Box>
                         </Typography>
                         <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">ימי הגעה: </Box>
                             <Box component="span">{profile.arrivalDays?.join(", ") || "לא צוינו"}</Box>
                         </Typography>
+                        
+                        <Typography sx={{ my: 0 }}>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">הסעה: </Box>
+                            <Box component="span">{profile.transport}</Box>
+                        </Typography>
+                        <Typography sx={{ my: 0 }}>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">משובץ להסעה: </Box>
+                            <Box
+                                component="span"
+                                sx={{
+                                    color: transportDetails ? 'text.primary' : 'error.main',
+                                    fontWeight: transportDetails ? 'normal' : 'medium'
+                                }}
+                            >
+                                {transportDetails
+                                    ? `מספר ${transportDetails.serialNumber} (${transportDetails.cities.join(' -> ')})`
+                                    : "נדרש לשבץ להסעה"}
+                            </Box>
+                        </Typography>
+                        
+                        <Typography sx={{ my: 0 }}>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">מטפל: </Box>
+                            <Box component="span">{profile.hasCaregiver ? "כן" : "לא"}</Box>
+                        </Typography>
+                        <Typography sx={{ my: 0 }}>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">ניצול שואה: </Box>
+                            <Box component="span">{profile.isHolocaustSurvivor ? "כן" : "לא"}</Box>
+                        </Typography>
+                        <Typography sx={{ my: 0 }}>
+                            <Box component="span" fontWeight="bold" fontSize="1.1rem">רמת תפקוד: </Box>
+                            <Box component="span">{profile.functionLevel}</Box>
+                        </Typography>
+                        
+                        
                         <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">זכאות: </Box>
                             <Box component="span">{profile.eligibility}</Box>
@@ -181,17 +228,10 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                             </Typography>
                         )}
                         <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">ניצול שואה: </Box>
-                            <Box component="span">{profile.isHolocaustSurvivor ? "כן" : "לא"}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">מטפל: </Box>
-                            <Box component="span">{profile.hasCaregiver ? "כן" : "לא"}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
                             <Box component="span" fontWeight="bold" fontSize="1.1rem">חבר ב-: </Box>
                             <Box component="span">{profile.membership}</Box>
                         </Typography>
+                        
 
                         <Box mt={2}>
                             <Button

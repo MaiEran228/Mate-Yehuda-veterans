@@ -1,24 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box, Table, TableHead, TableRow, TableCell, TableBody,
   TextField, Select, MenuItem, InputLabel, FormControl,
-  Button, IconButton, Tooltip, Chip, Stack
+  Button, IconButton, Tooltip, Chip, Stack,
+  Popover, Typography
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EventSeatIcon from '@mui/icons-material/EventSeat';
+import { calculateAvailableSeatsByDay } from '../utils/transportUtils';
 
 function TransportTable({ 
   data, 
-  searchTerm, 
-  setSearchTerm, 
-  sortField, 
-  setSortField, 
-  onAddClick, 
+  searchTerm,
+  sortField,
   onViewPassengers,
   onEditClick,
   onDeleteClick 
 }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedTransport, setSelectedTransport] = useState(null);
+
+  const handleSeatsClick = (event, transport) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedTransport(transport);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+    setSelectedTransport(null);
+  };
+
+  const open = Boolean(anchorEl);
+
   const filteredData = [...data]
     .filter((row) =>
       (row.cities || []).some(city => 
@@ -39,79 +54,34 @@ function TransportTable({
     });
 
   return (
-    <>
-      {/* 🔘 חיפוש + מיון + כפתור הוספה */}
-      <Box
-        sx={{
-          position: 'relative',
-          zIndex: 2,
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 2,
-          mb: 3,
-          alignItems: 'center',
-          backgroundColor: '#f5f5f5',
-          padding: 2,
-          borderRadius: 2,
-        }}
-      >
-        <TextField
-          label="חיפוש לפי יישוב"
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+    <Box sx={{
+      backgroundColor: '#fff',
+      borderRadius: 2,
+      boxShadow: 1,
+      overflow: 'hidden'
+    }}>
+      <Table sx={{ minWidth: '800px', tableLayout: 'fixed' }}>
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold', width: '60px' }}>מס׳</TableCell>
+            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>ימים</TableCell>
+            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>יישובים</TableCell>
+            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>מקומות פנויים</TableCell>
+            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>סוג הסעה</TableCell>
+            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>צפייה</TableCell>
+            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>פעולה</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {filteredData.map((row, index) => {
+            const availableSeatsByDay = calculateAvailableSeatsByDay(row.type, row.passengers, row.days);
+            const hasAvailableSeats = Object.values(availableSeatsByDay).some(seats => seats > 0);
 
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel>מיון לפי</InputLabel>
-          <Select
-            value={sortField}
-            label="מיון לפי"
-            onChange={(e) => setSortField(e.target.value)}
-          >
-            <MenuItem value="">ללא מיון</MenuItem>
-            <MenuItem value="days">ימים</MenuItem>
-            <MenuItem value="cities">יישובים</MenuItem>
-            <MenuItem value="seats">מקומות פנויים</MenuItem>
-            <MenuItem value="type">סוג הסעה</MenuItem>
-          </Select>
-        </FormControl>
-
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={onAddClick}
-        >
-          הוספת הסעה
-        </Button>
-      </Box>
-
-      {/* 📋 טבלה בגלילה */}
-      <Box
-        sx={{
-          overflow: 'auto',
-          maxHeight: '70vh',
-          backgroundColor: '#fff',
-          borderRadius: 2,
-          boxShadow: 1,
-          padding: 2,
-        }}
-      >
-        <Table sx={{ minWidth: '800px', tableLayout: 'fixed' }}>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>ימים</TableCell>
-              <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>יישובים</TableCell>
-              <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>מקומות פנויים</TableCell>
-              <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>סוג הסעה</TableCell>
-              <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>צפייה</TableCell>
-              <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>פעולה</TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {filteredData.map((row, index) => (
+            return (
               <TableRow key={index}>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                  {index + 1}
+                </TableCell>
                 <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
                   <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
                     {(row.days || []).map((day, i) => (
@@ -126,17 +96,24 @@ function TransportTable({
                     ))}
                   </Stack>
                 </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>{row.seats}</TableCell>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                  <Tooltip title="לחץ לפירוט מקומות פנויים">
+                    <IconButton onClick={(e) => handleSeatsClick(e, row)}>
+                      <EventSeatIcon sx={{ 
+                        color: hasAvailableSeats ? 'success.main' : 'error.main',
+                        fontSize: 20
+                      }} />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
                 <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>{row.type}</TableCell>
-
                 <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
                   <Tooltip title="צפייה באנשים">
-                    <IconButton onClick={() => onViewPassengers(row.passengers || [])}>
+                    <IconButton onClick={() => onViewPassengers(row.passengers || [], row.days || [])}>
                       <VisibilityIcon />
                     </IconButton>
                   </Tooltip>
                 </TableCell>
-
                 <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                     <Tooltip title="עריכה">
@@ -152,11 +129,43 @@ function TransportTable({
                   </Box>
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
-    </>
+            );
+          })}
+        </TableBody>
+      </Table>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+      >
+        <Box sx={{ p: 2, minWidth: 200 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+            מקומות פנויים לפי יום:
+          </Typography>
+          {selectedTransport && selectedTransport.days?.map((day) => {
+            const seats = calculateAvailableSeatsByDay(
+              selectedTransport.type,
+              selectedTransport.passengers,
+              [day]
+            )[day];
+            return (
+              <Typography key={day} sx={{ mb: 0.5 }}>
+                {day}: {seats} מקומות פנויים
+              </Typography>
+            );
+          })}
+        </Box>
+      </Popover>
+    </Box>
   );
 }
 

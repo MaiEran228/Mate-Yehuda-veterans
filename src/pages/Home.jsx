@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import DailyAttendance from "./AllReports/DailyAttendance";
 import { useNavigate } from 'react-router-dom';
 
+
 import { saveAttendanceForDate, fetchAllProfiles, fetchAttendanceByDate } from '../firebase'; // יבוא הפונקציה החדשה
 
 function Home({ onLogout }) {
@@ -40,7 +41,6 @@ function Home({ onLogout }) {
                 // לא עושים כלום, הטבלה תטען בעצמה
             }
         };
-
         preloadData();
     }, []); // ← רץ פעם אחת כשהקומפוננטה נטענת
 
@@ -74,7 +74,6 @@ function Home({ onLogout }) {
         alert('נוכחות נשמרה בהצלחה!');
     };
 
-
     const closeReport = () => {
         setShowReport(false);
     };
@@ -87,18 +86,10 @@ function Home({ onLogout }) {
         <>
             <Header onLogout={onLogout} />
             {/* שורת חיפוש */}
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 2, mb: 2, mr: 3 }}>
-                {/* תאריך - מיושר לימין ובולט */}
-                <Typography
-                    variant="h5"
-                    sx={{
-                        fontWeight: 'bold',
-                        fontSize: '2rem',
-                        color: 'rgb(85, 105, 125)'
-                    }}
-                >
-                    {todayFormatted}
-                </Typography>
+            <Box sx={{
+                display: 'flex', justifyContent: 'center',
+                alignItems: 'center', gap: 2, mt: 2, mb: 2, mr: -5
+            }}>
                 <TextField
                     label="מיון לפי"
                     select
@@ -109,8 +100,8 @@ function Home({ onLogout }) {
                     sx={{
                         width: 200, '& .MuiOutlinedInput-root': {
                             height: 36, fontSize: '0.8rem',
-                            color: 'rgb(85, 105, 125)', '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
-                            '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
+                            color: 'rgb(85, 105, 125)', '& fieldset': {borderWidth: 2,borderColor: 'rgba(64, 99, 112, 0.72)' },
+                            '&:hover fieldset, &.Mui-focused fieldset': { borderWidth: 2,borderColor: '#7b8f99' }
                         },
                         '& .MuiInputLabel-root': {
                             fontSize: '0.75rem', top: '-6px',
@@ -128,11 +119,17 @@ function Home({ onLogout }) {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     size="small"
-                    sx={{ width: 280, '& .MuiOutlinedInput-root': { height: 36, fontSize: '0.8rem',
-                        color: 'rgb(85, 105, 125)', '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
-                         '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' } },
-                          '& .MuiInputLabel-root': { fontSize: '0.75rem', top: '-6px',
-                             color: 'rgb(85, 105, 125)', '&.Mui-focused': { color: '#7b8f99' } } }}
+                    sx={{
+                        width: 280, '& .MuiOutlinedInput-root': {
+                            height: 36, fontSize: '0.8rem',
+                            color: 'rgb(85, 105, 125)', '& fieldset': {  borderWidth: 2, borderColor: 'rgba(64, 99, 112, 0.72)' },
+                            '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
+                        },
+                        '& .MuiInputLabel-root': {
+                            fontSize: '0.75rem', top: '-6px',
+                            color: 'rgb(85, 105, 125)', '&.Mui-focused': { color: '#7b8f99' }
+                        }
+                    }}
                 />
             </Box>
 
@@ -142,22 +139,36 @@ function Home({ onLogout }) {
                 <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start', }}>
 
                     {/* הטבלה */}
-                    <Box sx={{ width: '1300px', maxWidth: '1300px', overflowY: 'auto', mx: 'auto', borderRadius: '19px', }}>
+                    <Box sx={{
+                        width: '1300px', maxWidth: '1300px', overflowY: 'auto', mx: 'auto', borderRadius: '12px 12px 8px 8px',
+                    }}>
                         <AttendanceTable
                             ref={attendanceRef}
                             search={search}
                             sortBy={sortBy}
                             onAttendanceChange={handleAttendanceUpdate}
-
                         />
                     </Box>
 
                     {/* פאנל צדדי */}
                     <Box sx={{
                         width: '200px', minWidth: '220px', display: 'flex', flexDirection: 'column',
-                        gap: 2, p: 2, mt: '130px',
+                        gap: 2, p: 2, mt: '80px',
                         ml: -22 // מזיז את הפאנל יותר שמאלה
                     }}>
+                        {/* תאריך מעוצב */}
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                color: 'rgba(64, 99, 112, 0.72)',
+                                fontWeight: 500,
+                                fontSize: '2.8rem',
+                                textAlign: 'center',
+
+                            }}
+                        >
+                            {todayFormatted}
+                        </Typography>
                         <Box
                             sx={{
                                 p: 2,
@@ -167,27 +178,44 @@ function Home({ onLogout }) {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 1,
-                                color: 'rgb(85, 105, 125)', // צבע טקסט כהה יחסית שמשתלב
+                                color: 'rgba(64, 99, 112, 0.72)', // צבע טקסט כהה יחסית שמשתלב
                                 fontFamily: 'inherit',
                                 boxShadow: '0 7px 15px rgba(0, 0, 0, 0.22)',
                             }}
                         >
-                            <Typography variant="h6" sx={{ color: 'rgb(85, 105, 125)', fontWeight: 'bold' }}>
+                            <Typography variant="h6" sx={{ color: 'rgba(64, 99, 112, 0.72)', fontWeight: 'bold' }}>
                                 נוכחים היום
                             </Typography>
-                            <Typography variant="h5" sx={{ color: 'rgb(85, 105, 125)', fontWeight: 'bold' }}>
+                            <Typography variant="h5" sx={{ color: 'rgba(64, 99, 112, 0.72)', fontWeight: 'bold' }}>
                                 {attendanceCount}
                             </Typography>
                         </Box>
 
                         <Button
                             variant="contained"
-                            sx={{ backgroundColor: 'rgb(200, 219, 234)', border: '1px solid rgb(175, 194, 208)', ':hover': { backgroundColor: '#rgb(185, 205, 220)' }, fontWeight: 'bold' }}
+                            sx={{ 
+                                backgroundColor: 'rgba(142, 172, 183, 0.72)', 
+                                border: 'none',
+                                outline: 'none',
+                                ':hover': { 
+                                    backgroundColor: '#rgb(185, 205, 220)',
+                                    border: 'none',
+                                    outline: 'none'
+                                }, 
+                                fontWeight: 'bold',
+                                color: 'black',
+                                '&:focus': {
+                                    border: 'none',
+                                    outline: 'none'
+                                },
+                                '&:active': {
+                                    border: 'none',
+                                    outline: 'none'
+                                }
+                            }}
                             onClick={handleSave}
                             fullWidth
                             size="large"
-                            color='black'
-
                         >
                             שמירה
                         </Button>
@@ -195,9 +223,19 @@ function Home({ onLogout }) {
                         <Button
                             variant="outlined"
                             sx={{
-                                border: '1.8px solid rgb(175, 194, 208)', color: 'rgb(175, 194, 208)', fontWeight: 'bold',
-                                ':hover': {borderColor: '#7b8f99', color: '#5a676e', }
-                            }} onClick={() => navigate('/AllReports/DailyAttendance', { state: { from: 'home' } })}
+                                border: '2px solid rgba(64, 99, 112, 0.72)', 
+                                color: 'rgba(64, 99, 112, 0.72)', 
+                                fontWeight: 'bold',
+                                ':hover': { 
+                                    borderColor: '#7b8f99', 
+                                    color: '#5a676e',
+                                    outline: 'none'
+                                },
+                                '&:focus': {
+                                    outline: 'none'
+                                }
+                            }} 
+                            onClick={() => navigate('/AllReports/DailyAttendance', { state: { from: 'home' } })}
                             fullWidth
                             size="large"
                         >
@@ -207,9 +245,7 @@ function Home({ onLogout }) {
 
                 </Box>
             </Container>
-
         </>
     );
 }
-
 export default Home;

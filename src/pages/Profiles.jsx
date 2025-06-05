@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAllProfiles, addProfile, deleteProfile, updateProfile } from '../firebase';
+import { transportService } from '../firebase';
 import ProfileCard from '../components/ProfileCard';
 import ProfileWindow from '../components/ProfileWindow';
 import AddProfileWindow from '../components/AddProfileWindow';
@@ -34,11 +35,27 @@ function Profiles() {
 
   // פונקציה חדשה לעדכון פרופיל
   const handleUpdateProfile = async (updatedProfile) => {
-    await updateProfile(updatedProfile.id, updatedProfile);
-    const data = await fetchAllProfiles();
-    setProfiles(data);
-    // עדכון הפרופיל הנבחר כדי שהחלון יציג את הנתונים החדשים
-    setSelectedProfile(updatedProfile);
+    try {
+      // מעדכן את הפרופיל
+      await updateProfile(updatedProfile.id, updatedProfile);
+      
+      // מעדכן את פרטי הנוסע בהסעות
+      await transportService.updatePassengerInTransports(updatedProfile.id, {
+        name: updatedProfile.name,
+        city: updatedProfile.city,
+        hasCaregiver: updatedProfile.hasCaregiver,
+        arrivalDays: updatedProfile.arrivalDays
+      });
+
+      // מעדכן את הרשימה המקומית
+      const data = await fetchAllProfiles();
+      setProfiles(data);
+      
+      // עדכון הפרופיל הנבחר כדי שהחלון יציג את הנתונים החדשים
+      setSelectedProfile(updatedProfile);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
   };
 
   // סינון לפי שם או יישוב

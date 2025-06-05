@@ -52,6 +52,14 @@ export default function Login({ onLogin }) {
                 backgroundImage: `linear-gradient(rgba(255,255,255,0.6), rgba(255,255,255,0.6)), url(${backgtoundLoginpage})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
+                imageRendering: '-webkit-optimize-contrast',
+                WebkitBackfaceVisibility: 'hidden',
+                backfaceVisibility: 'hidden',
+                transform: 'translateZ(0)',
+                WebkitTransform: 'translateZ(0)',
+                willChange: 'transform',
+                WebkitFontSmoothing: 'antialiased',
+                MozOsxFontSmoothing: 'grayscale'
             }}
         >
             <Paper elevation={8} sx={{
@@ -68,8 +76,6 @@ export default function Login({ onLogin }) {
                 pb: 4,
                 position: 'relative',
             }}>
-
-                {/* מנעול למעלה באמצע – ללא עיגול */}
                 <Box sx={{
                     position: 'absolute',
                     top: -50,
@@ -83,7 +89,7 @@ export default function Login({ onLogin }) {
                         xmlns="http://www.w3.org/2000/svg"
                         height="90"
                         viewBox="0 0 24 24"
-                        fill="#888"
+                        fill="rgb(65, 85, 115)"
                     >
                         <g
                             style={{
@@ -103,7 +109,7 @@ export default function Login({ onLogin }) {
                 </Box>
 
                 {/* תוכן התחברות */}
-                <Typography variant="h6" align="center" mb={4} color="grey">
+                <Typography variant="h6" align="center" mb={4} color="rgb(65, 85, 115)">
                     התחברות
                 </Typography>
 
@@ -112,7 +118,29 @@ export default function Login({ onLogin }) {
                     label="אימייל"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    sx={{ mb: 2 }}
+                    sx={{ 
+                        mb: 2,
+                        '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                                borderColor: 'rgb(65, 85, 115)',
+                            },
+                            '&:hover fieldset': {
+                                borderColor: 'rgb(65, 85, 115)',
+                            },
+                            '&.Mui-focused fieldset': {
+                                borderColor: 'rgb(65, 85, 115)',
+                            },
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: 'rgb(65, 85, 115)',
+                            '&.Mui-focused': {
+                                color: 'rgb(65, 85, 115)',
+                            },
+                        },
+                        '& .MuiInputBase-input': {
+                            color: 'rgb(65, 85, 115)',
+                        },
+                    }}
                 />
 
                 <TextField
@@ -121,11 +149,36 @@ export default function Login({ onLogin }) {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    sx={{ mb: 1 }}
+                    sx={{ 
+                        mb: 1,
+                        '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                                borderColor: 'rgb(65, 85, 115)',
+                            },
+                            '&:hover fieldset': {
+                                borderColor: 'rgb(65, 85, 115)',
+                            },
+                            '&.Mui-focused fieldset': {
+                                borderColor: 'rgb(65, 85, 115)',
+                            },
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: 'rgb(65, 85, 115)',
+                            '&.Mui-focused': {
+                                color: 'rgb(65, 85, 115)',
+                            },
+                        },
+                        '& .MuiInputBase-input': {
+                            color: 'rgb(65, 85, 115)',
+                        },
+                    }}
                     InputProps={{
                         endAdornment: (
                             <InputAdornment position="end">
-                                <IconButton onClick={() => setShowPassword(!showPassword)}>
+                                <IconButton 
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    sx={{ color: 'rgb(65, 85, 115)' }}
+                                >
                                     {showPassword ? <VisibilityOff /> : <Visibility />}
                                 </IconButton>
                             </InputAdornment>
@@ -136,7 +189,7 @@ export default function Login({ onLogin }) {
                 <Typography
                     variant="body2"
                     align="right"
-                    sx={{ mb: 2, cursor: 'pointer', color: 'grey' }}
+                    sx={{ mb: 2, cursor: 'pointer', color: 'rgb(65, 85, 115)' }}
                     onClick={() => setShowForgotPassword(true)}
                 >
                     שכחת סיסמא?
@@ -145,7 +198,7 @@ export default function Login({ onLogin }) {
                 <Typography
                     variant="body2"
                     align="right"
-                    sx={{ mb: 2, cursor: 'pointer', color: 'grey' }}
+                    sx={{ mb: 2, cursor: 'pointer', color: 'rgb(65, 85, 115)' }}
                     onClick={() => setShowSignup(true)}
                 >
                     משתמש חדש?
@@ -156,14 +209,14 @@ export default function Login({ onLogin }) {
                     variant="contained"
                     onClick={handleLogin}
                     sx={{
-                        backgroundColor: 'rgba(147, 142, 142, 0.62)',
+                        backgroundColor: 'rgb(65, 85, 115)',
                         height: 50,
                         boxShadow: '0px 6px 15px rgba(0,0,0,0.5)',
                         fontWeight: 'bold',
                         fontSize: '1.1rem',
                         color: 'white',
                         '&:hover': {
-                            backgroundColor: '#rgba(114, 111, 111, 0.62)',
+                            backgroundColor: 'rgba(65, 85, 115, 0.8)',
                         }
                     }}
                 >

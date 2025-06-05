@@ -5,6 +5,8 @@ import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
 import ExportPDFButton from '../../components/ExportPDFButton'; // ודאי שהנתיב נכון
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 
 const DailyAttendance = () => {
@@ -59,11 +61,49 @@ const DailyAttendance = () => {
     <Container maxWidth="lg" sx={{ mt: 0.5 }}>
 
       <Box sx={{ mb: 2 }}>
-        <Button variant="outlined" color="primary" onClick={handleBack} sx={{ ml:2 }}>
+        <Button 
+          variant="outlined" 
+          color="primary" 
+          onClick={handleBack} 
+          sx={{ 
+            ml: 2,
+            '&:focus': {
+              outline: 'none'
+            },
+            '&:active': {
+              outline: 'none'
+            }
+          }}
+        >
           חזור
         </Button>
 
-        <ExportPDFButton targetId="reportContent" fileName={`דוח נוכחות - ${todayFormatted}.pdf`} />
+        <Button
+          variant="contained"
+          onClick={() => {
+            const input = document.getElementById('reportContent');
+            html2canvas(input).then(canvas => {
+              const imgData = canvas.toDataURL('image/png');
+              const pdf = new jsPDF('p', 'mm', 'a4');
+              const imgProps = pdf.getImageProperties(imgData);
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+              pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+              pdf.save(`דוח נוכחות - ${todayFormatted}.pdf`);
+            });
+          }}
+          sx={{
+            '&:focus': {
+              outline: 'none'
+            },
+            '&:active': {
+              outline: 'none'
+            }
+          }}
+        >
+          ייצוא ל־PDF
+        </Button>
       </Box>
 
       <div id="reportContent">{/* תוכן הדוח להדפסה */}

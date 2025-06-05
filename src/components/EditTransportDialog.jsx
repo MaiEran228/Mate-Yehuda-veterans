@@ -19,26 +19,27 @@ import {
 const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 const transportTypes = ['מיניבוס', 'מונית'];
 const cities = [
-  'ירושלים',
-  'תל אביב',
-  'חיפה',
-  'באר שבע',
-  'אשדוד',
-  'אשקלון',
-  'פתח תקווה',
-  'ראשון לציון',
-  'חולון',
-  'נתניה',
-  'בני ברק',
-  'רמת גן'
+  'ירושלים','אדרת','אביעזר','נחם','אשתאול','תרום','תעוז',
+
 ];
 
 function EditTransportDialog({ open, onClose, onSave, transportData }) {
-  const [formData, setFormData] = React.useState(transportData);
+  const [formData, setFormData] = React.useState({
+    days: [],
+    cities: [],
+    type: '',
+    seats: ''
+  });
 
   React.useEffect(() => {
     if (open && transportData) {
-      setFormData(transportData);
+      setFormData({
+        days: transportData.days || [],
+        cities: transportData.cities || [],
+        type: transportData.type || '',
+        seats: transportData.seats || '',
+        id: transportData.id // חשוב לשמור את ה-ID
+      });
     }
   }, [open, transportData]);
 
@@ -60,7 +61,9 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
   };
 
   const handleSubmit = () => {
-    onSave(formData);
+    if (transportData && transportData.id) {
+      onSave({ ...formData, id: transportData.id });
+    }
   };
 
   if (!transportData) return null;
@@ -105,14 +108,14 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
                 <InputLabel>ימים</InputLabel>
                 <Select
                   multiple
-                  value={formData.days || []}
+                  value={formData?.days || []}
                   onChange={handleChange('days')}
                   input={<OutlinedInput label="ימים" />}
                   renderValue={(selected) => selected.join(', ')}
                 >
                   {daysOfWeek.map((day) => (
                     <MenuItem key={day} value={day}>
-                      <Checkbox checked={(formData.days || []).indexOf(day) > -1} />
+                      <Checkbox checked={(formData?.days || []).indexOf(day) > -1} />
                       <ListItemText primary={day} />
                     </MenuItem>
                   ))}
@@ -125,7 +128,7 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
               <FormControl sx={{ width: '170px' }} size="small">
                 <InputLabel>סוג הסעה</InputLabel>
                 <Select
-                  value={formData.type || ''}
+                  value={formData?.type || ''}
                   label="סוג הסעה"
                   onChange={handleChange('type')}
                 >
@@ -144,14 +147,14 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
             <InputLabel>יישובים</InputLabel>
             <Select
               multiple
-              value={formData.cities || []}
+              value={formData?.cities || []}
               onChange={handleChange('cities')}
               input={<OutlinedInput label="יישובים" />}
               renderValue={(selected) => selected.join(', ')}
             >
               {cities.map((city) => (
                 <MenuItem key={city} value={city}>
-                  <Checkbox checked={(formData.cities || []).indexOf(city) > -1} />
+                  <Checkbox checked={(formData?.cities || []).indexOf(city) > -1} />
                   <ListItemText primary={city} />
                 </MenuItem>
               ))}
@@ -164,7 +167,7 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
               מקומות פנויים:
             </Typography>
             <Typography variant="body1" fontWeight="medium">
-              {formData.type ? (formData.type === 'מיניבוס' ? '14' : '4') : '-'}
+              {formData?.type ? (formData.type === 'מיניבוס' ? '14' : '4') : '-'}
             </Typography>
           </Box>
         </Box>
@@ -178,7 +181,7 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
           onClick={handleSubmit} 
           variant="contained" 
           color="primary"
-          disabled={!formData.type || !formData.days?.length || !formData.cities?.length}
+          disabled={!formData?.type || !formData?.days?.length || !formData?.cities?.length}
         >
           שמור
         </Button>
