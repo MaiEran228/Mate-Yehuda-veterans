@@ -17,6 +17,8 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     arrivalDays: initialProfile.arrivalDays,
     hasCaregiver: initialProfile.hasCaregiver
   });
+  const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
+  const [errors, setErrors] = useState({});
 
   // בודק אם השדות הרלוונטיים להסעה השתנו
   const hasTransportFieldsChanged = () => {
@@ -26,6 +28,35 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       initialProfile.hasCaregiver !== originalTransportData.hasCaregiver ||
       JSON.stringify(initialProfile.arrivalDays?.sort()) !== JSON.stringify(originalTransportData.arrivalDays?.sort())
     );
+  };
+
+  const isValidPhoneNumber = (phone) => {
+    if (!phone) return true; // אם השדה ריק, נטפל בזה בנפרד
+    if (!/^\d+$/.test(phone)) {
+      return false;
+    }
+
+    const landlinePrefixes = ["02", "03", "04", "08", "09"];
+    const mobilePrefixes = [
+      "050", "051", "052", "053", "054", "055", "056", "057", "058", "059",
+      "072", "073", "074", "075", "076", "077", "078"
+    ];
+
+    if (phone.length === 9) {
+      return landlinePrefixes.includes(phone.slice(0, 2));
+    } else if (phone.length === 10) {
+      return mobilePrefixes.includes(phone.slice(0, 3));
+    }
+
+    return false;
+  };
+
+  const isValidIsraeliID = (id) => {
+    // בדיקה שהקלט מכיל רק ספרות ובאורך 9
+    if (!/^\d{9}$/.test(id)) {
+      return false;
+    }
+    return true;
   };
 
   const handleAssignTransport = async () => {
@@ -102,6 +133,81 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     }
   };
 
+  const validateAndSave = async (profileData) => {
+    let hasErrors = false;
+    const newErrors = {};
+
+    // בדיקת תעודת זהות
+    if (!profileData.id) {
+      newErrors.id = "שדה חובה";
+      hasErrors = true;
+    } else if (!isValidIsraeliID(profileData.id)) {
+      newErrors.id = "תעודת זהות חייבת להכיל 9 ספרות";
+      hasErrors = true;
+    }
+
+    // בדיקת טלפון ראשי
+    if (!profileData.phone) {
+      newErrors.phone = "שדה חובה";
+      hasErrors = true;
+    } else if (!isValidPhoneNumber(profileData.phone)) {
+      newErrors.phone = "מספר טלפון לא תקין";
+      hasErrors = true;
+    }
+
+    // בדיקת טלפון נוסף (אם הוזן)
+    if (profileData.phone2 && !isValidPhoneNumber(profileData.phone2)) {
+      newErrors.phone2 = "מספר טלפון לא תקין";
+      hasErrors = true;
+    }
+
+    setErrors(newErrors);
+
+    if (!hasErrors) {
+      await handleSave(profileData);
+    }
+  };
+
+  // עדכון הפונקציה המקורית של handleChange כדי להוסיף בדיקת טלפון
+  const handleFieldChange = (field) => (e) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    
+    // בדיקת תקינות תעודת זהות
+    if (field === "id") {
+      if (!value) {
+        setErrors(prev => ({ ...prev, id: "שדה חובה" }));
+      } else if (!isValidIsraeliID(value)) {
+        setErrors(prev => ({ ...prev, id: "תעודת זהות חייבת להכיל 9 ספרות" }));
+      } else {
+        setErrors(prev => ({ ...prev, id: null }));
+      }
+    }
+
+    // בדיקת תקינות מספר טלפון
+    if (field === "phone") {
+      if (!value) {
+        setErrors(prev => ({ ...prev, phone: "שדה חובה" }));
+      } else if (!isValidPhoneNumber(value)) {
+        setErrors(prev => ({ ...prev, phone: "מספר טלפון לא תקין" }));
+      } else {
+        setErrors(prev => ({ ...prev, phone: null }));
+      }
+    }
+    
+    // בדיקת תקינות מספר טלפון נוסף
+    if (field === "phone2") {
+      if (!value) {
+        setErrors(prev => ({ ...prev, phone2: null })); // מאפס את השגיאה אם השדה ריק
+      } else if (!isValidPhoneNumber(value)) {
+        setErrors(prev => ({ ...prev, phone2: "מספר טלפון לא תקין" }));
+      } else {
+        setErrors(prev => ({ ...prev, phone2: null }));
+      }
+    }
+
+    handleChange(field)(e);
+  };
+
   return (
     <>
       <Dialog
@@ -133,15 +239,17 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 label="שם"
                 value={initialProfile.name || ''}
                 required
-                onChange={handleChange("name")}
+                onChange={handleFieldChange("name")}
                 sx={{ maxWidth: "170px" }}
               />
               <TextField
                 fullWidth
                 label="תעודת זהות"
                 value={initialProfile.id || ''}
-                onChange={handleChange("id")}
+                onChange={handleFieldChange("id")}
                 required
+                error={!!errors.id}
+                helperText={errors.id}
                 sx={{ maxWidth: "170px" }}
               />
 
@@ -151,7 +259,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 type="date"
                 required
                 value={initialProfile.birthDate || ''}
-                onChange={handleChange("birthDate")}
+                onChange={handleFieldChange("birthDate")}
                 InputLabelProps={{ shrink: true }}
                 sx={{ maxWidth: "170px" }}
               />
@@ -161,7 +269,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 fullWidth
                 label="מין"
                 value={initialProfile.gender || ''}
-                onChange={handleChange("gender")}
+                onChange={handleFieldChange("gender")}
                 sx={{ maxWidth: "170px" }}
               >
                 {GENDERS.map((g) => (
@@ -175,17 +283,19 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 fullWidth
                 label="טלפון"
                 value={initialProfile.phone || ''}
-                onChange={handleChange("phone")}
-                sx={{ maxWidth: "170px" }}
+                onChange={handleFieldChange("phone")}
                 required
-                error={!initialProfile.phone}
-                helperText={!initialProfile.phone && "שדה חובה"}
+                error={!!errors.phone}
+                helperText={errors.phone}
+                sx={{ maxWidth: "170px" }}
               />
               <TextField
                 fullWidth
                 label="טלפון נוסף"
                 value={initialProfile.phone2 || ''}
-                onChange={handleChange("phone2")}
+                onChange={handleFieldChange("phone2")}
+                error={!!errors.phone2}
+                helperText={errors.phone2}
                 sx={{ maxWidth: "170px" }}
               />
 
@@ -193,7 +303,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 fullWidth
                 label="מייל"
                 value={initialProfile.email || ''}
-                onChange={handleChange("email")}
+                onChange={handleFieldChange("email")}
                 sx={{ maxWidth: "170px" }}
               />
 
@@ -201,14 +311,14 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 fullWidth
                 label="כתובת"
                 value={initialProfile.address || ''}
-                onChange={handleChange("address")}
+                onChange={handleFieldChange("address")}
                 sx={{ maxWidth: "170px" }}
               />
               <TextField
                 fullWidth
                 label="יישוב"
                 value={initialProfile.city || ''}
-                onChange={handleChange("city")}
+                onChange={handleFieldChange("city")}
                 required
                 sx={{ maxWidth: "170px" }}
               />
@@ -218,7 +328,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 fullWidth
                 label="הסעה"
                 value={initialProfile.transport || ''}
-                onChange={handleChange("transport")}
+                onChange={handleFieldChange("transport")}
                 sx={{ maxWidth: "170px" }}
               >
                 <MenuItem value="מונית">מונית</MenuItem>
@@ -236,7 +346,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                     control={
                       <Checkbox
                         checked={initialProfile.arrivalDays?.includes(day) || false}
-                        onChange={handleDayChange(day)}
+                        onChange={handleFieldChange(day)}
                       />
                     }
                     label={day}
@@ -251,7 +361,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 fullWidth
                 label="רמת תפקוד"
                 value={initialProfile.functionLevel || ''}
-                onChange={handleChange("functionLevel")}
+                onChange={handleFieldChange("functionLevel")}
                 sx={{ maxWidth: "170px" }}
               >
                 {[1, 2, 3, 4, 5, 6].map((level) => (
@@ -266,7 +376,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 fullWidth
                 label="זכאות"
                 value={initialProfile.eligibility || ''}
-                onChange={handleChange("eligibility")}
+                onChange={handleFieldChange("eligibility")}
                 sx={{ maxWidth: "170px" }}
               >
                 <MenuItem value="רווחה">רווחה</MenuItem>
@@ -279,7 +389,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 fullWidth
                 label="חברת סיעוד"
                 value={initialProfile.nursingCompany || ''}
-                onChange={handleChange("nursingCompany")}
+                onChange={handleFieldChange("nursingCompany")}
                 disabled={initialProfile.eligibility !== "סיעוד"}
                 sx={{ maxWidth: "170px" }}
               >
@@ -301,7 +411,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 fullWidth
                 label="חבר ב-"
                 value={initialProfile.membership || ''}
-                onChange={handleChange("membership")}
+                onChange={handleFieldChange("membership")}
                 sx={{ maxWidth: "170px" }}
               >
                 <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
@@ -315,7 +425,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 control={
                   <Checkbox
                     checked={initialProfile.isHolocaustSurvivor || false}
-                    onChange={handleChange("isHolocaustSurvivor")}
+                    onChange={handleFieldChange("isHolocaustSurvivor")}
                   />
                 }
                 label="ניצול שואה"
@@ -324,7 +434,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 control={
                   <Checkbox
                     checked={initialProfile.hasCaregiver || false}
-                    onChange={handleChange("hasCaregiver")}
+                    onChange={handleFieldChange("hasCaregiver")}
                   />
                 }
                 label="מטפל"
@@ -365,7 +475,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                     </Button>
 
                     <Button
-                        onClick={handleSave}
+                        onClick={() => validateAndSave(initialProfile)}
                         variant="contained"
                         color="primary"
                     >
@@ -407,6 +517,26 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         <DialogActions>
           <Button onClick={() => setTransportDialog({ open: false, transports: [] })}>
             ביטול
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={successDialog.open}
+        onClose={() => setSuccessDialog({ open: false, message: '' })}
+        maxWidth="sm"
+        fullWidth
+        dir="rtl"
+      >
+        <DialogTitle>הפרופיל נשמר</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            {successDialog.message}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSuccessDialog({ open: false, message: '' })}>
+            סגור
           </Button>
         </DialogActions>
       </Dialog>

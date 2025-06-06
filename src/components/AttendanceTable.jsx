@@ -3,7 +3,7 @@ import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { fetchAllProfiles, fetchAttendanceByDate } from '../firebase';
 import dayjs from 'dayjs';
 
-const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל'];
+const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל', 'שיפוי', 'טיפול בית'];
 
 // קומפוננטה לשורה עם Skeleton loading
 const SkeletonRow = () => (

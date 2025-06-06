@@ -47,12 +47,11 @@ const SchedulePage = () => {
     <Box
       sx={{
         direction: 'rtl',
-        width: '95vw',
-        height: '100vh',
+        width: '100%',
+        height: '125vh',
         bgcolor: '#ebf1f5',
         p: 2,
         boxSizing: 'border-box',
-        overflowX: 'auto',
       }}
     >
       <Box
@@ -72,21 +71,22 @@ const SchedulePage = () => {
           color="primary"
           onClick={() => setIsEditing(prev => !prev)}
           sx={{
-            minWidth: '120px',
+          
             height: '40px',
             fontWeight: 'bold',
-            fontSize: '1rem',
+            fontSize: '0.9rem',
+            width:'180px',
             px: 2,
-            bgcolor: 'rgb(85, 105, 125)',
-            border: '2px solid rgb(53, 45, 45)',
-            color: 'white',
+            bgcolor: 'rgba(142, 172, 183, 0.72)',
+            border: '2px solid rgba(97, 116, 123, 0.72)',
+            color: 'black',
             '&:hover': {
-              bgcolor: 'rgb(65, 85, 105)',
-              border: '2px solid rgb(68, 63, 63)'
+              bgcolor: 'rgba(142, 172, 183, 0.72)',
+             border: '2px solid rgb(181, 170, 170)'
             }
           }}
         >
-          {isEditing ? 'סיים עריכה' : 'ערוך מערכת שעות'}
+          {isEditing ? 'סיים עריכה' : 'ערוך לוח פעילויות'}
         </Button>
       </Box>
 
@@ -103,7 +103,7 @@ const SchedulePage = () => {
               border: '2px solid #ddd',
               backgroundColor: '#fff',
               borderRadius: 2,
-              height: '685px',
+              height: '705px',
               mx: 0.3,
               p: 1,
             }}
@@ -136,9 +136,9 @@ const SchedulePage = () => {
                       <Box
                         key={key}
                         sx={{
-                          height: '100px',
+                          height: 'auto',
+                          minHeight: '100px',
                           width: '100px',
-                          minHeight: '45px',
                           flex: 1,
                           border: '4px solid #eee',
                           borderRadius: 1,
@@ -218,5 +218,6 @@ const SchedulePage = () => {
     </Box>
   );
 };
+
 
 export default SchedulePage;

@@ -4,6 +4,8 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { findMatchingTransports, addPassengerToTransport } from '../utils/transportUtils';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function AddProfileWindow({ open, onClose, onSave }) {
     const initialFormData = {
@@ -18,6 +20,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
     const [matchingTransports, setMatchingTransports] = useState([]);
     const [showTransportDialog, setShowTransportDialog] = useState(false);
     const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
+    const [existingProfileDialog, setExistingProfileDialog] = useState(false);
 
     useEffect(() => {
         if (open) {
@@ -26,19 +29,27 @@ function AddProfileWindow({ open, onClose, onSave }) {
             setTransportMessage(null);
             setMatchingTransports([]);
             setShowTransportDialog(false);
+            setExistingProfileDialog(false);
         }
     }, [open]);
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: type === "checkbox" ? checked : value,
-        }));
-        if (name === "eligibility" && value !== "סיעוד") {
-            setFormData((prev) => ({ ...prev, nursingCompany: "" }));
+    const checkExistingId = async (id) => {
+        try {
+            const profileRef = doc(db, 'profiles', id);
+            const profileSnap = await getDoc(profileRef);
+            
+            if (profileSnap.exists()) {
+                setErrors(prev => ({
+                    ...prev,
+                    id: "תעודת זהות קיימת במערכת"
+                }));
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error checking ID:', error);
+            return false;
         }
-        setErrors((prev) => ({ ...prev, [name]: false }));
     };
 
     const isValidPhoneNumber = (phone) => {
@@ -61,17 +72,91 @@ function AddProfileWindow({ open, onClose, onSave }) {
         return false;
     };
 
+    const isValidIsraeliID = (id) => {
+        // בדיקה שהקלט מכיל רק ספרות ובאורך 9
+        if (!/^\d{9}$/.test(id)) {
+            return false;
+        }
+        return true;
+    };
+
+    const handleChange = async (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: type === "checkbox" ? checked : value,
+        }));
+
+        // בדיקת תקינות תעודת זהות
+        if (name === "id") {
+            if (!value) {
+                setErrors(prev => ({ ...prev, id: "שדה חובה" }));
+            } else if (!isValidIsraeliID(value)) {
+                setErrors(prev => ({ ...prev, id: "תעודת זהות חייבת להכיל 9 ספרות" }));
+            } else {
+                const exists = await checkExistingId(value);
+                if (!exists) {
+                    setErrors(prev => ({ ...prev, id: null }));
+                }
+            }
+        } else if (name === "phone") {
+            // בדיקת תקינות מספר טלפון
+            if (!value) {
+                setErrors(prev => ({ ...prev, phone: "שדה חובה" }));
+            } else if (!isValidPhoneNumber(value)) {
+                setErrors(prev => ({ ...prev, phone: "מספר טלפון לא תקין" }));
+            } else {
+                setErrors(prev => ({ ...prev, phone: null }));
+            }
+        } else if (name === "phone2") {
+            // בדיקת תקינות מספר טלפון נוסף
+            if (!value) {
+                setErrors(prev => ({ ...prev, phone2: null }));
+            } else if (!isValidPhoneNumber(value)) {
+                setErrors(prev => ({ ...prev, phone2: "מספר טלפון לא תקין" }));
+            } else {
+                setErrors(prev => ({ ...prev, phone2: null }));
+            }
+        } else if (name === "eligibility" && value !== "סיעוד") {
+            setFormData((prev) => ({ ...prev, nursingCompany: "" }));
+        } else {
+            // איפוס שגיאות רק לשדות שאינם דורשים בדיקת תקינות מיוחדת
+            setErrors(prev => ({ ...prev, [name]: null }));
+        }
+    };
+
     const handleSubmit = async () => {
         const requiredFields = ["name", "id", "city", "birthDate", "phone", "transport", "arrivalDays"];
         const newErrors = {};
+        
+        // בדיקת שדות חובה
         requiredFields.forEach((field) => {
             if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
-                newErrors[field] = true;
+                newErrors[field] = "שדה חובה";
             }
         });
 
+        // בדיקת תקינות תעודת זהות
+        if (formData.id) {
+            if (!isValidIsraeliID(formData.id)) {
+                newErrors.id = "תעודת זהות חייבת להכיל 9 ספרות";
+            } else {
+                const exists = await checkExistingId(formData.id);
+                if (exists) {
+                    setExistingProfileDialog(true);
+                    return;
+                }
+            }
+        }
+
+        // בדיקת תקינות מספר טלפון ראשי
         if (formData.phone && !isValidPhoneNumber(formData.phone)) {
             newErrors.phone = "מספר טלפון לא תקין";
+        }
+
+        // בדיקת תקינות מספר טלפון נוסף (אם הוזן)
+        if (formData.phone2 && !isValidPhoneNumber(formData.phone2)) {
+            newErrors.phone2 = "מספר טלפון לא תקין";
         }
 
         if (Object.keys(newErrors).length > 0) {
@@ -206,8 +291,8 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 value={formData.id}
                                 onChange={handleChange}
                                 required
-                                error={errors.id}
-                                helperText={errors.id && "שדה חובה"}
+                                error={!!errors.id}
+                                helperText={errors.id}
                                 sx={{ maxWidth: "170px" }}
                             />
 
@@ -256,6 +341,8 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 name="phone2"
                                 value={formData.phone2}
                                 onChange={handleChange}
+                                error={!!errors.phone2}
+                                helperText={errors.phone2}
                                 sx={{ maxWidth: "170px" }}
                             />
 
@@ -479,6 +566,29 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseSuccessDialog} variant="contained" color="primary">
+                        סגור
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* דיאלוג פרופיל קיים */}
+            <Dialog
+                open={existingProfileDialog}
+                onClose={() => setExistingProfileDialog(false)}
+                dir="rtl"
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0' }}>
+                    שגיאה
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    <Typography>
+                        איש זה קיים כבר במערכת
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setExistingProfileDialog(false)} variant="contained" color="primary">
                         סגור
                     </Button>
                 </DialogActions>

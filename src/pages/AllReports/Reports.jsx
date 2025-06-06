@@ -13,13 +13,6 @@ const reports = [
 const Reports = () => {
   const navigate = useNavigate();
 
-  // הגדרת רקע תכלת לכל המסך
-  useEffect(() => {
-    document.body.style.backgroundColor = '#ebf1f5';
-    return () => {
-      document.body.style.backgroundColor = '';
-    };
-  }, []);
 
   return (
     <Box sx={{ 

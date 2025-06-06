@@ -46,7 +46,9 @@ const AbsencePeople = () => {
     );
   }
 
-  const absentMembers = attendanceData.attendanceList.filter(p => !p.attended);
+  const absentMembers = attendanceData.attendanceList
+    .filter(p => !p.attended)
+    .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
 
   return (
     <Container maxWidth="lg" sx={{ mt: 0.5 }}>
@@ -127,8 +129,11 @@ const AbsencePeople = () => {
                     <Typography variant="body2">
                       <strong>{index + 1}. {person.name}</strong>
                     </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      יישוב: {person.city} {person.reason && `| סיבת היעדרות: ${person.reason}`}
+                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>
+                      יישוב: {person.city}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary" sx={{ mt: 0, display: 'block' }}>
+                      סיבת היעדרות: {person.reason || ''}
                     </Typography>
                   </Box>
                 ))}

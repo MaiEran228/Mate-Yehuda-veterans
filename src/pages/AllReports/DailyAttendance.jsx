@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { fetchAttendanceByDate } from '../../firebase';
-import { Typography, CircularProgress, Box, Paper, Button, Container, } from '@mui/material';
+import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Divider } from '@mui/material';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
@@ -14,11 +14,14 @@ const DailyAttendance = () => {
   const [loading, setLoading] = useState(true);
   const reportRef = useRef();
 
-  const today = dayjs().format('YYYY-MM-DD');
-  const todayFormatted = dayjs().format('DD/MM/YYYY');
+  const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
+  const [inputDate, setInputDate] = useState(dayjs().format('YYYY-MM-DD'));
   const location = useLocation();
   const navigate = useNavigate();
   const from = location.state?.from;
+
+  const [openNoData, setOpenNoData] = useState(false);
+  const [lastValidAttendance, setLastValidAttendance] = useState(null);
 
   const handleBack = () => {
     if (from === 'home') {
@@ -29,43 +32,55 @@ const DailyAttendance = () => {
   };
 
   useEffect(() => {
+    // Only fetch if selectedDate is a valid YYYY-MM-DD string
+    const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate);
+    if (!selectedDate || !isValidDate) return;
     const loadAttendance = async () => {
       setLoading(true);
-      const data = await fetchAttendanceByDate(today);
-      setAttendanceData(data);
+      console.log('מביא נתונים לתאריך:', selectedDate);
+      const data = await fetchAttendanceByDate(selectedDate);
+      if (data && data.attendanceList) {
+        setAttendanceData(data);
+        setLastValidAttendance(data);
+      } else {
+        setOpenNoData(true);
+      }
       setLoading(false);
     };
-
     loadAttendance();
-  }, [today]);
+  }, [selectedDate]);
 
   const handlePrint = useReactToPrint({
     content: () => reportRef.current,
-    documentTitle: `דו"ח נוכחות - ${todayFormatted}`,
+    documentTitle: `דו"ח נוכחות - ${selectedDate}`,
   });
 
   if (loading) return <CircularProgress sx={{ m: 4 }} />;
-  if (!attendanceData || !attendanceData.attendanceList) {
-    return (
-      <Typography variant="body1">
-        אין נתוני נוכחות להיום ({todayFormatted})
-      </Typography>
-    );
+  // Always show the last valid attendance data if exists
+  const dataToShow = attendanceData && attendanceData.attendanceList ? attendanceData : lastValidAttendance;
+  if (!dataToShow || !dataToShow.attendanceList) {
+    return null;
   }
 
-  const presentMembers = attendanceData.attendanceList.filter(p => p.attended);
-  const absentMembers = attendanceData.attendanceList.filter(p => !p.attended);
+  const presentMembers = dataToShow.attendanceList
+    .filter(p => p.attended)
+    .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+  const absentMembers = dataToShow.attendanceList
+    .filter(p => !p.attended)
+    .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
 
+  const reportDate = dataToShow?.date || selectedDate;
+  const todayFormatted = dayjs(reportDate).format('DD/MM/YYYY');
 
   return (
     <Container maxWidth="lg" sx={{ mt: 0.5 }}>
 
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
         <Button 
           variant="outlined" 
           color="primary" 
           onClick={handleBack} 
-          sx={{ 
+          sx={{
             ml: 2,
             '&:focus': {
               outline: 'none'
@@ -94,6 +109,7 @@ const DailyAttendance = () => {
             });
           }}
           sx={{
+            ml: 2,
             '&:focus': {
               outline: 'none'
             },
@@ -104,6 +120,21 @@ const DailyAttendance = () => {
         >
           ייצוא ל־PDF
         </Button>
+
+        <TextField
+          label="בחר תאריך"
+          type="date"
+          size="small"
+          value={inputDate}
+          onChange={e => setInputDate(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              setSelectedDate(inputDate);
+            }
+          }}
+          sx={{ ml: 2, minWidth: 140 }}
+          InputLabelProps={{ shrink: true }}
+        />
       </Box>
 
       <div id="reportContent">{/* תוכן הדוח להדפסה */}
@@ -149,7 +180,7 @@ const DailyAttendance = () => {
             </Box>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h5" color="primary">
-                {attendanceData.attendanceList.length}
+                {dataToShow.attendanceList.length}
               </Typography>
               <Typography variant="body2">סה"כ</Typography>
             </Box>
@@ -167,8 +198,11 @@ const DailyAttendance = () => {
                     <Typography variant="body2">
                       <strong>{index + 1}. {person.name}</strong>
                     </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {person.city} | מטפל: {person.caregiver}
+                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>
+                      יישוב: {person.city}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary" sx={{ mt: 0, display: 'block' }}>
+                      מטפל: {person.caregiver}
                     </Typography>
                   </Box>
                 ))}
@@ -192,14 +226,12 @@ const DailyAttendance = () => {
                     <Typography variant="body2">
                       <strong>{index + 1}. {person.name}</strong>
                     </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {person.city} | מטפל: {person.caregiver}
+                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>
+                      יישוב: {person.city}
                     </Typography>
-                    {person.reason && (
-                      <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
-                        סיבה: {person.reason}
-                      </Typography>
-                    )}
+                    <Typography variant="caption" color="textSecondary" sx={{ mt: 0, display: 'block' }}>
+                      סיבת היעדרות: {person.reason || ''}
+                    </Typography>
                   </Box>
                 ))}
               </Box>
@@ -220,6 +252,36 @@ const DailyAttendance = () => {
 
         </Paper>
       </div>
+
+      <Dialog open={openNoData} onClose={() => setOpenNoData(false)}
+        PaperProps={{ sx: { minWidth: 340, border: '1px solid #e0e0e0', boxShadow: 6 } }}
+      >
+        <DialogTitle sx={{ textAlign: 'right', fontWeight: 'bold' }}>אין נתונים</DialogTitle>
+        <Divider sx={{ mb: 1 }} />
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+            לא נשמרו נתונים בתאריך:
+            <span style={{ color: 'black', fontWeight: 500, marginRight: 6 }}>
+              {dayjs(selectedDate).format('DD/MM/YYYY')}
+            </span>
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setOpenNoData(false)}
+            autoFocus
+            disableRipple
+            sx={{
+              '&:focus': { outline: 'none' },
+              '&:active': { outline: 'none' }
+            }}
+          >
+            סגור
+          </Button>
+        </DialogActions>
+      </Dialog>
 
     </Container>
   );

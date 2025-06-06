@@ -44,13 +44,7 @@ function Home({ onLogout }) {
         preloadData();
     }, []); // ← רץ פעם אחת כשהקומפוננטה נטענת
 
-    // הגדרת רקע תכלת לכל המסך
-    useEffect(() => {
-        document.body.style.backgroundColor = '#ebf1f5';
-        return () => {
-            document.body.style.backgroundColor = '';
-        };
-    }, []);
+
 
     // פונקציה שתקבל את המידע על הנוכחות מהטבלה
     const handleAttendanceUpdate = (count) => {
@@ -222,6 +216,7 @@ function Home({ onLogout }) {
 
                         <Button
                             variant="outlined"
+                            onClick={() => navigate('/AllReports/AbsencePeople', { state: { from: 'home' } })}
                             sx={{
                                 border: '2px solid rgba(64, 99, 112, 0.72)', 
                                 color: 'rgba(64, 99, 112, 0.72)', 
@@ -233,13 +228,15 @@ function Home({ onLogout }) {
                                 },
                                 '&:focus': {
                                     outline: 'none'
+                                },
+                                '&:active': {
+                                    outline: 'none'
                                 }
-                            }} 
-                            onClick={() => navigate('/AllReports/DailyAttendance', { state: { from: 'home' } })}
+                            }}
                             fullWidth
                             size="large"
                         >
-                            הפק דוח יומי
+                            הפקת דוח היעדרות
                         </Button>
                     </Box>
 

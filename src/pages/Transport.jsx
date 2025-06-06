@@ -100,7 +100,16 @@ function Transport() {
   return (
     <>
       {/* שורת חיפוש */}
-      <Box sx={{ display: 'flex', gap: 2, mt: -30, mb: 5, mr: 3, ml: 3 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        gap: 2, 
+        p: 3,
+        position: 'sticky',
+        top: 0,
+        backgroundColor: 'white',
+        zIndex: 1,
+        borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+      }}>
         <TextField
           label="חיפוש לפי יישוב"
           variant="outlined"
@@ -111,13 +120,13 @@ function Transport() {
             width: 280,
             '& .MuiOutlinedInput-root': {
               height: 36,
-              fontSize: '0.8rem',
+              fontSize: '0.9rem',
               color: 'rgb(85, 105, 125)',
               '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
               '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
             },
             '& .MuiInputLabel-root': {
-              fontSize: '0.75rem',
+              fontSize: '0.85rem',
               top: '-6px',
               color: 'rgb(85, 105, 125)',
               '&.Mui-focused': { color: '#7b8f99' }
@@ -136,13 +145,13 @@ function Transport() {
             width: 200,
             '& .MuiOutlinedInput-root': {
               height: 36,
-              fontSize: '0.8rem',
+              fontSize: '0.9rem',
               color: 'rgb(85, 105, 125)',
               '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
               '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
             },
             '& .MuiInputLabel-root': {
-              fontSize: '0.75rem',
+              fontSize: '0.85rem',
               top: '-6px',
               color: 'rgb(85, 105, 125)',
               '&.Mui-focused': { color: '#7b8f99' }
@@ -161,14 +170,23 @@ function Transport() {
           color="primary"
           onClick={handleAddOpen}
           size="small"
-          sx={{ height: 36 }}
+          sx={{ 
+            height: 36,
+            fontSize: '0.9rem'
+          }}
         >
           הוספת הסעה
         </Button>
       </Box>
 
       {/* אזור הטבלה */}
-      <Box sx={{ mx: 3, flex: 1 }}>
+      <Box sx={{ 
+        px: 3,
+        pb: 3,
+        flex: 1,
+        overflow: 'auto',
+        height: 'calc(100vh - 120px)'  // גובה מסך פחות גובה שורת החיפוש ומרווחים
+      }}>
         <TransportTable
           data={data}
           searchTerm={searchTerm}

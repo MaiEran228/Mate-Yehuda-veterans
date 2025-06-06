@@ -68,15 +68,16 @@ function Profiles() {
   });
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: 3 }}>
       {/* חלק עליון - חיפוש וכפתור */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 2,
-          mb: 6,
+          mb: 8,
         }}
       >
         <TextField
@@ -85,31 +86,65 @@ function Profiles() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           dir="rtl"
-          sx={{ width: '300px', ml: '700px' }}
+          sx={{ 
+            width: '300px',
+            '& .MuiOutlinedInput-root': {
+              height: 40,
+              fontSize: '0.9rem'
+            },
+            '& .MuiInputLabel-root': {
+              fontSize: '0.9rem',
+              transform: 'translate(14px, 8px) scale(1)'
+            },
+            '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
+              transform: 'translate(14px, -9px) scale(0.75)'
+            }
+          }}
         />
 
         <Button
           variant="contained"
           onClick={() => setAddDialogOpen(true)}
-          sx={{ height: 40 }}
+          sx={{ 
+            height: 40,
+            fontSize: '0.9rem',
+            minWidth: '120px'
+          }}
         >
           הוספת פרופיל
         </Button>
       </Box>
 
-      {/* אזור הפרופילים בלבד */}
-      <Box sx={{ minHeight: 400 }}>
-        <Grid container spacing={0}>
+      {/* אזור הפרופילים */}
+      <Box sx={{ 
+        minHeight: 400,
+        '& .MuiGrid-container': {
+          margin: 0,
+          width: '100%',
+          justifyContent: 'flex-start'
+        }
+      }}>
+        <Grid container spacing={1.5}>
           {filteredProfiles.map(profile => (
-            <ProfileCard
-              key={profile.id}
-              profile={profile}
-              onClick={() => setSelectedProfile(profile)}
-            />
+            <Grid item xs={12} sm={6} md={4} lg={2} key={profile.id}>
+              <ProfileCard
+                profile={profile}
+                onClick={() => setSelectedProfile(profile)}
+              />
+            </Grid>
           ))}
 
           {filteredProfiles.length === 0 && (
-            <Typography variant="body1" sx={{ mt: 3, mx: 'auto', textAlign: 'center', width: '100%' }}>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                mt: 3, 
+                mx: 'auto', 
+                textAlign: 'center', 
+                width: '100%',
+                fontSize: '0.9rem'
+              }}
+            >
               לא נמצאו פרופילים מתאימים
             </Typography>
           )}
