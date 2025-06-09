@@ -48,10 +48,12 @@ const SchedulePage = () => {
       sx={{
         direction: 'rtl',
         width: '100%',
-        height: '125vh',
+        height: '100vh',
         bgcolor: '#ebf1f5',
         p: 2,
         boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <Box
@@ -71,18 +73,17 @@ const SchedulePage = () => {
           color="primary"
           onClick={() => setIsEditing(prev => !prev)}
           sx={{
-          
             height: '40px',
             fontWeight: 'bold',
             fontSize: '0.9rem',
-            width:'180px',
+            width: '180px',
             px: 2,
             bgcolor: 'rgba(142, 172, 183, 0.72)',
             border: '2px solid rgba(97, 116, 123, 0.72)',
             color: 'black',
             '&:hover': {
               bgcolor: 'rgba(142, 172, 183, 0.72)',
-             border: '2px solid rgb(181, 170, 170)'
+              border: '2px solid rgb(181, 170, 170)'
             }
           }}
         >
@@ -90,8 +91,11 @@ const SchedulePage = () => {
         </Button>
       </Box>
 
-      <Box sx={{ display: 'flex', height: 'calc(100vh - 130px)' }}>
-        {/* עמודות ימים בלבד */}
+      <Box sx={{ 
+        display: 'flex', 
+        flex: 1,
+        gap: '4px',
+      }}>
         {days.map((day) => (
           <Box
             key={day}
@@ -99,12 +103,9 @@ const SchedulePage = () => {
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
               border: '2px solid #ddd',
               backgroundColor: '#fff',
               borderRadius: 2,
-              height: '705px',
-              mx: 0.3,
               p: 1,
             }}
           >
@@ -112,9 +113,8 @@ const SchedulePage = () => {
               sx={{
                 py: 0.5,
                 width: '100%',
-                
                 textAlign: 'center',
-                fontSize: '1.3rem',
+                fontSize: '1.1rem',
                 fontWeight: 'bold',
                 borderBottom: '1px solid #ddd',
                 mb: 1,
@@ -122,31 +122,36 @@ const SchedulePage = () => {
             >
               {day}
             </Box>
-            <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ 
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px'
+            }}>
               {[...Array(CELLS_PER_DAY_ROWS)].map((_, rowIdx) => (
-                <Box key={rowIdx} sx={{ display: 'flex', flexDirection: 'row', gap: 1, mb: 1 }}>
+                <Box key={rowIdx} sx={{ 
+                  display: 'flex',
+                  gap: '4px',
+                  flex: 1
+                }}>
                   {[...Array(CELLS_PER_DAY_COLS)].map((_, colIdx) => {
                     const cellIdx = rowIdx * CELLS_PER_DAY_COLS + colIdx;
                     const key = `${day}-cell${cellIdx}`;
                     const value = activities[key] || { activity: '', instructor: '', location: '', time: '' };
-                    // בדיקה אם כל התאים מלאים
-                    const allFilled = false; // לא צריך להקטין פונט כי אין גרירה
-                    const fontSize = allFilled ? '0.85rem' : '1rem';
+                    
                     return (
                       <Box
                         key={key}
                         sx={{
-                          height: 'auto',
-                          minHeight: '100px',
-                          width: '100px',
                           flex: 1,
-                          border: '4px solid #eee',
+                          border: '2px solid #eee',
                           borderRadius: 1,
                           p: 0.5,
                           display: 'flex',
                           flexDirection: 'column',
                           justifyContent: 'center',
                           bgcolor: '#f7fafc',
+                          minHeight: 0,
                         }}
                       >
                         {isEditing ? (
@@ -158,8 +163,8 @@ const SchedulePage = () => {
                               placeholder="פעילות"
                               value={value.activity}
                               onChange={(e) => handleChange(key, 'activity', e.target.value)}
-                              sx={{ mb: 0.3, fontSize }}
-                              inputProps={{ style: { fontSize } }}
+                              sx={{ mb: 0.3 }}
+                              inputProps={{ style: { fontSize: '0.8rem' } }}
                             />
                             <TextField
                               fullWidth
@@ -168,8 +173,8 @@ const SchedulePage = () => {
                               placeholder="שם מדריך"
                               value={value.instructor}
                               onChange={(e) => handleChange(key, 'instructor', e.target.value)}
-                              sx={{ mb: 0.3, fontSize }}
-                              inputProps={{ style: { fontSize } }}
+                              sx={{ mb: 0.3 }}
+                              inputProps={{ style: { fontSize: '0.8rem' } }}
                             />
                             <TextField
                               fullWidth
@@ -178,8 +183,8 @@ const SchedulePage = () => {
                               placeholder="מיקום"
                               value={value.location}
                               onChange={(e) => handleChange(key, 'location', e.target.value)}
-                              sx={{ mb: 0.3, fontSize }}
-                              inputProps={{ style: { fontSize } }}
+                              sx={{ mb: 0.3 }}
+                              inputProps={{ style: { fontSize: '0.8rem' } }}
                             />
                             <TextField
                               fullWidth
@@ -188,20 +193,21 @@ const SchedulePage = () => {
                               placeholder="שעה"
                               value={value.time}
                               onChange={(e) => handleChange(key, 'time', e.target.value)}
-                              sx={{ mb: 0.3, fontSize }}
-                              inputProps={{ style: { fontSize } }}
+                              inputProps={{ style: { fontSize: '0.8rem' } }}
                             />
                           </>
                         ) : (
                           <Box sx={{ textAlign: 'center' }}>
-                            <Typography fontWeight="bold" fontSize={fontSize}>{value.activity}</Typography>
-                            <Typography fontSize={fontSize} color="text.secondary">
+                            <Typography fontWeight="bold" fontSize="0.85rem">
+                              {value.activity}
+                            </Typography>
+                            <Typography fontSize="0.8rem" color="text.secondary">
                               {value.instructor}
                             </Typography>
-                            <Typography fontSize={fontSize} color="text.secondary">
+                            <Typography fontSize="0.8rem" color="text.secondary">
                               {value.location}
                             </Typography>
-                            <Typography fontSize={fontSize} color="text.secondary">
+                            <Typography fontSize="0.8rem" color="text.secondary">
                               {value.time}
                             </Typography>
                           </Box>
@@ -218,6 +224,5 @@ const SchedulePage = () => {
     </Box>
   );
 };
-
 
 export default SchedulePage;

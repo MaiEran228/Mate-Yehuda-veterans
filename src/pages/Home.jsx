@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Container, Typography, Box, Button, TextField, Modal, Paper } from '@mui/material';
+import { Container, Typography, Box, Button, TextField, Modal, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import Header from '../components/ToolBarMUI'; // סרגל כלים קבוע
 import AttendanceTable from '../components/AttendanceTable'; // הטבלה
 import ExportPDFButton from '../components/ExportPDFButton'; // קומפוננטת ייצוא PDF
@@ -21,10 +21,21 @@ function Home({ onLogout }) {
     const navigate = useNavigate();
     const today = dayjs().format('YYYY-MM-DD');
     const todayFormatted = dayjs().format('DD/MM/YYYY');
+    
+    // Add dialog state
+    const [dialog, setDialog] = useState({
+        open: false,
+        message: '',
+        isSuccess: false
+    });
+
     const handleClose = () => {
-        setModalOpen(false); // assuming you already have setModalOpen defined
+        setModalOpen(false);
     };
 
+    const handleDialogClose = () => {
+        setDialog(prev => ({ ...prev, open: false }));
+    };
 
     // 🚀 PRE-LOADING - טוען את הנתונים מוקדם
     useEffect(() => {
@@ -38,7 +49,11 @@ function Home({ onLogout }) {
                 }
             } catch (error) {
                 console.error('Pre-loading failed:', error);
-                // לא עושים כלום, הטבלה תטען בעצמה
+                setDialog({
+                    open: true,
+                    message: 'שגיאה בטעינת הנתונים',
+                    isSuccess: false
+                });
             }
         };
         preloadData();
@@ -52,20 +67,40 @@ function Home({ onLogout }) {
     };
 
     const handleSave = async () => {
-        const rawData = attendanceRef.current?.getAttendanceData?.();
-        if (!rawData) return;
+        try {
+            const rawData = attendanceRef.current?.getAttendanceData?.();
+            if (!rawData) {
+                setDialog({
+                    open: true,
+                    message: 'לא נמצאו נתונים לשמירה',
+                    isSuccess: false
+                });
+                return;
+            }
 
-        const attendanceList = rawData.map(person => ({
-            id: person.id,
-            name: person.name,
-            city: person.city,
-            attended: person.attended,
-            caregiver: person.caregiver,
-            reason: person.reason
-        }));
+            const attendanceList = rawData.map(person => ({
+                id: person.id,
+                name: person.name,
+                city: person.city,
+                attended: person.attended,
+                caregiver: person.caregiver,
+                reason: person.reason
+            }));
 
-        await saveAttendanceForDate(today, attendanceList);
-        alert('נוכחות נשמרה בהצלחה!');
+            await saveAttendanceForDate(today, attendanceList);
+            setDialog({
+                open: true,
+                message: 'הנתונים נשמרו בהצלחה',
+                isSuccess: true
+            });
+        } catch (error) {
+            console.error('Save failed:', error);
+            setDialog({
+                open: true,
+                message: 'שגיאה בשמירת הנתונים',
+                isSuccess: false
+            });
+        }
     };
 
     const closeReport = () => {
@@ -79,86 +114,98 @@ function Home({ onLogout }) {
     return (
         <>
             <Header onLogout={onLogout} />
-            {/* שורת חיפוש */}
-            <Box sx={{
-                display: 'flex', justifyContent: 'center',
-                alignItems: 'center', gap: 2, mt: 2, mb: 2, mr: -5
+            
+            {/* Main Container - Full Width */}
+            <Box sx={{ 
+                width: '100%', 
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
             }}>
-                <TextField
-                    label="מיון לפי"
-                    select
-                    SelectProps={{ native: true }}
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    size="small"
-                    sx={{
-                        width: 200, '& .MuiOutlinedInput-root': {
-                            height: 36, fontSize: '0.8rem',
-                            color: 'rgb(85, 105, 125)', '& fieldset': {borderWidth: 2,borderColor: 'rgba(64, 99, 112, 0.72)' },
-                            '&:hover fieldset, &.Mui-focused fieldset': { borderWidth: 2,borderColor: '#7b8f99' }
-                        },
-                        '& .MuiInputLabel-root': {
-                            fontSize: '0.75rem', top: '-6px',
-                            color: 'rgb(85, 105, 125)', '&.Mui-focused': { color: '#7b8f99' }
-                        }
-                    }}
-                >
-                    <option value="שם">שם</option>
-                    <option value="אזור מגורים">אזור מגורים</option>
-                </TextField>
+                {/* Search Bar */}
+                <Box sx={{
+                    width: '95%',
+                    maxWidth: '1800px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 2,
+                    mb: 2
+                }}>
+                    <TextField
+                        label="מיון לפי"
+                        select
+                        SelectProps={{ native: true }}
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        size="small"
+                        sx={{
+                            width: 200,
+                            '& .MuiOutlinedInput-root': {
+                                height: 36,
+                                fontSize: '0.8rem',
+                                color: 'rgb(85, 105, 125)',
+                                '& fieldset': { borderWidth: 2, borderColor: 'rgba(64, 99, 112, 0.72)' },
+                                '&:hover fieldset, &.Mui-focused fieldset': { borderWidth: 2, borderColor: '#7b8f99' }
+                            },
+                            '& .MuiInputLabel-root': {
+                                fontSize: '0.75rem',
+                                top: '-6px',
+                                color: 'rgb(85, 105, 125)',
+                                '&.Mui-focused': { color: '#7b8f99' }
+                            }
+                        }}
+                    >
+                        <option value="שם">שם</option>
+                        <option value="אזור מגורים">אזור מגורים</option>
+                    </TextField>
 
-                <TextField
-                    label="חיפוש"
-                    variant="outlined"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    size="small"
-                    sx={{
-                        width: 280, '& .MuiOutlinedInput-root': {
-                            height: 36, fontSize: '0.8rem',
-                            color: 'rgb(85, 105, 125)', '& fieldset': {  borderWidth: 2, borderColor: 'rgba(64, 99, 112, 0.72)' },
-                            '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
-                        },
-                        '& .MuiInputLabel-root': {
-                            fontSize: '0.75rem', top: '-6px',
-                            color: 'rgb(85, 105, 125)', '&.Mui-focused': { color: '#7b8f99' }
-                        }
-                    }}
-                />
-            </Box>
+                    <TextField
+                        label="חיפוש"
+                        variant="outlined"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        size="small"
+                        sx={{
+                            width: 280,
+                            '& .MuiOutlinedInput-root': {
+                                height: 36,
+                                fontSize: '0.8rem',
+                                color: 'rgb(85, 105, 125)',
+                                '& fieldset': { borderWidth: 2, borderColor: 'rgba(64, 99, 112, 0.72)' },
+                                '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
+                            },
+                            '& .MuiInputLabel-root': {
+                                fontSize: '0.75rem',
+                                top: '-6px',
+                                color: 'rgb(85, 105, 125)',
+                                '&.Mui-focused': { color: '#7b8f99' }
+                            }
+                        }}
+                    />
+                </Box>
 
-
-            {/* אזור הטבלה והכפתורים */}
-            <Container maxWidth="lg">
-                <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start', }}>
-
-                    {/* הטבלה */}
-                    <Box sx={{
-                        width: '1300px', maxWidth: '1300px', overflowY: 'auto', mx: 'auto', borderRadius: '12px 12px 8px 8px',
+                {/* Header Section with Date and Buttons */}
+                <Box sx={{ 
+                    width: '95%',
+                    maxWidth: '1800px',
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    mb: 2
+                }}>
+                    {/* Date Display - Right Side */}
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 2 
                     }}>
-                        <AttendanceTable
-                            ref={attendanceRef}
-                            search={search}
-                            sortBy={sortBy}
-                            onAttendanceChange={handleAttendanceUpdate}
-                        />
-                    </Box>
-
-                    {/* פאנל צדדי */}
-                    <Box sx={{
-                        width: '200px', minWidth: '220px', display: 'flex', flexDirection: 'column',
-                        gap: 2, p: 2, mt: '80px',
-                        ml: -22 // מזיז את הפאנל יותר שמאלה
-                    }}>
-                        {/* תאריך מעוצב */}
                         <Typography
                             variant="h6"
                             sx={{
                                 color: 'rgba(64, 99, 112, 0.72)',
                                 fontWeight: 500,
                                 fontSize: '2.8rem',
-                                textAlign: 'center',
-
                             }}
                         >
                             {todayFormatted}
@@ -166,13 +213,13 @@ function Home({ onLogout }) {
                         <Box
                             sx={{
                                 p: 2,
-                                backgroundColor: 'rgb(233, 241, 247)', // גוון רקע תואם לגוון העיקרי
+                                backgroundColor: 'rgb(233, 241, 247)',
                                 borderRadius: 2,
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 1,
-                                color: 'rgba(64, 99, 112, 0.72)', // צבע טקסט כהה יחסית שמשתלב
+                                color: 'rgba(64, 99, 112, 0.72)',
                                 fontFamily: 'inherit',
                                 boxShadow: '0 7px 15px rgba(0, 0, 0, 0.22)',
                             }}
@@ -184,15 +231,22 @@ function Home({ onLogout }) {
                                 {attendanceCount}
                             </Typography>
                         </Box>
+                    </Box>
 
+                    {/* Buttons - Left Side */}
+                    <Box sx={{ 
+                        display: 'flex', 
+                        gap: 2 
+                    }}>
                         <Button
                             variant="contained"
+                            onClick={handleSave}
                             sx={{ 
                                 backgroundColor: 'rgba(142, 172, 183, 0.72)', 
                                 border: 'none',
                                 outline: 'none',
                                 ':hover': { 
-                                    backgroundColor: '#rgb(185, 205, 220)',
+                                    backgroundColor: 'rgb(185, 205, 220)',
                                     border: 'none',
                                     outline: 'none'
                                 }, 
@@ -205,11 +259,9 @@ function Home({ onLogout }) {
                                 '&:active': {
                                     border: 'none',
                                     outline: 'none'
-                                }
+                                },
+                                minWidth: '120px'
                             }}
-                            onClick={handleSave}
-                            fullWidth
-                            size="large"
                         >
                             שמירה
                         </Button>
@@ -231,17 +283,80 @@ function Home({ onLogout }) {
                                 },
                                 '&:active': {
                                     outline: 'none'
-                                }
+                                },
+                                minWidth: '150px'
                             }}
-                            fullWidth
-                            size="large"
                         >
                             הפקת דוח היעדרות
                         </Button>
                     </Box>
-
                 </Box>
-            </Container>
+
+                {/* Table Section - Full Width */}
+                <Box sx={{ 
+                    width: '95%',
+                    maxWidth: '1800px'
+                }}>
+                    <AttendanceTable
+                        ref={attendanceRef}
+                        search={search}
+                        sortBy={sortBy}
+                        onAttendanceChange={handleAttendanceUpdate}
+                    />
+                </Box>
+            </Box>
+
+            {/* Dialog for notifications */}
+            <Dialog
+                open={dialog.open}
+                onClose={handleDialogClose}
+                dir="rtl"
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: '12px',
+                    }
+                }}
+            >
+                <DialogTitle sx={{ 
+                    backgroundColor: '#f5f5f5',
+                    borderBottom: '1px solid #e0e0e0',
+                    py: 2
+                }}>
+                    {dialog.isSuccess ? 'שמירת נתונים' : 'שגיאה'}
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    <Typography variant="body1" sx={{ 
+                        textAlign: 'center',
+                        color: dialog.isSuccess ? '#2e7d32' : '#d32f2f',
+                        fontSize: '1.1rem',
+                        fontWeight: 500
+                    }}>
+                        {dialog.message}
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ 
+                    borderTop: '1px solid #e0e0e0',
+                    p: 2,
+                    justifyContent: 'center'
+                }}>
+                    <Button
+                        onClick={handleDialogClose}
+                        variant="contained"
+                        sx={{
+                            backgroundColor: dialog.isSuccess ? '#2e7d32' : '#d32f2f',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: dialog.isSuccess ? '#1b5e20' : '#aa2424'
+                            },
+                            minWidth: '120px'
+                        }}
+                    >
+                        אישור
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 }

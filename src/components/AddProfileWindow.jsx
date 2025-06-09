@@ -1,17 +1,20 @@
 import {
     Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, FormControlLabel, Checkbox, MenuItem,
-    Select, InputLabel, FormControl, Typography, Box, Alert
+    Select, InputLabel, FormControl, Typography, Box, Alert, IconButton, Avatar
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { findMatchingTransports, addPassengerToTransport } from '../utils/transportUtils';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 function AddProfileWindow({ open, onClose, onSave }) {
     const initialFormData = {
         name: "", age: "", id: "", address: "", city: "", birthDate: "", phone: "", phone2:"", email: "",
         transport: "", functionLevel: "", gender: "", arrivalDays: [], eligibility: "", isHolocaustSurvivor: false,
-        hasCaregiver: false, membership: "", nursingCompany: "",
+        hasCaregiver: false, membership: "", nursingCompany: "", profileImage: "",
     };
 
     const [formData, setFormData] = useState(initialFormData);
@@ -21,6 +24,8 @@ function AddProfileWindow({ open, onClose, onSave }) {
     const [showTransportDialog, setShowTransportDialog] = useState(false);
     const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
     const [existingProfileDialog, setExistingProfileDialog] = useState(false);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         if (open) {
@@ -30,6 +35,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
             setMatchingTransports([]);
             setShowTransportDialog(false);
             setExistingProfileDialog(false);
+            setImagePreview(null);
         }
     }, [open]);
 
@@ -165,11 +171,19 @@ function AddProfileWindow({ open, onClose, onSave }) {
         }
 
         try {
+            // Create a clean profile object with all the data
+            const profileToSave = {
+                ...formData,
+                profileImage: formData.profileImage || null // Make sure to include the image URL
+            };
+
+            console.log('Saving profile with data:', profileToSave); // For debugging
+
             const transports = await findMatchingTransports(
-                formData.arrivalDays,
-                formData.city,
-                formData.transport,
-                formData.hasCaregiver
+                profileToSave.arrivalDays,
+                profileToSave.city,
+                profileToSave.transport,
+                profileToSave.hasCaregiver
             );
 
             if (transports.length === 0) {
@@ -177,22 +191,24 @@ function AddProfileWindow({ open, onClose, onSave }) {
                     type: 'warning',
                     text: 'לא נמצאה הסעה מתאימה. יש להוסיף הסעה חדשה.'
                 });
-                await onSave(formData);
+                await onSave(profileToSave);
             } else if (transports.length === 1) {
                 await addPassengerToTransport(transports[0].id, {
-                    id: formData.id,
-                    name: formData.name,
-                    phone: formData.phone,
-                    city: formData.city,
-                    hasCaregiver: formData.hasCaregiver,
-                    arrivalDays: formData.arrivalDays
+                    id: profileToSave.id,
+                    name: profileToSave.name,
+                    phone: profileToSave.phone,
+                    city: profileToSave.city,
+                    hasCaregiver: profileToSave.hasCaregiver,
+                    arrivalDays: profileToSave.arrivalDays,
+                    profileImage: profileToSave.profileImage // Make sure to include the image URL here too
                 });
 
-                const successMessage = `${formData.name} שובץ להסעה מספר ${transports[0].serialNumber} - ${transports[0].cities.join(' -> ')}`;
+                const successMessage = `${profileToSave.name} שובץ להסעה מספר ${transports[0].serialNumber} - ${transports[0].cities.join(' -> ')}`;
                 setSuccessDialog({ open: true, message: successMessage });
-                await onSave(formData);
+                await onSave(profileToSave);
                 setFormData(initialFormData);
                 setErrors({});
+                setImagePreview(null);
             } else {
                 setMatchingTransports(transports);
                 setShowTransportDialog(true);
@@ -239,6 +255,43 @@ function AddProfileWindow({ open, onClose, onSave }) {
         onClose();
     };
 
+    const handleImageUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Preview the image
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+
+        try {
+            setIsUploading(true);
+            // Create a reference to the storage location with a unique filename
+            const uniqueFileName = `${Date.now()}-${file.name}`;
+            const storageRef = ref(storage, `profile-images/${uniqueFileName}`);
+            
+            // Upload the file
+            const snapshot = await uploadBytes(storageRef, file);
+            
+            // Get the download URL
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            console.log('File uploaded, URL:', downloadURL); // For debugging
+            
+            // Update form data with the image URL
+            setFormData(prev => ({
+                ...prev,
+                profileImage: downloadURL
+            }));
+            
+            setIsUploading(false);
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            setIsUploading(false);
+        }
+    };
+
     return (
         <>
             <Dialog
@@ -270,6 +323,50 @@ function AddProfileWindow({ open, onClose, onSave }) {
                             </Alert>
                         )}
                         
+                        {/* Image Upload Section */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            alignItems: 'center', 
+                            gap: 1,
+                            position: 'relative',
+                            mb: 2
+                        }}>
+                            <input
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                id="profile-image-upload"
+                                type="file"
+                                onChange={handleImageUpload}
+                            />
+                            <label htmlFor="profile-image-upload">
+                                <Avatar
+                                    src={imagePreview}
+                                    sx={{
+                                        width: 120,
+                                        height: 120,
+                                        bgcolor: 'grey.200',
+                                        cursor: 'pointer',
+                                        '&:hover': {
+                                            opacity: 0.8
+                                        }
+                                    }}
+                                >
+                                    {!imagePreview && <AddPhotoAlternateIcon sx={{ fontSize: 40 }} />}
+                                </Avatar>
+                            </label>
+                            {isUploading && (
+                                <Typography variant="body2" color="text.secondary">
+                                    מעלה תמונה...
+                                </Typography>
+                            )}
+                            {!imagePreview && !isUploading && (
+                                <Typography variant="body2" color="text.secondary">
+                                    העלאת תמונת פרופיל
+                                </Typography>
+                            )}
+                        </Box>
+
                         {/* שדות טקסט */}
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                             <TextField

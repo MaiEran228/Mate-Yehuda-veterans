@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 import { calculateAvailableSeatsByDay } from './utils/transportUtils';
 
 // קונפיגורציה ואתחול
@@ -16,6 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);  // חשוב! ייצוא של db
+export const storage = getStorage(app);  // Initialize Firebase Storage
 
 
 // read the profiles and show in the attendance table

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Card, CardContent, Typography, Box, Avatar } from '@mui/material';
 
 function ProfileCard({ profile, onClick }) {
   return (
@@ -10,29 +10,31 @@ function ProfileCard({ profile, onClick }) {
         mb: 4,
     }}>
       {/* עיגול של הפרופיל - צף מעל הכרטיס */}
-      <Box
+      <Avatar
+        src={profile.profileImage || ''}
+        alt={profile.name}
         sx={{
           position: 'absolute',
-          top: -45,  // הגדלת המרחק מהכרטיס בגלל העיגול הגדול יותר
+          top: -45,
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 100,  // הגדלת גודל העיגול
+          width: 100,
           height: 100,
-          bgcolor: '#ffffffcc',
-          borderRadius: '50%',
-          backgroundColor: '#dbeafe',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          bgcolor: profile.profileImage ? 'transparent' : '#dbeafe',
+          fontSize: '1.3rem',
           fontWeight: 'bold',
-          fontSize: '1.3rem',  // הגדלת גודל הפונט
           zIndex: 1,
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          border: '2px solid #fff'
+          border: '2px solid #fff',
+          '& img': {
+            objectFit: 'cover',
+            width: '100%',
+            height: '100%'
+          }
         }}
       >
-        {profile.initials || profile.name.charAt(0)}
-      </Box>
+        {!profile.profileImage && (profile.initials || profile.name.charAt(0))}
+      </Avatar>
 
       {/* כרטיס פרופיל */}
       <Card

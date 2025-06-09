@@ -145,22 +145,24 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
     }
 
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+        <Box sx={{ width: '100%' }}>
             <Paper
                 sx={{
-                    width: '1300px',
+                    width: '100%',
                     borderRadius: '12px 12px 8px 8px',
                     boxShadow: '0px 0px 4px rgba(0, 0, 0, 0.27)',
                     overflow: 'hidden',
                     border: '1px solid rgb(118, 126, 136)',
                 }}
             >
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                     <Table
                         size="small"
                         sx={{
                             direction: 'rtl',
                             borderCollapse: 'collapse',
+                            width: '100%',
+                            tableLayout: 'fixed',
                             '& th, & td': {
                                 py: 1,
                                 px: 1,
@@ -170,11 +172,11 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                     >
                         <TableHead>
                             <TableRow>
-                                <TableCell align="right" sx={{ width: '20%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>אזור מגורים</TableCell>
-                                <TableCell align="right" sx={{ width: '20%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>שם</TableCell>
+                                <TableCell align="right" sx={{ width: '30%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>אזור מגורים</TableCell>
+                                <TableCell align="right" sx={{ width: '30%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>שם</TableCell>
                                 <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>נוכח</TableCell>
                                 <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>מטפל</TableCell>
-                                <TableCell align="right" sx={{ width: '15%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>סיבה להיעדרות</TableCell>
+                                <TableCell align="right" sx={{ width: '20%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>סיבה להיעדרות</TableCell>
                             </TableRow>
                         </TableHead>
                     </Table>
@@ -183,6 +185,7 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                             maxHeight: 385,
                             overflowY: 'auto',
                             direction: 'ltr',
+                            width: '100%',
                             '&::-webkit-scrollbar': {
                                 width: '8px',
                             },
@@ -204,6 +207,8 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                             sx={{
                                 direction: 'rtl',
                                 borderCollapse: 'collapse',
+                                width: '100%',
+                                tableLayout: 'fixed',
                                 '& th, & td': {
                                     py: 1,
                                     px: 1,
@@ -219,8 +224,8 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                                 ) : (
                                     sortedRows.map((profile) => (
                                         <TableRow key={profile.id}>
-                                            <TableCell align="right" sx={{ width: '20%' }}>{profile.city}</TableCell>
-                                            <TableCell align="right" sx={{ width: '20%' }}>{profile.name}</TableCell>
+                                            <TableCell align="right" sx={{ width: '30%' }}>{profile.city}</TableCell>
+                                            <TableCell align="right" sx={{ width: '30%' }}>{profile.name}</TableCell>
                                             <TableCell align="right" sx={{ width: '10%' }}>
                                                 <Checkbox
                                                     checked={profile.attended}
@@ -242,7 +247,7 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                                                     sx={{ p: 0.2, '& .MuiSvgIcon-root': { fontSize: 18 } }}
                                                 />
                                             </TableCell>
-                                            <TableCell align="right" sx={{ width: '15%' }}>
+                                            <TableCell align="right" sx={{ width: '20%' }}>
                                                 {profile.attended ? (
                                                     <Box sx={{ height: 44 }} />
                                                 ) : (
