@@ -482,6 +482,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 >
                                     <MenuItem value="מונית">מונית</MenuItem>
                                     <MenuItem value="מיניבוס">מיניבוס</MenuItem>
+                                    <MenuItem value="פרטי">פרטי</MenuItem>
                                     <MenuItem value="אחר">אחר</MenuItem>
                                 </Select>
                             </FormControl>

@@ -1,4 +1,5 @@
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Checkbox, TextField, Paper, MenuItem, Box, Skeleton, CircularProgress } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Checkbox, TextField, Paper, MenuItem, Box, Skeleton, CircularProgress, TableSortLabel, Tooltip, InputAdornment, IconButton } from '@mui/material';
+import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { fetchAllProfiles, fetchAttendanceByDate } from '../firebase';
 import dayjs from 'dayjs';
@@ -26,10 +27,13 @@ const SkeletonRow = () => (
     </TableRow>
 );
 
-export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanceChange }, ref) {
+export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [order, setOrder] = useState('asc');
+    const [orderBy, setOrderBy] = useState('city');
+    const [searchQuery, setSearchQuery] = useState('');
 
     useImperativeHandle(ref, () => ({
         getAttendanceData: () => rows,
@@ -114,17 +118,24 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
         }
     }, [rows, onAttendanceChange]);
 
-    // search by name
-    const filteredRows = rows.filter(row =>
-        row.name?.toLowerCase().includes(search.toLowerCase()) ||
-        row.city?.toLowerCase().includes(search.toLowerCase())
-    );
+    // Filter rows based on search query
+    const filteredRows = rows.filter(row => {
+        const searchLower = searchQuery.toLowerCase();
+        return row.name?.toLowerCase().includes(searchLower) ||
+               row.city?.toLowerCase().includes(searchLower);
+    });
 
-    // sort by city or name
+    const handleSort = (property) => {
+        const isAsc = orderBy === property && order === 'asc';
+        setOrder(isAsc ? 'desc' : 'asc');
+        setOrderBy(property);
+    };
+
     const sortedRows = [...filteredRows].sort((a, b) => {
-        const fieldA = sortBy === 'שם' ? a.name : a.city;
-        const fieldB = sortBy === 'שם' ? b.name : b.city;
-        return (fieldA || '').localeCompare(fieldB || '');
+        if (!a[orderBy] || !b[orderBy]) return 0;
+        
+        const comparison = a[orderBy].toLowerCase().localeCompare(b[orderBy].toLowerCase());
+        return order === 'asc' ? comparison : -comparison;
     });
 
     if (error) {
@@ -153,9 +164,72 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                     boxShadow: '0px 0px 4px rgba(0, 0, 0, 0.27)',
                     overflow: 'hidden',
                     border: '1px solid rgb(118, 126, 136)',
+                    display: 'flex',
+                    flexDirection: 'column',
                 }}
             >
-                <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                {/* Search Field - Fixed */}
+                <Box
+                    sx={{
+                        p: 2,
+                        backgroundColor: 'rgba(142, 172, 183, 0.2)',
+                        borderBottom: '1px solid rgba(118, 126, 136, 0.2)',
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 2
+                    }}
+                >
+                    <TextField
+                        fullWidth
+                        placeholder="חיפוש לפי שם או אזור מגורים..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: searchQuery && (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => setSearchQuery('')}
+                                        edge="end"
+                                        sx={{ mr: -0.5 }}
+                                    >
+                                        <ClearIcon fontSize="small" />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                            sx: {
+                                backgroundColor: '#fff',
+                                '&:hover': {
+                                    backgroundColor: '#fff',
+                                },
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: 'rgba(118, 126, 136, 0.2)',
+                                },
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: 'rgba(118, 126, 136, 0.4)',
+                                },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: 'rgba(118, 126, 136, 0.6)',
+                                },
+                            },
+                        }}
+                        sx={{
+                            maxWidth: '400px',
+                            '& .MuiInputBase-root': {
+                                height: '40px',
+                            },
+                        }}
+                    />
+                </Box>
+
+                {/* Table Headers - Fixed */}
                     <Table
                         size="small"
                         sx={{
@@ -164,28 +238,125 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                             width: '100%',
                             tableLayout: 'fixed',
                             '& th, & td': {
-                                py: 1,
+                            py: 0.5,
                                 px: 1,
                                 fontSize: '1rem',
                             },
+                    }}
+                >
+                    <TableHead
+                        sx={{
+                            position: 'sticky',
+                            top: '76px',
+                            backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                            zIndex: 1,
                         }}
                     >
-                        <TableHead>
                             <TableRow>
-                                <TableCell align="right" sx={{ width: '30%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>אזור מגורים</TableCell>
-                                <TableCell align="right" sx={{ width: '30%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>שם</TableCell>
+                            <TableCell 
+                                align="right" 
+                                sx={{ 
+                                    width: '30%', 
+                                    backgroundColor: 'rgba(142, 172, 183, 0.72)', 
+                                    height: '52px', 
+                                    fontSize: '1.1rem', 
+                                    fontWeight: 'bold',
+                                    '& .MuiTableSortLabel-root': {
+                                        '&:hover': {
+                                            color: 'rgba(0, 0, 0, 0.87)',
+                                        },
+                                        '&.MuiTableSortLabel-active': {
+                                            color: 'rgba(0, 0, 0, 0.87)',
+                                            '& .MuiTableSortLabel-icon': {
+                                                color: 'rgba(0, 0, 0, 0.87)',
+                                            },
+                                        },
+                                    },
+                                }}
+                            >
+                                <Tooltip 
+                                    title="מיון לפי אזור מגורים" 
+                                    placement="top"
+                                    arrow
+                                >
+                                    <TableSortLabel
+                                        active={orderBy === 'city'}
+                                        direction={orderBy === 'city' ? order : 'asc'}
+                                        onClick={() => handleSort('city')}
+                                        sx={{
+                                            '& .MuiTableSortLabel-icon': {
+                                                marginRight: '8px',
+                                                marginLeft: '0',
+                                                opacity: 0.7,
+                                                '&:hover': {
+                                                    opacity: 1,
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        אזור מגורים
+                                    </TableSortLabel>
+                                </Tooltip>
+                            </TableCell>
+                            <TableCell 
+                                align="right" 
+                                sx={{ 
+                                    width: '30%', 
+                                    backgroundColor: 'rgba(142, 172, 183, 0.72)', 
+                                    height: '52px', 
+                                    fontSize: '1.1rem', 
+                                    fontWeight: 'bold',
+                                    '& .MuiTableSortLabel-root': {
+                                        '&:hover': {
+                                            color: 'rgba(0, 0, 0, 0.87)',
+                                        },
+                                        '&.MuiTableSortLabel-active': {
+                                            color: 'rgba(0, 0, 0, 0.87)',
+                                            '& .MuiTableSortLabel-icon': {
+                                                color: 'rgba(0, 0, 0, 0.87)',
+                                            },
+                                        },
+                                    },
+                                }}
+                            >
+                                <Tooltip 
+                                    title="מיון לפי שם" 
+                                    placement="top"
+                                    arrow
+                                >
+                                    <TableSortLabel
+                                        active={orderBy === 'name'}
+                                        direction={orderBy === 'name' ? order : 'asc'}
+                                        onClick={() => handleSort('name')}
+                                        sx={{
+                                            '& .MuiTableSortLabel-icon': {
+                                                marginRight: '8px',
+                                                marginLeft: '0',
+                                                opacity: 0.7,
+                                                '&:hover': {
+                                                    opacity: 1,
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        שם
+                                    </TableSortLabel>
+                                </Tooltip>
+                            </TableCell>
                                 <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>נוכח</TableCell>
                                 <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>מטפל</TableCell>
                                 <TableCell align="right" sx={{ width: '20%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>סיבה להיעדרות</TableCell>
                             </TableRow>
                         </TableHead>
                     </Table>
+
+                {/* Table Body - Scrollable */}
                     <TableContainer
                         sx={{
-                            maxHeight: 385,
+                        flexGrow: 1,
                             overflowY: 'auto',
                             direction: 'ltr',
-                            width: '100%',
+                        maxHeight: 'calc(100vh - 340px)', // הקטנתי את גובה הטבלה
                             '&::-webkit-scrollbar': {
                                 width: '8px',
                             },
@@ -210,9 +381,10 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                                 width: '100%',
                                 tableLayout: 'fixed',
                                 '& th, & td': {
-                                    py: 1,
+                                py: 0,
                                     px: 1,
                                     fontSize: '1rem',
+                                height: '40px',
                                 },
                             }}
                         >
@@ -249,36 +421,68 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                                             </TableCell>
                                             <TableCell align="right" sx={{ width: '20%' }}>
                                                 {profile.attended ? (
-                                                    <Box sx={{ height: 44 }} />
+                                                <Box sx={{ height: 40 }} />
                                                 ) : (
                                                     <TextField
                                                         select
-                                                        label={profile.reason ? "" : "סיבה להיעדרות"}
-                                                        InputLabelProps={{ shrink: true }}
+                                                    placeholder="בחר סיבה"
                                                         variant="standard"
                                                         value={profile.reason}
                                                         onChange={(e) => handleReasonChange(profile.id, e.target.value)}
                                                         fullWidth
+                                                    SelectProps={{
+                                                        displayEmpty: true,
+                                                        renderValue: (value) => value || "בחר סיבה",
+                                                        MenuProps: {
+                                                            disableScrollLock: true,
+                                                            PaperProps: {
+                                                                style: {
+                                                                    maxHeight: 250
+                                                                }
+                                                            }
+                                                        }
+                                                    }}
                                                         sx={{
                                                             fontSize: '0.8rem',
-                                                            minHeight: '44px',
+                                                        height: '36px',
                                                             '& .MuiInputBase-root': {
-                                                                height: '28px',
-                                                                fontSize: '0.8rem',
-                                                                paddingTop: profile.reason ? '20px' : undefined,
+                                                            height: '40px',
+                                                            fontSize: '0.9rem',
+                                                            '&:before': {
+                                                                borderBottomColor: 'rgba(0, 0, 0, 0.2)',
                                                             },
-                                                            '& .MuiInputLabel-root': {
-                                                                fontSize: '0.7rem',
+                                                            '&:hover:not(.Mui-disabled):before': {
+                                                                borderBottomColor: 'rgba(0, 0, 0, 0.4)',
+                                                            },
+                                                            '&.Mui-focused:after': {
+                                                                borderBottomColor: 'rgba(0, 0, 0, 0.6)',
+                                                            }
                                                             },
                                                             '& .MuiSelect-select': {
                                                                 paddingTop: '4px',
-                                                                paddingBottom: '2px',
-                                                                fontSize: '0.8rem',
+                                                            paddingBottom: '4px',
+                                                            color: profile.reason ? 'rgba(0, 0, 0, 0.87)' : 'rgba(0, 0, 0, 0.4)',
                                                             },
                                                         }}
                                                     >
                                                         {reasonOptions.map((option) => (
-                                                            <MenuItem key={option} value={option}>
+                                                            <MenuItem 
+                                                                key={option} 
+                                                                value={option}
+                                                                sx={{
+                                                                    fontSize: '0.9rem',
+                                                                    minHeight: '35px',
+                                                                    '&:hover': {
+                                                                        backgroundColor: 'rgba(142, 172, 183, 0.1)',
+                                                                    },
+                                                                    '&.Mui-selected': {
+                                                                        backgroundColor: 'rgba(142, 172, 183, 0.2)',
+                                                                        '&:hover': {
+                                                                            backgroundColor: 'rgba(142, 172, 183, 0.3)',
+                                                                        }
+                                                                    }
+                                                                }}
+                                                            >
                                                                 {option}
                                                             </MenuItem>
                                                         ))}
@@ -291,8 +495,7 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                             </TableBody>
                         </Table>
                     </TableContainer>
-                </Box>
             </Paper>
-        </Box >
+        </Box>
     );
 });

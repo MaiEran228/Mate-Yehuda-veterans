@@ -11,8 +11,6 @@ import { useNavigate } from 'react-router-dom';
 import { saveAttendanceForDate, fetchAllProfiles, fetchAttendanceByDate } from '../firebase'; // יבוא הפונקציה החדשה
 
 function Home({ onLogout }) {
-    const [search, setSearch] = useState('');
-    const [sortBy, setSortBy] = useState('אזור מגורים'); // או אזור מגורים וכו'
     const [attendanceCount, setAttendanceCount] = useState(0);
     const [showReport, setShowReport] = useState(false);
     const [reportData, setReportData] = useState([]);
@@ -112,87 +110,30 @@ function Home({ onLogout }) {
     const absentMembers = reportData.filter(person => !person.attended);
 
     return (
-        <>
+        <Box sx={{ 
+            height: '100vh', 
+            display: 'flex', 
+            flexDirection: 'column',
+            overflow: 'hidden' // מונע גלילה בכלל
+        }}>
             <Header onLogout={onLogout} />
             
-            {/* Main Container - Full Width */}
+            {/* Static Content Container */}
             <Box sx={{ 
-                width: '100%', 
+                flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center'
+                padding: '16px 0',
+                overflow: 'hidden' // מונע גלילה
             }}>
-                {/* Search Bar */}
-                <Box sx={{
-                    width: '95%',
-                    maxWidth: '1800px',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: 2,
-                    mb: 2
-                }}>
-                    <TextField
-                        label="מיון לפי"
-                        select
-                        SelectProps={{ native: true }}
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        size="small"
-                        sx={{
-                            width: 200,
-                            '& .MuiOutlinedInput-root': {
-                                height: 36,
-                                fontSize: '0.8rem',
-                                color: 'rgb(85, 105, 125)',
-                                '& fieldset': { borderWidth: 2, borderColor: 'rgba(64, 99, 112, 0.72)' },
-                                '&:hover fieldset, &.Mui-focused fieldset': { borderWidth: 2, borderColor: '#7b8f99' }
-                            },
-                            '& .MuiInputLabel-root': {
-                                fontSize: '0.75rem',
-                                top: '-6px',
-                                color: 'rgb(85, 105, 125)',
-                                '&.Mui-focused': { color: '#7b8f99' }
-                            }
-                        }}
-                    >
-                        <option value="שם">שם</option>
-                        <option value="אזור מגורים">אזור מגורים</option>
-                    </TextField>
-
-                    <TextField
-                        label="חיפוש"
-                        variant="outlined"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        size="small"
-                        sx={{
-                            width: 280,
-                            '& .MuiOutlinedInput-root': {
-                                height: 36,
-                                fontSize: '0.8rem',
-                                color: 'rgb(85, 105, 125)',
-                                '& fieldset': { borderWidth: 2, borderColor: 'rgba(64, 99, 112, 0.72)' },
-                                '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
-                            },
-                            '& .MuiInputLabel-root': {
-                                fontSize: '0.75rem',
-                                top: '-6px',
-                                color: 'rgb(85, 105, 125)',
-                                '&.Mui-focused': { color: '#7b8f99' }
-                            }
-                        }}
-                    />
-                </Box>
-
                 {/* Header Section with Date and Buttons */}
                 <Box sx={{ 
                     width: '95%',
                     maxWidth: '1800px',
+                    margin: '0 auto 24px auto', // מרווח קבוע מהטבלה
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    mb: 2
                 }}>
                     {/* Date Display - Right Side */}
                     <Box sx={{ 
@@ -292,21 +233,21 @@ function Home({ onLogout }) {
                     </Box>
                 </Box>
 
-                {/* Table Section - Full Width */}
+                {/* Table Section - Static Position */}
                 <Box sx={{ 
                     width: '95%',
-                    maxWidth: '1800px'
+                    maxWidth: '1800px',
+                    margin: '0 auto',
+                    flex: 1
                 }}>
                     <AttendanceTable
                         ref={attendanceRef}
-                        search={search}
-                        sortBy={sortBy}
                         onAttendanceChange={handleAttendanceUpdate}
                     />
                 </Box>
             </Box>
 
-            {/* Dialog for notifications */}
+            {/* Dialog */}
             <Dialog
                 open={dialog.open}
                 onClose={handleDialogClose}
@@ -357,7 +298,7 @@ function Home({ onLogout }) {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </>
+        </Box>
     );
 }
 export default Home;

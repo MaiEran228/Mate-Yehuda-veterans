@@ -400,6 +400,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
               >
                 <MenuItem value="מונית">מונית</MenuItem>
                 <MenuItem value="מיניבוס">מיניבוס</MenuItem>
+                <MenuItem value="פרטי">פרטי</MenuItem>
                 <MenuItem value="אחר">אחר</MenuItem>
               </TextField>
             </Box>
@@ -413,7 +414,13 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                     control={
                       <Checkbox
                         checked={initialProfile.arrivalDays?.includes(day) || false}
-                        onChange={handleFieldChange(day)}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          const updatedDays = isChecked
+                            ? [...(initialProfile.arrivalDays || []), day]
+                            : (initialProfile.arrivalDays || []).filter(d => d !== day);
+                          handleChange("arrivalDays")({ target: { value: updatedDays } });
+                        }}
                       />
                     }
                     label={day}
