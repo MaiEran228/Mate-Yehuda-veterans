@@ -13,9 +13,21 @@ const hours = [
 ];
 
 const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
-const CELLS_PER_DAY_ROWS = 5;
-const CELLS_PER_DAY_COLS = 2;
+const CELLS_PER_DAY_ROWS = 10;
+const CELLS_PER_DAY_COLS = 1;
 const CELLS_PER_DAY = CELLS_PER_DAY_ROWS * CELLS_PER_DAY_COLS;
+
+// פונקציה שמחזירה צבע לפי מיקום
+const getLocationColor = (location) => {
+  const loc = (location || '').trim().replace(/\s+/g, '').toLowerCase();
+  if (loc.includes('הרצאות')) return 'rgba(173, 203, 228, 0.88)'; // כחול
+  if (loc.includes('לובי')) return 'rgba(181, 227, 202, 0.8)'; // ירוק
+  if (loc.includes('אומנות') || loc.includes('אמנות')) return 'rgba(228, 201, 138, 0.93)'; // צהוב
+  if (loc.includes('תעסוקה')) return 'rgba(209, 177, 202, 0.77)'; // ורוד
+  if (loc.includes('מדרש')) return 'rgba(211, 147, 147, 0.89)'; // אדום
+  if (loc.includes('פיזותרפיה')) return 'rgba(199, 196, 187, 0.88)'; // אפור בהיר
+  return '#rgba(199, 196, 187, 0.88)'; // לבן
+};
 
 const SchedulePage = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -47,10 +59,11 @@ const SchedulePage = () => {
     <Box
       sx={{
         direction: 'rtl',
-        width: '100%',
-        height: '100vh',
+        width: '94vw',
+        height: '150vh',
         bgcolor: '#ebf1f5',
-        p: 2,
+        p: 0,
+        m: 0,
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
@@ -95,6 +108,8 @@ const SchedulePage = () => {
         display: 'flex', 
         flex: 1,
         gap: '4px',
+        width: '95vm',
+        m: 0,
       }}>
         {days.map((day) => (
           <Box
@@ -114,7 +129,7 @@ const SchedulePage = () => {
                 py: 0.5,
                 width: '100%',
                 textAlign: 'center',
-                fontSize: '1.1rem',
+                fontSize: '1.25rem',
                 fontWeight: 'bold',
                 borderBottom: '1px solid #ddd',
                 mb: 1,
@@ -150,7 +165,7 @@ const SchedulePage = () => {
                           display: 'flex',
                           flexDirection: 'column',
                           justifyContent: 'center',
-                          bgcolor: '#f7fafc',
+                          bgcolor: getLocationColor(value.location),
                           minHeight: 0,
                         }}
                       >
@@ -163,8 +178,8 @@ const SchedulePage = () => {
                               placeholder="פעילות"
                               value={value.activity}
                               onChange={(e) => handleChange(key, 'activity', e.target.value)}
-                              sx={{ mb: 0.3 }}
-                              inputProps={{ style: { fontSize: '0.8rem' } }}
+                              sx={{ mb: 0.3, fontSize: '1.1rem', color: 'black' }}
+                              inputProps={{ style: { fontSize: '1.1rem', color: 'black' } }}
                             />
                             <TextField
                               fullWidth
@@ -173,8 +188,8 @@ const SchedulePage = () => {
                               placeholder="שם מדריך"
                               value={value.instructor}
                               onChange={(e) => handleChange(key, 'instructor', e.target.value)}
-                              sx={{ mb: 0.3 }}
-                              inputProps={{ style: { fontSize: '0.8rem' } }}
+                              sx={{ mb: 0.3, fontSize: '1.05rem', color: 'black' }}
+                              inputProps={{ style: { fontSize: '1rem', color: 'black' } }}
                             />
                             <TextField
                               fullWidth
@@ -183,8 +198,8 @@ const SchedulePage = () => {
                               placeholder="מיקום"
                               value={value.location}
                               onChange={(e) => handleChange(key, 'location', e.target.value)}
-                              sx={{ mb: 0.3 }}
-                              inputProps={{ style: { fontSize: '0.8rem' } }}
+                              sx={{ mb: 0.3, fontSize: '1.05rem', color: 'black' }}
+                              inputProps={{ style: { fontSize: '1rem', color: 'black' } }}
                             />
                             <TextField
                               fullWidth
@@ -193,21 +208,21 @@ const SchedulePage = () => {
                               placeholder="שעה"
                               value={value.time}
                               onChange={(e) => handleChange(key, 'time', e.target.value)}
-                              inputProps={{ style: { fontSize: '0.8rem' } }}
+                              inputProps={{ style: { fontSize: '1rem', color: 'black' } }}
                             />
                           </>
                         ) : (
                           <Box sx={{ textAlign: 'center' }}>
-                            <Typography fontWeight="bold" fontSize="0.85rem">
+                            <Typography fontWeight="bold" fontSize="1.2rem" sx={{ color: 'black' }}>
                               {value.activity}
                             </Typography>
-                            <Typography fontSize="0.8rem" color="text.secondary">
+                            <Typography fontSize="1rem" color="text.secondary" sx={{ color: 'black' }}>
                               {value.instructor}
                             </Typography>
-                            <Typography fontSize="0.8rem" color="text.secondary">
+                            <Typography fontSize="1rem" sx={{ color: 'black', fontWeight: 'bold' }}>
                               {value.location}
                             </Typography>
-                            <Typography fontSize="0.8rem" color="text.secondary">
+                            <Typography fontSize="1rem" color="text.secondary" sx={{ color: 'black' }}>
                               {value.time}
                             </Typography>
                           </Box>
