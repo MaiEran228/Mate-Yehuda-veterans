@@ -1,9 +1,12 @@
 import {
   TextField, MenuItem, Checkbox, FormControlLabel, Typography, Box, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, Select, InputLabel, FormControl
+  Dialog, DialogTitle, DialogContent, DialogActions, Select, InputLabel, FormControl, Avatar
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { findMatchingTransports, addPassengerToTransport, getPassengerTransport, removePassengerFromTransports } from '../utils/transportUtils';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
 const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
@@ -19,6 +22,8 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   });
   const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
   const [errors, setErrors] = useState({});
+  const [imagePreview, setImagePreview] = useState(initialProfile.profileImage || null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // בודק אם השדות הרלוונטיים להסעה השתנו
   const hasTransportFieldsChanged = () => {
@@ -208,6 +213,35 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     handleChange(field)(e);
   };
 
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Preview the image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      setIsUploading(true);
+      // Create a reference to the storage location with a unique filename
+      const uniqueFileName = `${Date.now()}-${file.name}`;
+      const storageRef = ref(storage, `profile-images/${uniqueFileName}`);
+      // Upload the file
+      const snapshot = await uploadBytes(storageRef, file);
+      // Get the download URL
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      // Update profile image in initialProfile
+      handleChange('profileImage')({ target: { value: downloadURL } });
+      setIsUploading(false);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setIsUploading(false);
+    }
+  };
+
   return (
     <>
       <Dialog
@@ -233,6 +267,39 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, position: 'relative', mb: 2 }}>
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="edit-profile-image-upload"
+                type="file"
+                onChange={handleImageUpload}
+              />
+              <label htmlFor="edit-profile-image-upload">
+                <Avatar
+                  src={imagePreview || initialProfile.profileImage}
+                  sx={{
+                    width: 120,
+                    height: 120,
+                    bgcolor: 'grey.200',
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.8 }
+                  }}
+                >
+                  {!imagePreview && !initialProfile.profileImage && <AddPhotoAlternateIcon sx={{ fontSize: 40 }} />}
+                </Avatar>
+              </label>
+              {isUploading && (
+                <Typography variant="body2" color="text.secondary">
+                  מעלה תמונה...
+                </Typography>
+              )}
+              {!imagePreview && !isUploading && !initialProfile.profileImage && (
+                <Typography variant="body2" color="text.secondary">
+                  העלאת תמונת פרופיל
+                </Typography>
+              )}
+            </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
               <TextField
                 fullWidth

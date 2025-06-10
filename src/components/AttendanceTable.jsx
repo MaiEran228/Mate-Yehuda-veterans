@@ -253,16 +253,19 @@ export default forwardRef(function AttendanceTable({ search, sortBy, onAttendanc
                                                 ) : (
                                                     <TextField
                                                         select
-                                                        label="סיבה להיעדרות"
+                                                        label={profile.reason ? "" : "סיבה להיעדרות"}
+                                                        InputLabelProps={{ shrink: true }}
                                                         variant="standard"
                                                         value={profile.reason}
                                                         onChange={(e) => handleReasonChange(profile.id, e.target.value)}
                                                         fullWidth
                                                         sx={{
                                                             fontSize: '0.8rem',
+                                                            minHeight: '44px',
                                                             '& .MuiInputBase-root': {
                                                                 height: '28px',
                                                                 fontSize: '0.8rem',
+                                                                paddingTop: profile.reason ? '20px' : undefined,
                                                             },
                                                             '& .MuiInputLabel-root': {
                                                                 fontSize: '0.7rem',
