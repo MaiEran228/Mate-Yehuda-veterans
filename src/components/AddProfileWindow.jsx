@@ -179,40 +179,45 @@ function AddProfileWindow({ open, onClose, onSave }) {
 
             console.log('Saving profile with data:', profileToSave); // For debugging
 
-            const transports = await findMatchingTransports(
-                profileToSave.arrivalDays,
-                profileToSave.city,
-                profileToSave.transport,
-                profileToSave.hasCaregiver
-            );
-
-            if (transports.length === 0) {
-                setTransportMessage({
-                    type: 'warning',
-                    text: 'לא נמצאה הסעה מתאימה. יש להוסיף הסעה חדשה.'
-                });
-                await onSave(profileToSave);
-            } else if (transports.length === 1) {
-                await addPassengerToTransport(transports[0].id, {
-                    id: profileToSave.id,
-                    name: profileToSave.name,
-                    phone: profileToSave.phone,
-                    city: profileToSave.city,
-                    hasCaregiver: profileToSave.hasCaregiver,
-                    arrivalDays: profileToSave.arrivalDays,
-                    profileImage: profileToSave.profileImage // Make sure to include the image URL here too
-                });
-
-                const successMessage = `${profileToSave.name} שובץ להסעה מספר ${transports[0].serialNumber} - ${transports[0].cities.join(' -> ')}`;
-                setSuccessDialog({ open: true, message: successMessage });
+            if (profileToSave.transport === 'פרטי') {
                 await onSave(profileToSave);
                 setFormData(initialFormData);
                 setErrors({});
                 setImagePreview(null);
             } else {
-                setMatchingTransports(transports);
-                setShowTransportDialog(true);
-                return;
+                const transports = await findMatchingTransports(
+                    profileToSave.arrivalDays,
+                    profileToSave.city,
+                    profileToSave.transport,
+                    profileToSave.hasCaregiver
+                );
+                if (transports.length === 0) {
+                    setTransportMessage({
+                        type: 'warning',
+                        text: 'לא נמצאה הסעה מתאימה. יש להוסיף הסעה חדשה.'
+                    });
+                    await onSave(profileToSave);
+                } else if (transports.length === 1) {
+                    await addPassengerToTransport(transports[0].id, {
+                        id: profileToSave.id,
+                        name: profileToSave.name,
+                        phone: profileToSave.phone,
+                        city: profileToSave.city,
+                        hasCaregiver: profileToSave.hasCaregiver,
+                        arrivalDays: profileToSave.arrivalDays,
+                        profileImage: profileToSave.profileImage // Make sure to include the image URL here too
+                    });
+                    const successMessage = `${profileToSave.name} שובץ להסעה מספר ${transports[0].serialNumber} - ${transports[0].cities.join(' -> ')}`;
+                    setSuccessDialog({ open: true, message: successMessage });
+                    await onSave(profileToSave);
+                    setFormData(initialFormData);
+                    setErrors({});
+                    setImagePreview(null);
+                } else {
+                    setMatchingTransports(transports);
+                    setShowTransportDialog(true);
+                    return;
+                }
             }
         } catch (error) {
             console.error('Error saving profile:', error);
@@ -473,25 +478,34 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 sx={{ maxWidth: "170px" }}
                             />
 
-                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                                <InputLabel>הסעה</InputLabel>
+                            <FormControl fullWidth sx={{ maxWidth: "170px" }} error={!!errors.transport} required>
+                                <InputLabel required error={!!errors.transport}>הסעה</InputLabel>
                                 <Select
                                     name="transport"
                                     value={formData.transport}
                                     onChange={handleChange}
+                                    required
+                                    error={!!errors.transport}
+                                    label="הסעה"
                                 >
                                     <MenuItem value="מונית">מונית</MenuItem>
                                     <MenuItem value="מיניבוס">מיניבוס</MenuItem>
                                     <MenuItem value="פרטי">פרטי</MenuItem>
                                     <MenuItem value="אחר">אחר</MenuItem>
                                 </Select>
+                                {errors.transport && (
+                                    <Typography variant="caption" color="error">{errors.transport}</Typography>
+                                )}
                             </FormControl>
                         </Box>
 
                         {/* ימי הגעה בשורה נפרדת */}
                         <Box sx={{ mt: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap' }}>ימי הגעה:</Typography>
+                                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
+                                    ימי הגעה:
+                                    <span style={{ color: 'black', marginRight: 2 }}>*</span>
+                                </Typography>
                                 {["ראשון", "שני", "שלישי", "רביעי", "חמישי"].map((day) => (
                                     <FormControlLabel
                                         key={day}
@@ -507,11 +521,15 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                                         return { ...prev, arrivalDays: newDays };
                                                     });
                                                 }}
+                                                required
                                             />
                                         }
                                         label={day}
                                     />
                                 ))}
+                                {errors.arrivalDays && (
+                                    <Typography variant="caption" color="error">{errors.arrivalDays}</Typography>
+                                )}
                             </Box>
                         </Box>
 

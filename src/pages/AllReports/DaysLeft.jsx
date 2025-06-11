@@ -4,6 +4,7 @@ import { Typography, CircularProgress, Box, Paper, Button, Container, TextField,
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useNavigate } from 'react-router-dom';
 
 const getMonthDates = (month, year) => {
   const dates = [];
@@ -21,6 +22,7 @@ const DaysLeft = () => {
   const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'));
   const [summary, setSummary] = useState({ present: 0, absent: 0, total: 0 });
   const [extraOpen, setExtraOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMonthData = async () => {
@@ -49,17 +51,21 @@ const DaysLeft = () => {
 
   // For each person, check if missed any required day
   const people = profiles.map(profile => {
-    const eligible = Array.isArray(profile.arrivalDays) ? profile.arrivalDays.length * 4 : 0;
-    const attendedCount = attendanceData.filter(p => p.id === profile.id && p.attended).length;
-    // Build all dates in month for this person's arrivalDays
+    // Calculate number of weeks in the month
     const [year, month] = selectedMonth.split('-');
-    const monthDates = getMonthDates(month, year);
+    const firstDay = dayjs(`${year}-${month}-01`);
+    const lastDay = firstDay.endOf('month');
+    const numDays = lastDay.date();
+    const numWeeks = Math.ceil((firstDay.day() + numDays) / 7);
+    // Eligible days = arrivalDays.length * numWeeks
+    const eligible = Array.isArray(profile.arrivalDays) ? profile.arrivalDays.length * numWeeks : 0;
+    const attendedCount = attendanceData.filter(p => p.id === profile.id && p.attended).length;
     let missed = false;
     if (Array.isArray(profile.arrivalDays) && profile.arrivalDays.length > 0) {
+      const monthDates = getMonthDates(month, year);
       for (const dateStr of monthDates) {
-        const weekday = dayjs(dateStr).format('dddd'); // e.g. 'ראשון'
+        const weekday = dayjs(dateStr).format('dddd');
         if (profile.arrivalDays.includes(weekday)) {
-          // Was he marked attended on this date?
           const attended = attendanceData.some(p => p.id === profile.id && p.date === dateStr && p.attended);
           if (!attended) {
             missed = true;
@@ -94,7 +100,7 @@ const DaysLeft = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 0.5 }}>
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <TextField
             label="בחר חודש"
             type="month"
@@ -104,6 +110,14 @@ const DaysLeft = () => {
             sx={{ ml: 2, minWidth: 140 }}
             InputLabelProps={{ shrink: true }}
           />
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => navigate('/Reports')}
+            sx={{ ml: 2 }}
+          >
+            חזור
+          </Button>
           <Button variant="contained" onClick={handleExportPDF} sx={{ ml: 2 }}>
             ייצוא ל־PDF
           </Button>

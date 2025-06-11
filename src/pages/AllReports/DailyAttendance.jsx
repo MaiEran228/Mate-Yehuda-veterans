@@ -5,8 +5,9 @@ import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
 import ExportPDFButton from '../../components/ExportPDFButton'; // ודאי שהנתיב נכון
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 
 const DailyAttendance = () => {
@@ -103,7 +104,6 @@ const DailyAttendance = () => {
               const imgProps = pdf.getImageProperties(imgData);
               const pdfWidth = pdf.internal.pageSize.getWidth();
               const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
               pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
               pdf.save(`דוח נוכחות - ${todayFormatted}.pdf`);
             });
