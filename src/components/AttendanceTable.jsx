@@ -8,6 +8,14 @@ import dayjs from 'dayjs';
 
 const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל', 'שיפוי', 'טיפול בית'];
 
+const dayMap = {
+  'ראשון': 'א',
+  'שני': 'ב',
+  'שלישי': 'ג',
+  'רביעי': 'ד',
+  'חמישי': 'ה',
+};
+
 // קומפוננטה לשורה עם Skeleton loading
 const SkeletonRow = () => (
     <TableRow>
@@ -62,6 +70,7 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                             ...attendance,
                             name: profile.name,
                             city: profile.city,
+                            arrivalDays: profile.arrivalDays,
                         };
                     }
                     return attendance;
@@ -387,6 +396,7 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                                     </TableSortLabel>
                                 </Tooltip>
                             </TableCell>
+                            <TableCell align="right" sx={{ width: '12%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>ימי הגעה</TableCell>
                                 <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>נוכח</TableCell>
                                 <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>מטפל</TableCell>
                                 <TableCell align="right" sx={{ width: '20%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>סיבה להיעדרות</TableCell>
@@ -442,6 +452,9 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                                         <TableRow key={profile.id}>
                                             <TableCell align="right" sx={{ width: '30%' }}>{profile.city}</TableCell>
                                             <TableCell align="right" sx={{ width: '30%' }}>{profile.name}</TableCell>
+                                            <TableCell align="right" sx={{ width: '12%' }}>
+                                                {profile.arrivalDays && profile.arrivalDays.length > 0 ? profile.arrivalDays.map(day => dayMap[day] || day).join(', ') : ''}
+                                            </TableCell>
                                             <TableCell align="right" sx={{ width: '10%' }}>
                                                 <Checkbox
                                                     checked={profile.attended}

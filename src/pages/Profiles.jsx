@@ -53,8 +53,8 @@ function Profiles() {
       const data = await fetchAllProfiles();
       setProfiles(data);
       
-      // עדכון הפרופיל הנבחר כדי שהחלון יציג את הנתונים החדשים
-      setSelectedProfile(updatedProfile);
+      // סגירת החלון
+      setSelectedProfile(null);
     } catch (error) {
       console.error('Error updating profile:', error);
     }

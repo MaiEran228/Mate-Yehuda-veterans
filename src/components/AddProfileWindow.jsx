@@ -179,6 +179,15 @@ function AddProfileWindow({ open, onClose, onSave }) {
 
             console.log('Saving profile with data:', profileToSave); // For debugging
 
+            if (profileToSave.transport === 'פרטי') {
+                await onSave(profileToSave);
+                setFormData(initialFormData);
+                setErrors({});
+                setImagePreview(null);
+                onClose();
+                return;
+            }
+
             const transports = await findMatchingTransports(
                 profileToSave.arrivalDays,
                 profileToSave.city,
@@ -209,6 +218,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 setFormData(initialFormData);
                 setErrors({});
                 setImagePreview(null);
+                onClose();
             } else {
                 setMatchingTransports(transports);
                 setShowTransportDialog(true);
@@ -241,6 +251,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
             setFormData(initialFormData);
             setErrors({});
             setShowTransportDialog(false);
+            onClose();
         } catch (error) {
             console.error('Error assigning to transport:', error);
             setTransportMessage({
@@ -509,7 +520,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 InputProps={{ notched: false }}
                             />
 
-                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
+                            <FormControl fullWidth sx={{ maxWidth: "170px" }} error={!!errors.transport}>
                                 <Select
                                     name="transport"
                                     value={formData.transport}
@@ -530,13 +541,14 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                     <MenuItem value="פרטי">פרטי</MenuItem>
                                     <MenuItem value="אחר">אחר</MenuItem>
                                 </Select>
+                                {errors.transport && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
                             </FormControl>
                         </Box>
 
                         {/* ימי הגעה בשורה נפרדת */}
                         <Box sx={{ mt: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap' }}>ימי הגעה:</Typography>
+                                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', color: errors.arrivalDays ? 'error.main' : undefined }}>ימי הגעה:</Typography>
                                 {["ראשון", "שני", "שלישי", "רביעי", "חמישי"].map((day) => (
                                     <FormControlLabel
                                         key={day}
@@ -552,12 +564,14 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                                         return { ...prev, arrivalDays: newDays };
                                                     });
                                                 }}
+                                                sx={errors.arrivalDays ? { color: 'error.main' } : {}}
                                             />
                                         }
                                         label={day}
                                     />
                                 ))}
                             </Box>
+                            {errors.arrivalDays && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
                         </Box>
 
                         {/* שדות נוספים */}

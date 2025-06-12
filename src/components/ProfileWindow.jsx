@@ -11,7 +11,15 @@ import EditIcon from '@mui/icons-material/Edit';
 import EditProfileWindow from "./EditProfileWindow";
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
-const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
+const DAYS = ["'א", "'ב", "'ג", "'ד", "'ה"];
+
+const dayMap = {
+  'ראשון': 'א',
+  'שני': 'ב',
+  'שלישי': 'ג',
+  'רביעי': 'ד',
+  'חמישי': 'ה',
+};
 
 function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelete }) {
     if (!initialProfile) return null;
@@ -59,6 +67,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                 await onSave(updatedProfile);
             }
             setIsEditing(false);
+            onClose(); // Close the window after successful save
         } catch (error) {
             console.error('Error saving profile:', error);
             alert('שגיאה בשמירת הפרופיל');
@@ -231,7 +240,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                             </Typography>
                             <Typography sx={{ my: 0 }}>
                                 <Box component="span" fontWeight="bold" fontSize="1.1rem">ימי הגעה: </Box>
-                                <Box component="span">{profile.arrivalDays?.join(", ") || "לא צוינו"}</Box>
+                                <Box component="span">{profile.arrivalDays && profile.arrivalDays.length > 0 ? profile.arrivalDays.map(day => dayMap[day] || day).join(", ") : "לא צוינו"}</Box>
                             </Typography>
                             
                             <Typography sx={{ my: 0 }}>
