@@ -4,9 +4,10 @@ import { transportService } from '../firebase';
 import ProfileCard from '../components/ProfileCard';
 import ProfileWindow from '../components/ProfileWindow';
 import AddProfileWindow from '../components/AddProfileWindow';
-import { Grid, Typography, Button, TextField, Box, AppBar, Toolbar } from '@mui/material';
+import { Grid, Typography, Button, TextField, Box, AppBar, Toolbar, IconButton } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
 import SearchIcon from '@mui/icons-material/Search';
+import CloseIcon from '@mui/icons-material/Close';
 
 function Profiles() {
   const [profiles, setProfiles] = useState([]);
@@ -115,6 +116,20 @@ function Profiles() {
                 <InputAdornment position="start">
                   <SearchIcon sx={{ ml: 0.5 }} />
                 </InputAdornment>
+              ),
+              endAdornment: (
+                searchTerm && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => setSearchTerm('')}
+                      edge="end"
+                      aria-label="נקה חיפוש"
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  </InputAdornment>
+                )
               )
             }}
             sx={{ 

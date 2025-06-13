@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { fetchAttendanceByDate } from '../../firebase';
+import { fetchAttendanceByDate, fetchAllProfiles } from '../../firebase';
 import { Typography, CircularProgress, Box, Paper, Button, Container } from '@mui/material';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -8,11 +8,13 @@ import * as XLSX from 'xlsx';
 
 const AbsencePeople = () => {
   const [attendanceData, setAttendanceData] = useState(null);
+  const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const reportRef = useRef();
 
   const today = dayjs().format('YYYY-MM-DD');
   const todayFormatted = dayjs().format('DD/MM/YYYY');
+  const todayWeekday = dayjs().format('dddd');
   const location = useLocation();
   const navigate = useNavigate();
   const from = location.state?.from;
@@ -26,14 +28,17 @@ const AbsencePeople = () => {
   };
 
   useEffect(() => {
-    const loadAttendance = async () => {
+    const loadData = async () => {
       setLoading(true);
-      const data = await fetchAttendanceByDate(today);
-      setAttendanceData(data);
+      const [attendance, allProfiles] = await Promise.all([
+        fetchAttendanceByDate(today),
+        fetchAllProfiles()
+      ]);
+      setAttendanceData(attendance);
+      setProfiles(allProfiles);
       setLoading(false);
     };
-
-    loadAttendance();
+    loadData();
   }, [today]);
 
   if (loading) return <CircularProgress sx={{ m: 4 }} />;
@@ -45,9 +50,13 @@ const AbsencePeople = () => {
     );
   }
 
-  const absentMembers = attendanceData.attendanceList
-    .filter(p => !p.attended)
-    .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+  // מצא את מי שהיו אמורים להגיע היום
+  const supposedToArrive = profiles.filter(p => Array.isArray(p.arrivalDays) && p.arrivalDays.includes(todayWeekday));
+  // מצא את מי שלא הגיע מתוך אלו שהיו אמורים להגיע
+  const absentMembers = supposedToArrive.filter(profile => {
+    const attendance = attendanceData.attendanceList.find(a => a.id === profile.id);
+    return !attendance || attendance.attended === false;
+  }).sort((a, b) => (a.city || '').localeCompare(b.city || ''));
 
   return (
     <Container maxWidth="lg" sx={{ mt: 0.5 }}>

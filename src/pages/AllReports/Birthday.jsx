@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAllProfiles } from '../../firebase';
-import { Typography, CircularProgress, Box, Paper, Button, Container } from '@mui/material';
+import { Typography, CircularProgress, Box, Paper, Button, Container, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/he';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ExportPDFButton from '../../components/ExportPDFButton';
 import CakeIcon from '@mui/icons-material/Cake';
+import * as XLSX from 'xlsx';
 
 // הגדרת השפה העברית
 dayjs.locale('he');
@@ -17,6 +18,7 @@ const Birthday = () => {
   const navigate = useNavigate();
   const from = location.state?.from;
   const todayFormatted = dayjs().format('DD/MM/YYYY');
+  const [selectedMonth, setSelectedMonth] = useState('all');
 
   const handleBack = () => {
     if (from === 'home') {
@@ -60,6 +62,11 @@ const Birthday = () => {
     return acc;
   }, {});
 
+  // סינון לפי חודש נבחר
+  const filteredProfilesByMonth = selectedMonth === 'all'
+    ? profilesByMonth
+    : { [selectedMonth]: profilesByMonth[selectedMonth] || [] };
+
   const hebrewMonths = [
     'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
     'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
@@ -88,6 +95,46 @@ const Birthday = () => {
           targetId="reportContent"
           fileName={`דוח ימי הולדת - ${todayFormatted}.pdf`}
         />
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            const columns = ['שם', 'תאריך לידה', 'גיל'];
+            const excelData = sortedProfiles
+              .filter(profile => profile.birthDate)
+              .map(profile => {
+                const birthDate = dayjs(profile.birthDate);
+                const age = dayjs().diff(birthDate, 'year');
+                return {
+                  'שם': profile.name,
+                  'תאריך לידה': birthDate.format('DD/MM/YYYY'),
+                  'גיל': age
+                };
+              });
+            const ws = XLSX.utils.json_to_sheet(excelData, { header: columns });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'ימי הולדת');
+            XLSX.writeFile(wb, `דוח ימי הולדת - ${todayFormatted}.xlsx`);
+          }}
+          sx={{ ml: 2 }}
+        >
+          ייצוא ל־Excel
+        </Button>
+        <FormControl size="small" sx={{ minWidth: 120, ml: 2 }}>
+          <InputLabel id="month-select-label">חודש</InputLabel>
+          <Select
+            labelId="month-select-label"
+            value={selectedMonth}
+            label="חודש"
+            onChange={e => setSelectedMonth(e.target.value)}
+          >
+            <MenuItem value="all">הכל</MenuItem>
+            {hebrewMonths.map((month, idx) => (
+              <MenuItem key={idx+1} value={(idx+1).toString()}>{month}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       <div id="reportContent" dir="rtl">
@@ -125,7 +172,7 @@ const Birthday = () => {
           </Box>
 
           {/* רשימת ימי הולדת לפי חודשים */}
-          {Object.entries(profilesByMonth)
+          {Object.entries(filteredProfilesByMonth)
             .sort(([a], [b]) => Number(a) - Number(b))
             .map(([monthNum, monthProfiles]) => (
               <Box 
@@ -173,11 +220,16 @@ const Birthday = () => {
                           {profile.name}
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
-                          תאריך: {dayjs(profile.birthDate).format('DD/MM')}
+                          {profile.birthDate ? (() => {
+                            const birthDate = dayjs(profile.birthDate);
+                            return `תאריך לידה: ${birthDate.format('DD/MM/YYYY')}`;
+                          })() : 'תאריך לידה לא צוין'}
                         </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          יישוב: {profile.city || 'לא צוין'}
-                        </Typography>
+                        {profile.birthDate && (
+                          <Typography variant="body2" color="textSecondary">
+                            {`גיל: ${dayjs().diff(dayjs(profile.birthDate), 'year')}`}
+                          </Typography>
+                        )}
                       </Box>
                     </Paper>
                   ))}

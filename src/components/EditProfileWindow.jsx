@@ -405,28 +405,32 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
               </TextField>
             </Box>
 
-            <Box sx={{ mt: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap' }}>ימי הגעה:</Typography>
-                {DAYS.map((day) => (
-                  <FormControlLabel
-                    key={day}
-                    control={
-                      <Checkbox
-                        checked={initialProfile.arrivalDays?.includes(day) || false}
-                        onChange={(e) => {
-                          const isChecked = e.target.checked;
-                          const updatedDays = isChecked
-                            ? [...(initialProfile.arrivalDays || []), day]
-                            : (initialProfile.arrivalDays || []).filter(d => d !== day);
-                          handleChange("arrivalDays")({ target: { value: updatedDays } });
-                        }}
-                      />
-                    }
-                    label={day}
-                  />
-                ))}
-              </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+              <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap' }}>ימי הגעה:</Typography>
+              {[
+                { label: 'א', value: 'ראשון' },
+                { label: 'ב', value: 'שני' },
+                { label: 'ג', value: 'שלישי' },
+                { label: 'ד', value: 'רביעי' },
+                { label: 'ה', value: 'חמישי' }
+              ].map(({ label, value }) => (
+                <FormControlLabel
+                  key={value}
+                  control={
+                    <Checkbox
+                      checked={initialProfile.arrivalDays?.includes(value) || false}
+                      onChange={() => {
+                        const isSelected = initialProfile.arrivalDays?.includes(value);
+                        const updatedDays = isSelected
+                          ? initialProfile.arrivalDays.filter((d) => d !== value)
+                          : [...(initialProfile.arrivalDays || []), value];
+                        handleChange("arrivalDays")({ target: { value: updatedDays } });
+                      }}
+                    />
+                  }
+                  label={label}
+                />
+              ))}
             </Box>
 
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>

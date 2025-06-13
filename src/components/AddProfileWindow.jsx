@@ -549,25 +549,31 @@ function AddProfileWindow({ open, onClose, onSave }) {
                         <Box sx={{ mt: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', color: errors.arrivalDays ? 'error.main' : undefined }}>ימי הגעה:</Typography>
-                                {["ראשון", "שני", "שלישי", "רביעי", "חמישי"].map((day) => (
+                                {[
+                                    { label: 'א', value: 'ראשון' },
+                                    { label: 'ב', value: 'שני' },
+                                    { label: 'ג', value: 'שלישי' },
+                                    { label: 'ד', value: 'רביעי' },
+                                    { label: 'ה', value: 'חמישי' }
+                                ].map(({ label, value }) => (
                                     <FormControlLabel
-                                        key={day}
+                                        key={value}
                                         control={
                                             <Checkbox
-                                                checked={formData.arrivalDays.includes(day)}
+                                                checked={formData.arrivalDays.includes(value)}
                                                 onChange={() => {
                                                     setFormData((prev) => {
-                                                        const isSelected = prev.arrivalDays.includes(day);
+                                                        const isSelected = prev.arrivalDays.includes(value);
                                                         const newDays = isSelected
-                                                            ? prev.arrivalDays.filter((d) => d !== day)
-                                                            : [...prev.arrivalDays, day];
+                                                            ? prev.arrivalDays.filter((d) => d !== value)
+                                                            : [...prev.arrivalDays, value];
                                                         return { ...prev, arrivalDays: newDays };
                                                     });
                                                 }}
                                                 sx={errors.arrivalDays ? { color: 'error.main' } : {}}
                                             />
                                         }
-                                        label={day}
+                                        label={label}
                                     />
                                 ))}
                             </Box>
