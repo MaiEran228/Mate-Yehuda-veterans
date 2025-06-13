@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
+import { Box, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, InputAdornment, IconButton, Autocomplete } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import CloseIcon from '@mui/icons-material/Close';
 import TransportTable from '../components/TransportTable';
 import AddTransportDialog from '../components/AddTransportDialog';
 import EditTransportDialog from '../components/EditTransportDialog';
@@ -11,6 +13,7 @@ function Transport() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('');
+  const [availableCities, setAvailableCities] = useState([]);
   
   // Dialog states
   const [addDialog, setAddDialog] = useState(false);
@@ -23,6 +26,9 @@ function Transport() {
     const unsubscribe = transportService.subscribeToTransports(
       (transportList) => {
         setData(transportList);
+        // מחלץ את כל היישובים הייחודיים מהנתונים
+        const cities = [...new Set(transportList.flatMap(transport => transport.cities || []))];
+        setAvailableCities(cities);
         if (loading) setLoading(false);
       },
       (error) => {
@@ -106,33 +112,80 @@ function Transport() {
         p: 3,
         position: 'sticky',
         top: 0,
-        backgroundColor: 'white',
         zIndex: 1,
-        borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+        mb: 6
       }}>
-        <TextField
-          label="חיפוש לפי יישוב"
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          size="small"
-          sx={{ 
-            width: 280,
-            '& .MuiOutlinedInput-root': {
-              height: 36,
-              fontSize: '0.9rem',
-              color: 'rgb(85, 105, 125)',
-              '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
-              '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
-            },
-            '& .MuiInputLabel-root': {
-              fontSize: '0.85rem',
-              top: '-6px',
-              color: 'rgb(85, 105, 125)',
-              '&.Mui-focused': { color: '#7b8f99' }
-            }
-          }}
-        />
+        <Box sx={{ width: 300 }}>
+          <Autocomplete
+            freeSolo
+            options={availableCities}
+            value={searchTerm}
+            onChange={(event, newValue) => setSearchTerm(newValue || '')}
+            onInputChange={(event, newValue) => setSearchTerm(newValue)}
+            filterOptions={(options, state) => {
+              const inputValue = state.inputValue.toLowerCase();
+              return options.filter(option => 
+                option.toLowerCase().startsWith(inputValue)
+              );
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="חיפוש לפי יישוב"
+                variant="outlined"
+                size="small"
+                dir="rtl"
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <InputAdornment position="start" sx={{ position: 'absolute', right: 0, zIndex: 1 }}>
+                      <SearchIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchTerm && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setSearchTerm('')}
+                        edge="end"
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    paddingRight: '40px !important'
+                  }
+                }}
+                sx={{ 
+                  width: 280,
+                  '& .MuiOutlinedInput-root': {
+                    height: 36,
+                    fontSize: '0.9rem',
+                    color: 'rgb(85, 105, 125)',
+                    '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
+                    '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
+                  }
+                }}
+              />
+            )}
+            sx={{
+              width: 280,
+              '& .MuiAutocomplete-listbox': {
+                backgroundColor: 'white',
+                border: '1px solid rgba(0, 0, 0, 0.12)',
+                borderRadius: '4px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                '& .MuiAutocomplete-option': {
+                  padding: '8px 16px',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                  }
+                }
+              }
+            }}
+          />
+        </Box>
 
         <TextField
           label="מיון לפי"
@@ -141,6 +194,20 @@ function Transport() {
           value={sortField}
           onChange={(e) => setSortField(e.target.value)}
           size="small"
+          InputProps={{ notched: false }}
+          InputLabelProps={{
+            shrink: true,
+            sx: {
+              right: 24,
+              left: 'unset',
+              textAlign: 'right',
+              transformOrigin: 'top right',
+              direction: 'rtl',
+              backgroundColor: '#f5f5f5',
+              px: 1,
+              color: 'rgb(82, 103, 125)'
+            }
+          }}
           sx={{
             width: 200,
             '& .MuiOutlinedInput-root': {
@@ -152,7 +219,6 @@ function Transport() {
             },
             '& .MuiInputLabel-root': {
               fontSize: '0.85rem',
-              top: '-6px',
               color: 'rgb(85, 105, 125)',
               '&.Mui-focused': { color: '#7b8f99' }
             }

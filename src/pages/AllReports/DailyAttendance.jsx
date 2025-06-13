@@ -4,10 +4,9 @@ import { Typography, CircularProgress, Box, Paper, Button, Container, TextField,
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
-import ExportPDFButton from '../../components/ExportPDFButton'; // ודאי שהנתיב נכון
+import ExportPDFButton from '../../components/ExportPDFButton'; // הגירסה הראשונה - עם תמונות
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-
 
 const DailyAttendance = () => {
   const [attendanceData, setAttendanceData] = useState(null);
@@ -75,42 +74,29 @@ const DailyAttendance = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 0.5 }}>
 
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-        <Button 
-          variant="outlined" 
-          color="primary" 
-          onClick={handleBack} 
-          sx={{
-            ml: 2,
-            '&:focus': {
-              outline: 'none'
-            },
-            '&:active': {
-              outline: 'none'
-            }
-          }}
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={handleBack}
+          sx={{ ml: 2 }}
         >
           חזור
         </Button>
+        <TextField
+          label="תאריך"
+          type="date"
+          size="small"
+          value={selectedDate}
+          onChange={e => setSelectedDate(e.target.value)}
+          sx={{ ml: 2, minWidth: 140 }}
+          InputLabelProps={{ shrink: true }}
+        />
 
+        {/* הגירסה הישנה - עם תמונות (משופרת) */}
         <ExportPDFButton
           targetId="reportContent"
           fileName={`דוח נוכחות - ${todayFormatted}.pdf`}
-        />
-
-        <TextField
-          label="בחר תאריך"
-          type="date"
-          size="small"
-          value={inputDate}
-          onChange={e => setInputDate(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              setSelectedDate(inputDate);
-            }
-          }}
-          sx={{ ml: 2, minWidth: 140 }}
-          InputLabelProps={{ shrink: true }}
         />
       </Box>
 
@@ -119,11 +105,26 @@ const DailyAttendance = () => {
           width: '210mm', // A4 width
           margin: '0 auto',
           p: 4,
-          outline: 'none'
+          outline: 'none',
+          // הוספת סגנונות לשיפור הדפסה
+          '@media print': {
+            width: '100%',
+            margin: 0,
+            boxShadow: 'none',
+            border: 'none'
+          }
         }}>
 
           {/* כותרת */}
-          <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px solid #1976d2', pb: 2 }}>
+          <Box className="header-section" sx={{ 
+            textAlign: 'center', 
+            mb: 4, 
+            borderBottom: '2px solid #1976d2', 
+            pb: 2,
+            '@media print': {
+              pageBreakInside: 'avoid'
+            }
+          }}>
             <Typography variant="h4" color="primary" gutterBottom>
               דוח נוכחות יומי
             </Typography>
@@ -133,13 +134,17 @@ const DailyAttendance = () => {
           </Box>
 
           {/* סיכום כללי */}
-          <Box sx={{
+          <Box className="summary-section" sx={{
             display: 'flex',
             justifyContent: 'space-around',
             mb: 4,
             p: 2,
             backgroundColor: '#f5f5f5',
-            borderRadius: 1
+            borderRadius: 1,
+            '@media print': {
+              backgroundColor: '#f9f9f9',
+              pageBreakInside: 'avoid'
+            }
           }}>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h5" color="success.main">
@@ -162,8 +167,14 @@ const DailyAttendance = () => {
           </Box>
 
           {/* רשימת נוכחים */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" color="success.main" gutterBottom sx={{ borderBottom: '1px solid #4caf50', pb: 1 }}>
+          <Box className="present-section" sx={{ mb: 4 }}>
+            <Typography variant="h6" color="success.main" gutterBottom sx={{ 
+              borderBottom: '1px solid #4caf50', 
+              pb: 1,
+              '@media print': {
+                pageBreakAfter: 'avoid'
+              }
+            }}>
               רשימת נוכחים ({presentMembers.length})
             </Typography>
             {presentMembers.length > 0 ? (
@@ -181,7 +192,11 @@ const DailyAttendance = () => {
                     p: 1.5, 
                     backgroundColor: '#e8f5e8', 
                     borderRadius: 1,
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    '@media print': {
+                      pageBreakInside: 'avoid',
+                      backgroundColor: '#f0f8f0'
+                    }
                   }}>
                     <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: 'inherit' }}>
                       {index + 1}. {person.name}
@@ -203,8 +218,14 @@ const DailyAttendance = () => {
           </Box>
 
           {/* רשימת נעדרים */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" color="error.main" gutterBottom sx={{ borderBottom: '1px solid #f44336', pb: 1 }}>
+          <Box className="absent-section" sx={{ mb: 4 }}>
+            <Typography variant="h6" color="error.main" gutterBottom sx={{ 
+              borderBottom: '1px solid #f44336', 
+              pb: 1,
+              '@media print': {
+                pageBreakAfter: 'avoid'
+              }
+            }}>
               רשימת נעדרים ({absentMembers.length})
             </Typography>
             {absentMembers.length > 0 ? (
@@ -222,7 +243,11 @@ const DailyAttendance = () => {
                     p: 1.5, 
                     backgroundColor: '#ffebee', 
                     borderRadius: 1,
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    '@media print': {
+                      pageBreakInside: 'avoid',
+                      backgroundColor: '#fdf0f0'
+                    }
                   }}>
                     <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: 'inherit' }}>
                       {index + 1}. {person.name}
@@ -244,7 +269,7 @@ const DailyAttendance = () => {
           </Box>
 
           {/* חתימה */}
-          <Box sx={{ 
+          <Box className="footer-section" sx={{ 
             mt: 4, 
             pt: 2, 
             borderTop: '1px solid #e0e0e0', 

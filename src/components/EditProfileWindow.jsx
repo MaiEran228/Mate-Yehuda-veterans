@@ -7,6 +7,7 @@ import { findMatchingTransports, addPassengerToTransport, getPassengerTransport,
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
+import { useNavigate } from 'react-router-dom';
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
 const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
@@ -24,6 +25,8 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   const [errors, setErrors] = useState({});
   const [imagePreview, setImagePreview] = useState(initialProfile.profileImage || null);
   const [isUploading, setIsUploading] = useState(false);
+  const [noTransportDialogOpen, setNoTransportDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   // בודק אם השדות הרלוונטיים להסעה השתנו
   const hasTransportFieldsChanged = () => {
@@ -78,7 +81,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       );
 
       if (matchingTransports.length === 0) {
-        alert('לא נמצאו הסעות מתאימות. יש להוסיף הסעה חדשה.');
+        setNoTransportDialogOpen(true);
       } else if (matchingTransports.length === 1) {
         const transport = matchingTransports[0];
         await addPassengerToTransport(transport.id, {
@@ -615,6 +618,38 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         <DialogActions>
           <Button onClick={() => setSuccessDialog({ open: false, message: '' })}>
             סגור
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* דיאלוג הודעה על חוסר הסעה */}
+      <Dialog
+        open={noTransportDialogOpen}
+        onClose={() => { setNoTransportDialogOpen(false); handleCancelEdit(); }}
+        dir="rtl"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          לא נמצאה הסעה מתאימה
+          <Button onClick={() => { setNoTransportDialogOpen(false); handleCancelEdit(); }} sx={{ minWidth: 0, p: 0, color: 'grey.700' }}>×</Button>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Typography>
+            לא נמצאה הסעה מתאימה. יש להוסיף הסעה חדשה.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setNoTransportDialogOpen(false);
+              handleCancelEdit();
+              navigate('/Transport');
+            }}
+            variant="contained"
+            color="primary"
+          >
+            מעבר לדף ההסעות
           </Button>
         </DialogActions>
       </Dialog>
