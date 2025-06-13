@@ -5,9 +5,8 @@ import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
 import ExportPDFButton from '../../components/ExportPDFButton'; // ודאי שהנתיב נכון
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 
 const DailyAttendance = () => {
@@ -94,32 +93,10 @@ const DailyAttendance = () => {
           חזור
         </Button>
 
-        <Button
-          variant="contained"
-          onClick={() => {
-            const input = document.getElementById('reportContent');
-            html2canvas(input).then(canvas => {
-              const imgData = canvas.toDataURL('image/png');
-              const pdf = new jsPDF('p', 'mm', 'a4');
-              const imgProps = pdf.getImageProperties(imgData);
-              const pdfWidth = pdf.internal.pageSize.getWidth();
-              const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-              pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-              pdf.save(`דוח נוכחות - ${todayFormatted}.pdf`);
-            });
-          }}
-          sx={{
-            ml: 2,
-            '&:focus': {
-              outline: 'none'
-            },
-            '&:active': {
-              outline: 'none'
-            }
-          }}
-        >
-          ייצוא ל־PDF
-        </Button>
+        <ExportPDFButton
+          targetId="reportContent"
+          fileName={`דוח נוכחות - ${todayFormatted}.pdf`}
+        />
 
         <TextField
           label="בחר תאריך"
@@ -137,12 +114,10 @@ const DailyAttendance = () => {
         />
       </Box>
 
-      <div id="reportContent">{/* תוכן הדוח להדפסה */}
+      <div id="reportContent">
         <Paper sx={{
-          width: '900px',
-          maxWidth: '800px',
-          maxHeight: '90%',
-          overflow: 'auto',
+          width: '210mm', // A4 width
+          margin: '0 auto',
           p: 4,
           outline: 'none'
         }}>
@@ -192,16 +167,29 @@ const DailyAttendance = () => {
               רשימת נוכחים ({presentMembers.length})
             </Typography>
             {presentMembers.length > 0 ? (
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 1, mt: 2 }}>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+                gap: 1.5,
+                mt: 2,
+                '@media print': {
+                  pageBreakInside: 'avoid'
+                }
+              }}>
                 {presentMembers.map((person, index) => (
-                  <Box key={person.id} sx={{ p: 1, backgroundColor: '#e8f5e8', borderRadius: 1 }}>
-                    <Typography variant="body2">
-                      <strong>{index + 1}. {person.name}</strong>
+                  <Box key={person.id} sx={{ 
+                    p: 1.5, 
+                    backgroundColor: '#e8f5e8', 
+                    borderRadius: 1,
+                    fontSize: '0.9rem'
+                  }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: 'inherit' }}>
+                      {index + 1}. {person.name}
                     </Typography>
-                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>
+                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
                       יישוב: {person.city}
                     </Typography>
-                    <Typography variant="caption" color="textSecondary" sx={{ mt: 0, display: 'block' }}>
+                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
                       מטפל: {person.caregiver}
                     </Typography>
                   </Box>
@@ -220,16 +208,29 @@ const DailyAttendance = () => {
               רשימת נעדרים ({absentMembers.length})
             </Typography>
             {absentMembers.length > 0 ? (
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 1, mt: 2 }}>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+                gap: 1.5,
+                mt: 2,
+                '@media print': {
+                  pageBreakInside: 'avoid'
+                }
+              }}>
                 {absentMembers.map((person, index) => (
-                  <Box key={person.id} sx={{ p: 1, backgroundColor: '#ffebee', borderRadius: 1 }}>
-                    <Typography variant="body2">
-                      <strong>{index + 1}. {person.name}</strong>
+                  <Box key={person.id} sx={{ 
+                    p: 1.5, 
+                    backgroundColor: '#ffebee', 
+                    borderRadius: 1,
+                    fontSize: '0.9rem'
+                  }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: 'inherit' }}>
+                      {index + 1}. {person.name}
                     </Typography>
-                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>
+                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
                       יישוב: {person.city}
                     </Typography>
-                    <Typography variant="caption" color="textSecondary" sx={{ mt: 0, display: 'block' }}>
+                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
                       סיבת היעדרות: {person.reason || ''}
                     </Typography>
                   </Box>
@@ -243,12 +244,19 @@ const DailyAttendance = () => {
           </Box>
 
           {/* חתימה */}
-          <Box sx={{ mt: 4, pt: 2, borderTop: '1px solid #e0e0e0', textAlign: 'center' }}>
+          <Box sx={{ 
+            mt: 4, 
+            pt: 2, 
+            borderTop: '1px solid #e0e0e0', 
+            textAlign: 'center',
+            '@media print': {
+              pageBreakInside: 'avoid'
+            }
+          }}>
             <Typography variant="caption" color="textSecondary">
               דוח נוצר ב-{dayjs().format('DD/MM/YYYY HH:mm')} | מעון יום לותיקים
             </Typography>
           </Box>
-
 
         </Paper>
       </div>

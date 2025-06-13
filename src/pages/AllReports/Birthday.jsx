@@ -1,167 +1,205 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { fetchAllProfiles } from '../../firebase';
+import { Typography, CircularProgress, Box, Paper, Button, Container } from '@mui/material';
 import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
-import jsPDF from 'jspdf';
 import 'dayjs/locale/he';
-import { Card, CardContent, Typography, Button, Box, Container, Divider } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
+import ExportPDFButton from '../../components/ExportPDFButton';
 import CakeIcon from '@mui/icons-material/Cake';
-import { useNavigate } from 'react-router-dom';
 
-dayjs.extend(isBetween);
+// הגדרת השפה העברית
 dayjs.locale('he');
 
 const Birthday = () => {
-  const [birthdays, setBirthdays] = useState([]);
+  const [profiles, setProfiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
   const navigate = useNavigate();
+  const from = location.state?.from;
+  const todayFormatted = dayjs().format('DD/MM/YYYY');
 
-  // הגדרת רקע תכלת לכל המסך
-  useEffect(() => {
-    document.body.style.backgroundColor = '#ebf1f5';
-    return () => {
-      document.body.style.backgroundColor = '';
-    };
-  }, []);
-
-  useEffect(() => {
-    const fetchBirthdays = async () => {
-      const today = dayjs();
-      const currentMonth = today.month() + 1; // +1 because dayjs months are 0-based
-      const querySnapshot = await getDocs(collection(db, 'profiles'));
-      const monthBirthdays = [];
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (!data.birthDate || !data.name) return;
-
-        const birthdate = dayjs(data.birthDate);
-        const birthMonth = birthdate.month() + 1; // +1 because dayjs months are 0-based
-
-        if (birthMonth === currentMonth) {
-          monthBirthdays.push({
-            name: data.name,
-            fullBirthdate: birthdate.format('DD/MM/YYYY'),
-            displayDate: birthdate.format('DD/MM'),
-            day: birthdate.date() // הוספת יום החודש למיון
-          });
-        }
-      });
-
-      // מיון לפי יום בחודש
-      monthBirthdays.sort((a, b) => a.day - b.day);
-
-      setBirthdays(monthBirthdays);
-    };
-
-    fetchBirthdays();
-  }, []);
-
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.setFont('helvetica');
-    doc.setFontSize(16);
-    doc.text('ימי הולדת בחודש הנוכחי:', 20, 20);
-    birthdays.forEach((person, index) => {
-      doc.text(`${index + 1}. ${person.name} - ${person.fullBirthdate}`, 20, 30 + index * 10);
-    });
-    doc.save('birthday-report.pdf');
+  const handleBack = () => {
+    if (from === 'home') {
+      navigate('/');
+    } else {
+      navigate('/Reports');
+    }
   };
+
+  useEffect(() => {
+    const loadProfiles = async () => {
+      setLoading(true);
+      const data = await fetchAllProfiles();
+      setProfiles(data);
+      setLoading(false);
+    };
+
+    loadProfiles();
+  }, []);
+
+  if (loading) return <CircularProgress sx={{ m: 4 }} />;
+
+  // מיון הפרופילים לפי חודש ויום
+  const sortedProfiles = [...profiles].sort((a, b) => {
+    if (!a.birthDate || !b.birthDate) return 0;
+    const dateA = dayjs(a.birthDate);
+    const dateB = dayjs(b.birthDate);
+    return dateA.month() - dateB.month() || dateA.date() - dateB.date();
+  });
+
+  // ארגון הפרופילים לפי חודשים
+  const profilesByMonth = sortedProfiles.reduce((acc, profile) => {
+    if (profile.birthDate) {
+      const birthDate = dayjs(profile.birthDate);
+      const monthKey = birthDate.format('M');
+      if (!acc[monthKey]) {
+        acc[monthKey] = [];
+      }
+      acc[monthKey].push(profile);
+    }
+    return acc;
+  }, {});
+
+  const hebrewMonths = [
+    'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+  ];
 
   return (
     <Container maxWidth="lg" sx={{ mt: 0.5 }}>
-      <Box sx={{ mb: 1 }}>
-        <Button variant="outlined" color="primary" onClick={() => navigate('/Reports')}>
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+        <Button 
+          variant="outlined" 
+          onClick={handleBack}
+          sx={{ 
+            ml: 2,
+            '&:focus': {
+              outline: 'none'
+            },
+            '&:active': {
+              outline: 'none'
+            }
+          }}
+        >
           חזור
         </Button>
-        <Button variant="contained" onClick={exportToPDF} sx={{ mb: 0.2, mr: 5 }}>
-          ייצוא ל־PDF
-        </Button>
+
+        <ExportPDFButton
+          targetId="reportContent"
+          fileName={`דוח ימי הולדת - ${todayFormatted}.pdf`}
+        />
       </Box>
-      <div style={{ 
-        textAlign: 'center', 
-        marginTop: '20px', 
-        minHeight: '100vh', 
-        padding: '40px',
-        border: '1px solid rgba(142, 172, 183, 0.3)',
-        borderRadius: '16px',
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-        maxWidth: '1400px',
-        margin: '20px auto'
-      }}>
-        <Typography variant="h4" gutterBottom sx={{ 
-          color: 'rgba(64, 99, 112, 0.85)',
-          fontWeight: 'bold',
-          textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-          mb: 2
+
+      <div id="reportContent" dir="rtl">
+        <Paper sx={{
+          width: '210mm',
+          margin: '0 auto',
+          p: 4,
+          outline: 'none'
         }}>
-          רשימת ימי הולדת החודש
-        </Typography>
-        <Box sx={{ 
-          width: '100%',
-          height: '2px',
-          backgroundColor: 'rgba(64, 99, 112, 0.85)',
-          margin: '0 auto 32px auto',
-          borderRadius: '2px'
-        }} />
-        {birthdays.length === 0 ? (
-          <Typography variant="h6" sx={{ color: 'text.secondary' }}>אין ימי הולדת בחודש זה.</Typography>
-        ) : (
-          <div style={{ 
-            maxWidth: '1200px', 
-            margin: 'auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '20px',
-            padding: '0 20px',
-            justifyContent: 'center'
+          {/* כותרת */}
+          <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px solid #1976d2', pb: 2 }}>
+            <Typography variant="h4" color="primary" gutterBottom>
+              דוח ימי הולדת שנתי
+            </Typography>
+            <Typography variant="h6" color="textSecondary">
+              נוצר בתאריך: {todayFormatted}
+            </Typography>
+          </Box>
+
+          {/* סיכום */}
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-around',
+            mb: 4,
+            p: 2,
+            backgroundColor: '#e3f2fd',
+            borderRadius: 1
           }}>
-            {birthdays.map((person, index) => (
-              <Card 
-                key={index} 
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h5" color="primary">
+                {profiles.filter(p => p.birthDate).length}
+              </Typography>
+              <Typography variant="body2">סה"כ ימי הולדת</Typography>
+            </Box>
+          </Box>
+
+          {/* רשימת ימי הולדת לפי חודשים */}
+          {Object.entries(profilesByMonth)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([monthNum, monthProfiles]) => (
+              <Box 
+                key={monthNum} 
                 sx={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  borderRadius: '12px',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 3px 10px rgba(0,0,0,0.12)'
+                  mb: 4,
+                  '@media print': {
+                    pageBreakInside: 'avoid'
                   }
                 }}
               >
-                <CardContent sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
-                  padding: '20px'
+                <Typography 
+                  variant="h6" 
+                  color="primary" 
+                  gutterBottom 
+                  sx={{ 
+                    borderBottom: '1px solid #1976d2',
+                    pb: 1,
+                    mb: 2
+                  }}
+                >
+                  {hebrewMonths[Number(monthNum) - 1]} ({monthProfiles.length})
+                </Typography>
+                <Box sx={{ 
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                  gap: 2
                 }}>
-                  <div style={{ textAlign: 'right', flex: 1 }}>
-                    <Typography variant="h5" sx={{ 
-                      color: 'rgba(64, 99, 112, 0.9)',
-                      fontWeight: 'bold',
-                      mb: 1
-                    }}>
-                      {person.name}
-                    </Typography>
-                    <Typography sx={{ 
-                      color: 'text.secondary',
-                      fontSize: '1.1rem'
-                    }}>
-                      תאריך לידה: {person.fullBirthdate}
-                    </Typography>
-                  </div>
-                  <CakeIcon sx={{ 
-                    fontSize: 45,
-                    color: 'rgba(142, 172, 183, 0.9)',
-                    ml: 3
-                  }} />
-                </CardContent>
-              </Card>
+                  {monthProfiles.map((profile) => (
+                    <Paper
+                      key={profile.id}
+                      elevation={1}
+                      sx={{
+                        p: 2,
+                        backgroundColor: '#e3f2fd',
+                        borderRadius: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2
+                      }}
+                    >
+                      <CakeIcon sx={{ color: '#1976d2', fontSize: 32 }} />
+                      <Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                          {profile.name}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          תאריך: {dayjs(profile.birthDate).format('DD/MM')}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          יישוב: {profile.city || 'לא צוין'}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+              </Box>
             ))}
-          </div>
-        )}
+
+          {/* חתימה */}
+          <Box sx={{ 
+            mt: 4,
+            pt: 2,
+            borderTop: '1px solid #e0e0e0',
+            textAlign: 'center',
+            '@media print': {
+              pageBreakInside: 'avoid'
+            }
+          }}>
+            <Typography variant="caption" color="textSecondary">
+              דוח נוצר ב-{dayjs().format('DD/MM/YYYY HH:mm')} | מעון יום לותיקים
+            </Typography>
+          </Box>
+        </Paper>
       </div>
     </Container>
   );

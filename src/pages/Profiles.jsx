@@ -4,7 +4,9 @@ import { transportService } from '../firebase';
 import ProfileCard from '../components/ProfileCard';
 import ProfileWindow from '../components/ProfileWindow';
 import AddProfileWindow from '../components/AddProfileWindow';
-import { Grid, Typography, Button, TextField, Box } from '@mui/material';
+import { Grid, Typography, Button, TextField, Box, AppBar, Toolbar } from '@mui/material';
+import InputAdornment from '@mui/material/InputAdornment';
+import SearchIcon from '@mui/icons-material/Search';
 
 function Profiles() {
   const [profiles, setProfiles] = useState([]);
@@ -51,69 +53,107 @@ function Profiles() {
       const data = await fetchAllProfiles();
       setProfiles(data);
       
-      // עדכון הפרופיל הנבחר כדי שהחלון יציג את הנתונים החדשים
-      setSelectedProfile(updatedProfile);
+      // סגירת החלון
+      setSelectedProfile(null);
     } catch (error) {
       console.error('Error updating profile:', error);
     }
   };
 
   // סינון לפי שם או יישוב
-  const filteredProfiles = profiles.filter(profile => {
-    const term = searchTerm.toLowerCase();
-    return (
-      profile.name?.toLowerCase().includes(term) ||
-      profile.city?.toLowerCase().includes(term)
-    );
-  });
+  const filteredProfiles = profiles
+    .filter(profile => {
+      const term = searchTerm.toLowerCase();
+      return (
+        profile.name?.toLowerCase().includes(term) ||
+        profile.city?.toLowerCase().includes(term)
+      );
+    })
+    .sort((a, b) => {
+      // מיון לפי הא"ב בעברית
+      return a.name.localeCompare(b.name, 'he');
+    });
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* חלק עליון - חיפוש וכפתור */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 2,
-          mb: 8,
+    <Box sx={{ p: 1.5 }}>
+      <AppBar 
+        position="fixed" 
+        color="transparent" 
+        elevation={0}
+        sx={{ 
+          top: 'auto', 
+          bottom: 'auto',
+          backgroundColor: 'transparent'
         }}
       >
-        <TextField
-          label="חיפוש לפי שם או יישוב"
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          dir="rtl"
-          sx={{ 
-            width: '300px',
-            '& .MuiOutlinedInput-root': {
+        <Toolbar sx={{ 
+          justifyContent: 'flex-start', 
+          minHeight: '64px !important',
+          padding: '0 24px',
+          gap: 2
+        }}>
+          <TextField
+            placeholder="חיפוש לפי שם או יישוב"
+            variant="outlined"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            dir="rtl"
+            inputProps={{
+              style: { textAlign: 'right' }
+            }}
+            InputLabelProps={{
+              sx: {
+                right: 14,
+                left: 'unset',
+                textAlign: 'right',
+                transformOrigin: 'top right',
+                direction: 'rtl'
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ ml: 0.5 }} />
+                </InputAdornment>
+              )
+            }}
+            sx={{ 
+              width: '300px',
+              '& .MuiOutlinedInput-root': {
+                height: 40,
+                fontSize: '0.9rem',
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#888',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: '0.9rem',
+                transform: 'translate(14px, 8px) scale(1)'
+              },
+              '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
+                transform: 'translate(14px, -9px) scale(0.75)'
+              },
+              '& .MuiInputBase-input': {
+                textAlign: 'right'
+              }
+            }}
+          />
+          <Box sx={{ flex: 1 }} />
+          <Button
+            variant="contained"
+            onClick={() => setAddDialogOpen(true)}
+            sx={{ 
               height: 40,
-              fontSize: '0.9rem'
-            },
-            '& .MuiInputLabel-root': {
               fontSize: '0.9rem',
-              transform: 'translate(14px, 8px) scale(1)'
-            },
-            '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
-              transform: 'translate(14px, -9px) scale(0.75)'
-            }
-          }}
-        />
-
-        <Button
-          variant="contained"
-          onClick={() => setAddDialogOpen(true)}
-          sx={{ 
-            height: 40,
-            fontSize: '0.9rem',
-            minWidth: '120px'
-          }}
-        >
-          הוספת פרופיל
-        </Button>
-      </Box>
+              minWidth: '120px',
+              
+            }}
+          >
+            הוספת פרופיל
+          </Button>
+        </Toolbar>
+      </AppBar>
+      <Toolbar sx={{ mb: 12 }} />
 
       {/* אזור הפרופילים */}
       <Box sx={{ 
@@ -121,12 +161,12 @@ function Profiles() {
         '& .MuiGrid-container': {
           margin: 0,
           width: '100%',
-          justifyContent: 'flex-start'
+          justifyContent: 'center'
         }
       }}>
-        <Grid container spacing={1.5}>
+        <Grid container spacing={0.5} rowSpacing={2}>
           {filteredProfiles.map(profile => (
-            <Grid item xs={12} sm={6} md={4} lg={2} key={profile.id}>
+            <Grid item xs={12} sm={6} md={4} lg={1.5} key={profile.id}>
               <ProfileCard
                 profile={profile}
                 onClick={() => setSelectedProfile(profile)}

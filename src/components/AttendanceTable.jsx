@@ -2,9 +2,19 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Check
 import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { fetchAllProfiles, fetchAttendanceByDate } from '../firebase';
+import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { db } from '../firebase';
 import dayjs from 'dayjs';
 
 const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל', 'שיפוי', 'טיפול בית'];
+
+const dayMap = {
+  'ראשון': 'א',
+  'שני': 'ב',
+  'שלישי': 'ג',
+  'רביעי': 'ד',
+  'חמישי': 'ה',
+};
 
 // קומפוננטה לשורה עם Skeleton loading
 const SkeletonRow = () => (
@@ -34,44 +44,87 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState('city');
     const [searchQuery, setSearchQuery] = useState('');
+    const [currentDate] = useState(dayjs().format('YYYY-MM-DD'));
 
     useImperativeHandle(ref, () => ({
         getAttendanceData: () => rows,
     }));
 
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-                const today = dayjs().format('YYYY-MM-DD');
-                const attendanceData = await fetchAttendanceByDate(today);
+            // נסה לטעון קודם את נתוני הנוכחות של היום
+            const attendanceData = await fetchAttendanceByDate(currentDate);
 
-                if (attendanceData && attendanceData.attendanceList?.length) {
-                    // טוען מהנוכחות השמורה
-                    setRows(attendanceData.attendanceList);
-                } else {
-                    // טוען מהפרופילים אם אין נוכחות
-                    const profiles = await fetchAllProfiles();
-                    const dataWithDefaults = profiles.map(profile => ({
-                        ...profile,
+            // טען את כל הפרופילים
+            const profiles = await fetchAllProfiles();
+
+            if (attendanceData && attendanceData.attendanceList?.length) {
+                // מיזוג נתוני הנוכחות עם פרופילים מעודכנים
+                const updatedAttendance = attendanceData.attendanceList.map(attendance => {
+                    const profile = profiles.find(p => p.id === attendance.id);
+                    if (profile) {
+                        return {
+                            ...attendance,
+                            name: profile.name,
+                            city: profile.city,
+                            arrivalDays: profile.arrivalDays,
+                        };
+                    }
+                    return attendance;
+                });
+
+                // הוספת פרופילים חדשים שלא היו בנוכחות
+                const existingIds = updatedAttendance.map(a => a.id);
+                const newProfiles = profiles
+                    .filter(p => !existingIds.includes(p.id))
+                    .map(p => ({
+                        ...p,
                         attended: false,
                         caregiver: false,
                         reason: '',
                     }));
-                    setRows(dataWithDefaults);
-                }
-            } catch (err) {
-                console.error('Error loading data:', err);
-                setError('שגיאה בטעינת הנתונים');
-            } finally {
-                setLoading(false);
-            }
-        };
 
+                setRows([...updatedAttendance, ...newProfiles]);
+            } else {
+                // אם אין נתוני נוכחות, השתמש בפרופילים
+                const dataWithDefaults = profiles.map(profile => ({
+                    ...profile,
+                    attended: false,
+                    caregiver: false,
+                    reason: '',
+                }));
+                setRows(dataWithDefaults);
+            }
+        } catch (err) {
+            console.error('Error loading data:', err);
+            setError('שגיאה בטעינת הנתונים');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         loadData();
-    }, []);
+
+        // האזנה לשינויים בפרופילים
+        const unsubscribeProfiles = onSnapshot(collection(db, 'profiles'), async () => {
+            await loadData();
+        });
+
+        // האזנה לשינויים בנוכחות של היום
+        const unsubscribeAttendance = onSnapshot(doc(db, 'attendance', currentDate), async () => {
+            await loadData();
+        });
+
+        // ניקוי ההאזנות בעת סגירת הקומפוננטה
+        return () => {
+            unsubscribeProfiles();
+            unsubscribeAttendance();
+        };
+    }, [currentDate]);
 
     const handleAttendanceChange = (id, checked) => {
         setRows(prev =>
@@ -343,6 +396,7 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                                     </TableSortLabel>
                                 </Tooltip>
                             </TableCell>
+                            <TableCell align="right" sx={{ width: '12%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>ימי הגעה</TableCell>
                                 <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>נוכח</TableCell>
                                 <TableCell align="right" sx={{ width: '10%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>מטפל</TableCell>
                                 <TableCell align="right" sx={{ width: '20%', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontSize: '1.1rem', fontWeight: 'bold' }}>סיבה להיעדרות</TableCell>
@@ -398,6 +452,9 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                                         <TableRow key={profile.id}>
                                             <TableCell align="right" sx={{ width: '30%' }}>{profile.city}</TableCell>
                                             <TableCell align="right" sx={{ width: '30%' }}>{profile.name}</TableCell>
+                                            <TableCell align="right" sx={{ width: '12%' }}>
+                                                {profile.arrivalDays && profile.arrivalDays.length > 0 ? profile.arrivalDays.map(day => dayMap[day] || day).join(', ') : ''}
+                                            </TableCell>
                                             <TableCell align="right" sx={{ width: '10%' }}>
                                                 <Checkbox
                                                     checked={profile.attended}

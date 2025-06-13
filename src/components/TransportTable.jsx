@@ -9,7 +9,18 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EventSeatIcon from '@mui/icons-material/EventSeat';
+import ErrorIcon from '@mui/icons-material/Error';
 import { calculateAvailableSeatsByDay } from '../utils/transportUtils';
+
+// Mapping from Hebrew days to א-ב-ג
+const dayMap = {
+  'ראשון': 'א',
+  'שני': 'ב',
+  'שלישי': 'ג',
+  'רביעי': 'ד',
+  'חמישי': 'ה',
+};
+const dayOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 
 function TransportTable({ 
   data, 
@@ -43,7 +54,10 @@ function TransportTable({
     .sort((a, b) => {
       if (!sortField) return 0;
       if (sortField === 'days') {
-        return (a.days?.[0] || '') < (b.days?.[0] || '') ? -1 : (a.days?.[0] || '') > (b.days?.[0] || '') ? 1 : 0;
+        // Sort by first day in order
+        const aIdx = dayOrder.indexOf((a.days || [])[0]);
+        const bIdx = dayOrder.indexOf((b.days || [])[0]);
+        return aIdx - bIdx;
       }
       if (sortField === 'cities') {
         return (a.cities?.[0] || '') < (b.cities?.[0] || '') ? -1 : (a.cities?.[0] || '') > (b.cities?.[0] || '') ? 1 : 0;
@@ -68,7 +82,7 @@ function TransportTable({
             <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>יישובים</TableCell>
             <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>מקומות פנויים</TableCell>
             <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>סוג הסעה</TableCell>
-            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>צפייה</TableCell>
+            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>רשימת נוסעים</TableCell>
             <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>פעולה</TableCell>
           </TableRow>
         </TableHead>
@@ -76,6 +90,8 @@ function TransportTable({
           {filteredData.map((row, index) => {
             const availableSeatsByDay = calculateAvailableSeatsByDay(row.type, row.passengers, row.days);
             const hasAvailableSeats = Object.values(availableSeatsByDay).some(seats => seats > 0);
+            // Sort days by order
+            const sortedDays = (row.days || []).slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
 
             return (
               <TableRow key={index}>
@@ -84,8 +100,8 @@ function TransportTable({
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
                   <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
-                    {(row.days || []).map((day, i) => (
-                      <Chip key={i} label={day} size="small" />
+                    {sortedDays.map((day, i) => (
+                      <Chip key={i} label={dayMap[day] || day} size="small" />
                     ))}
                   </Stack>
                 </TableCell>
@@ -105,6 +121,10 @@ function TransportTable({
                       }} />
                     </IconButton>
                   </Tooltip>
+                  {!hasAvailableSeats && (
+                    <Tooltip title="אין מקום פנוי באף יום">
+                    </Tooltip>
+                  )}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>{row.type}</TableCell>
                 <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
@@ -159,7 +179,7 @@ function TransportTable({
             )[day];
             return (
               <Typography key={day} sx={{ mb: 0.5 }}>
-                {day}: {seats} מקומות פנויים
+                {(dayMap[day] || day)}: {seats} מקומות פנויים
               </Typography>
             );
           })}

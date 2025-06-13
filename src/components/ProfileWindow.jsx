@@ -7,10 +7,19 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
+import EditIcon from '@mui/icons-material/Edit';
 import EditProfileWindow from "./EditProfileWindow";
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
-const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
+const DAYS = ["'א", "'ב", "'ג", "'ד", "'ה"];
+
+const dayMap = {
+  'ראשון': 'א',
+  'שני': 'ב',
+  'שלישי': 'ג',
+  'רביעי': 'ד',
+  'חמישי': 'ה',
+};
 
 function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelete }) {
     if (!initialProfile) return null;
@@ -58,6 +67,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                 await onSave(updatedProfile);
             }
             setIsEditing(false);
+            onClose(); // Close the window after successful save
         } catch (error) {
             console.error('Error saving profile:', error);
             alert('שגיאה בשמירת הפרופיל');
@@ -116,16 +126,64 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
             }}
         >
             <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ display: 'flex', gap: 2, position: 'absolute', right: 16, top: 16, 
+                    mt: 1
+                }}>
+                    <Button
+                        onClick={() => setIsEditing(true)}
+                        variant="outlined"
+                        size="small"
+                        sx={{ 
+                            minWidth: '30px',
+                            height: '25px',
+                            fontSize: '0.8rem',
+                            padding: '4px 0px 4px 14px'
+                        }}
+                        startIcon={<EditIcon sx={{ fontSize: '0.9rem', ml: 1 }} />}
+                    >
+                        ערוך
+                    </Button>
+
+                    <Button
+                        onClick={handleDelete}
+                        color="error"
+                        variant="outlined"
+                        size="small"
+                        sx={{ 
+                            minWidth: '50px',
+                            height: '25px',
+                            fontSize: '0.8rem',
+                            padding: '4px 8px'
+                            
+                        }}
+                    >
+                        מחק
+                    </Button>
+                </Box>
+                <Typography 
+                    variant="h4" 
+                    component="div" 
+                    sx={{ 
+                        flexGrow: 1,
+                        fontWeight: 'bold',
+                        fontSize: '2rem',
+                        mb: 2,
+                        mt: 0
+                    }}
+                >
+                    {profile.name}
+                </Typography>
                 <Avatar
                     alt={profile.name}
                     src={profile.imageUrl || ""}
-                    sx={{ width: 130, height: 130 }}
+                    sx={{ 
+                        width: 130, 
+                        height: 130,
+                        mt: 4
+                    }}
                 >
                     {(!profile.imageUrl && profile.name) ? profile.name[0] : ""}
                 </Avatar>
-                <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                    {profile.name}
-                </Typography>
                 <IconButton
                     aria-label="סגור"
                     onClick={onClose}
@@ -139,128 +197,110 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
-            <DialogContent>
-                {!isEditing ? (
-                    <>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">תעודת זהות: </Box>
-                            <Box component="span">{profile.id}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">גיל: </Box>
-                            <Box component="span">{calculateAge(profile.birthDate)}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">תאריך לידה: </Box>
-                            <Box component="span">{profile.birthDate}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">מין: </Box>
-                            <Box component="span">{profile.gender}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">טלפון: </Box>
-                            <Box component="span">{profile.phone}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">טלפון נוסף: </Box>
-                            <Box component="span">{profile.phone2}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">מייל: </Box>
-                            <Box component="span">{profile.email}</Box>
-                        </Typography>
-
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">כתובת: </Box>
-                            <Box component="span">{profile.address}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">יישוב: </Box>
-                            <Box component="span">{profile.city}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">ימי הגעה: </Box>
-                            <Box component="span">{profile.arrivalDays?.join(", ") || "לא צוינו"}</Box>
-                        </Typography>
-                        
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">הסעה: </Box>
-                            <Box component="span">{profile.transport}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">משובץ להסעה: </Box>
-                            <Box
-                                component="span"
-                                sx={{
-                                    color: transportDetails ? 'text.primary' : 'error.main',
-                                    fontWeight: transportDetails ? 'normal' : 'medium'
-                                }}
-                            >
-                                {transportDetails
-                                    ? `מספר ${transportDetails.serialNumber} (${transportDetails.cities.join(' -> ')})`
-                                    : "נדרש לשבץ להסעה"}
-                            </Box>
-                        </Typography>
-                        
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">מטפל: </Box>
-                            <Box component="span">{profile.hasCaregiver ? "כן" : "לא"}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">ניצול שואה: </Box>
-                            <Box component="span">{profile.isHolocaustSurvivor ? "כן" : "לא"}</Box>
-                        </Typography>
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">רמת תפקוד: </Box>
-                            <Box component="span">{profile.functionLevel}</Box>
-                        </Typography>
-                        
-                        
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">זכאות: </Box>
-                            <Box component="span">{profile.eligibility}</Box>
-                        </Typography>
-                        {profile.eligibility === "סיעוד" && (
+            <DialogContent dir="ltr" sx={{ mt: -8 }}>
+                <Box sx={{ direction: 'rtl' }}>
+                    {!isEditing ? (
+                        <>
                             <Typography sx={{ my: 0 }}>
-                                <Box component="span" fontWeight="bold" fontSize="1.1rem">חברת סיעוד: </Box>
-                                <Box component="span">{profile.nursingCompany || "לא צויין"}</Box>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">תעודת זהות: </Box>
+                                <Box component="span">{profile.id}</Box>
                             </Typography>
-                        )}
-                        <Typography sx={{ my: 0 }}>
-                            <Box component="span" fontWeight="bold" fontSize="1.1rem">חבר ב-: </Box>
-                            <Box component="span">{profile.membership}</Box>
-                        </Typography>
-                        
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">גיל: </Box>
+                                <Box component="span">{calculateAge(profile.birthDate)}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">תאריך לידה: </Box>
+                                <Box component="span">{profile.birthDate}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">מין: </Box>
+                                <Box component="span">{profile.gender}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">טלפון: </Box>
+                                <Box component="span">{profile.phone}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">טלפון נוסף: </Box>
+                                <Box component="span">{profile.phone2}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">מייל: </Box>
+                                <Box component="span">{profile.email}</Box>
+                            </Typography>
 
-                        <Box mt={2}>
-                            <Button
-                                onClick={() => setIsEditing(true)}
-                                sx={{ ml: 2 }}
-                                variant="outlined"
-                            >
-                                ערוך
-                            </Button>
-
-                            <Button
-                                onClick={handleDelete}
-                                color="error"
-                                variant="outlined"
-                                sx={{ ml: 2 }}
-                            >
-                                מחק
-                            </Button>
-                        </Box>
-                    </>
-                ) : (
-                    <EditProfileWindow
-                        profile={profile}
-                        handleChange={handleChange}
-                        handleDayChange={handleDayChange}
-                        handleCancelEdit={handleCancelEdit}
-                        handleSave={() => handleSave(profile)}
-                    />
-                )}
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">כתובת: </Box>
+                                <Box component="span">{profile.address}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">יישוב: </Box>
+                                <Box component="span">{profile.city}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">ימי הגעה: </Box>
+                                <Box component="span">{profile.arrivalDays && profile.arrivalDays.length > 0 ? profile.arrivalDays.map(day => dayMap[day] || day).join(", ") : "לא צוינו"}</Box>
+                            </Typography>
+                            
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">הסעה: </Box>
+                                <Box component="span">{profile.transport}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">משובץ להסעה: </Box>
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        color: transportDetails ? 'text.primary' : 'error.main',
+                                        fontWeight: transportDetails ? 'normal' : 'medium'
+                                    }}
+                                >
+                                    {transportDetails
+                                        ? `מספר ${transportDetails.serialNumber} (${transportDetails.cities.join(' -> ')})`
+                                        : "נדרש לשבץ להסעה"}
+                                </Box>
+                            </Typography>
+                            
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">מטפל: </Box>
+                                <Box component="span">{profile.hasCaregiver ? "כן" : "לא"}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">ניצול שואה: </Box>
+                                <Box component="span">{profile.isHolocaustSurvivor ? "כן" : "לא"}</Box>
+                            </Typography>
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">רמת תפקוד: </Box>
+                                <Box component="span">{profile.functionLevel}</Box>
+                            </Typography>
+                            
+                            
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">זכאות: </Box>
+                                <Box component="span">{profile.eligibility}</Box>
+                            </Typography>
+                            {profile.eligibility === "סיעוד" && (
+                                <Typography sx={{ my: 0 }}>
+                                    <Box component="span" fontWeight="bold" fontSize="1.1rem">חברת סיעוד: </Box>
+                                    <Box component="span">{profile.nursingCompany || "לא צויין"}</Box>
+                                </Typography>
+                            )}
+                            <Typography sx={{ my: 0 }}>
+                                <Box component="span" fontWeight="bold" fontSize="1.1rem">חבר ב-: </Box>
+                                <Box component="span">{profile.membership}</Box>
+                            </Typography>
+                        </>
+                    ) : (
+                        <EditProfileWindow
+                            profile={profile}
+                            handleChange={handleChange}
+                            handleDayChange={handleDayChange}
+                            handleCancelEdit={handleCancelEdit}
+                            handleSave={() => handleSave(profile)}
+                        />
+                    )}
+                </Box>
             </DialogContent>
         </Dialog>
     );

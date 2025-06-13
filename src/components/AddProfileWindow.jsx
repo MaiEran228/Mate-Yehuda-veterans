@@ -184,40 +184,45 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 setFormData(initialFormData);
                 setErrors({});
                 setImagePreview(null);
+                onClose();
+                return;
+            }
+
+            const transports = await findMatchingTransports(
+                profileToSave.arrivalDays,
+                profileToSave.city,
+                profileToSave.transport,
+                profileToSave.hasCaregiver
+            );
+
+            if (transports.length === 0) {
+                setTransportMessage({
+                    type: 'warning',
+                    text: 'לא נמצאה הסעה מתאימה. יש להוסיף הסעה חדשה.'
+                });
+                await onSave(profileToSave);
+            } else if (transports.length === 1) {
+                await addPassengerToTransport(transports[0].id, {
+                    id: profileToSave.id,
+                    name: profileToSave.name,
+                    phone: profileToSave.phone,
+                    city: profileToSave.city,
+                    hasCaregiver: profileToSave.hasCaregiver,
+                    arrivalDays: profileToSave.arrivalDays,
+                    profileImage: profileToSave.profileImage // Make sure to include the image URL here too
+                });
+
+                const successMessage = `${profileToSave.name} שובץ להסעה מספר ${transports[0].serialNumber} - ${transports[0].cities.join(' -> ')}`;
+                setSuccessDialog({ open: true, message: successMessage });
+                await onSave(profileToSave);
+                setFormData(initialFormData);
+                setErrors({});
+                setImagePreview(null);
+                onClose();
             } else {
-                const transports = await findMatchingTransports(
-                    profileToSave.arrivalDays,
-                    profileToSave.city,
-                    profileToSave.transport,
-                    profileToSave.hasCaregiver
-                );
-                if (transports.length === 0) {
-                    setTransportMessage({
-                        type: 'warning',
-                        text: 'לא נמצאה הסעה מתאימה. יש להוסיף הסעה חדשה.'
-                    });
-                    await onSave(profileToSave);
-                } else if (transports.length === 1) {
-                    await addPassengerToTransport(transports[0].id, {
-                        id: profileToSave.id,
-                        name: profileToSave.name,
-                        phone: profileToSave.phone,
-                        city: profileToSave.city,
-                        hasCaregiver: profileToSave.hasCaregiver,
-                        arrivalDays: profileToSave.arrivalDays,
-                        profileImage: profileToSave.profileImage // Make sure to include the image URL here too
-                    });
-                    const successMessage = `${profileToSave.name} שובץ להסעה מספר ${transports[0].serialNumber} - ${transports[0].cities.join(' -> ')}`;
-                    setSuccessDialog({ open: true, message: successMessage });
-                    await onSave(profileToSave);
-                    setFormData(initialFormData);
-                    setErrors({});
-                    setImagePreview(null);
-                } else {
-                    setMatchingTransports(transports);
-                    setShowTransportDialog(true);
-                    return;
-                }
+                setMatchingTransports(transports);
+                setShowTransportDialog(true);
+                return;
             }
         } catch (error) {
             console.error('Error saving profile:', error);
@@ -246,6 +251,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
             setFormData(initialFormData);
             setErrors({});
             setShowTransportDialog(false);
+            onClose();
         } catch (error) {
             console.error('Error assigning to transport:', error);
             setTransportMessage({
@@ -320,8 +326,8 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 }}>
                     הוספת פרופיל חדש
                 </DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                <DialogContent dir="ltr">
+                    <Box sx={{ direction: 'rtl' }}>
                         {transportMessage && (
                             <Alert severity={transportMessage.type} sx={{ mb: 2 }}>
                                 {transportMessage.text}
@@ -376,7 +382,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                             <TextField
                                 fullWidth
-                                label="שם"
+                                placeholder="שם"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
@@ -384,11 +390,13 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 error={errors.name}
                                 helperText={errors.name && "שדה חובה"}
                                 sx={{ maxWidth: "170px" }}
+                                inputProps={{ style: { textAlign: 'right' } }}
+                                InputProps={{ notched: false }}
                             />
 
                             <TextField
                                 fullWidth
-                                label="תעודת זהות"
+                                placeholder="תעודת זהות"
                                 name="id"
                                 value={formData.id}
                                 onChange={handleChange}
@@ -396,6 +404,8 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 error={!!errors.id}
                                 helperText={errors.id}
                                 sx={{ maxWidth: "170px" }}
+                                inputProps={{ style: { textAlign: 'right' } }}
+                                InputProps={{ notched: false }}
                             />
 
                             <TextField
@@ -408,17 +418,39 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 required
                                 error={!!errors?.birthDate}
                                 helperText={errors?.birthDate && "שדה חובה"}
-                                InputLabelProps={{ shrink: true }}
+                                InputLabelProps={{
+                                    shrink: true,
+                                    sx: {
+                                        right: 24,
+                                        left: 'unset',
+                                        textAlign: 'right',
+                                        transformOrigin: 'top right',
+                                        direction: 'rtl',
+                                        backgroundColor: 'white',
+                                        px: 0.5
+                                    }
+                                }}
                                 sx={{ maxWidth: "170px" }}
+                                inputProps={{ style: { textAlign: 'right' } }}
+                                InputProps={{ notched: false }}
                             />
 
                             <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                                <InputLabel>מין</InputLabel>
                                 <Select
                                     name="gender"
                                     value={formData.gender}
                                     onChange={handleChange}
+                                    displayEmpty
+                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'מין' }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: { textAlign: 'right', direction: 'rtl' }
+                                        }
+                                    }}
                                 >
+                                    <MenuItem value="" disabled hidden>
+                                        מין
+                                    </MenuItem>
                                     <MenuItem value="זכר">זכר</MenuItem>
                                     <MenuItem value="נקבה">נקבה</MenuItem>
                                     <MenuItem value="אחר">אחר</MenuItem>
@@ -427,7 +459,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
 
                             <TextField
                                 fullWidth
-                                label="טלפון"
+                                placeholder="טלפון"
                                 name="phone"
                                 value={formData.phone}
                                 onChange={handleChange}
@@ -435,40 +467,48 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 error={!!errors.phone}
                                 helperText={errors.phone === true ? "שדה חובה" : errors.phone}
                                 sx={{ maxWidth: "170px" }}
+                                inputProps={{ style: { textAlign: 'right' } }}
+                                InputProps={{ notched: false }}
                             />
 
                             <TextField
                                 fullWidth
-                                label="טלפון נוסף"
+                                placeholder="טלפון נוסף"
                                 name="phone2"
                                 value={formData.phone2}
                                 onChange={handleChange}
                                 error={!!errors.phone2}
                                 helperText={errors.phone2}
                                 sx={{ maxWidth: "170px" }}
+                                inputProps={{ style: { textAlign: 'right' } }}
+                                InputProps={{ notched: false }}
                             />
 
                             <TextField
                                 fullWidth
-                                label="מייל"
+                                placeholder="מייל"
                                 name="email"
                                 value={formData.email || ''}
                                 onChange={handleChange}
                                 sx={{ maxWidth: "170px" }}
+                                inputProps={{ style: { textAlign: 'right' } }}
+                                InputProps={{ notched: false }}
                             />
 
                             <TextField
                                 fullWidth
-                                label="כתובת"
+                                placeholder="כתובת"
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
                                 sx={{ maxWidth: "170px" }}
+                                inputProps={{ style: { textAlign: 'right' } }}
+                                InputProps={{ notched: false }}
                             />
 
                             <TextField
                                 fullWidth
-                                label="יישוב"
+                                placeholder="יישוב"
                                 name="city"
                                 value={formData.city}
                                 onChange={handleChange}
@@ -476,36 +516,39 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 error={errors.city}
                                 helperText={errors.city && "שדה חובה"}
                                 sx={{ maxWidth: "170px" }}
+                                inputProps={{ style: { textAlign: 'right' } }}
+                                InputProps={{ notched: false }}
                             />
 
-                            <FormControl fullWidth sx={{ maxWidth: "170px" }} error={!!errors.transport} required>
-                                <InputLabel required error={!!errors.transport}>הסעה</InputLabel>
+                            <FormControl fullWidth sx={{ maxWidth: "170px" }} error={!!errors.transport}>
                                 <Select
                                     name="transport"
                                     value={formData.transport}
                                     onChange={handleChange}
-                                    required
-                                    error={!!errors.transport}
-                                    label="הסעה"
+                                    displayEmpty
+                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'הסעה' }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: { textAlign: 'right', direction: 'rtl' }
+                                        }
+                                    }}
                                 >
+                                    <MenuItem value="" disabled hidden>
+                                        הסעה
+                                    </MenuItem>
                                     <MenuItem value="מונית">מונית</MenuItem>
                                     <MenuItem value="מיניבוס">מיניבוס</MenuItem>
                                     <MenuItem value="פרטי">פרטי</MenuItem>
                                     <MenuItem value="אחר">אחר</MenuItem>
                                 </Select>
-                                {errors.transport && (
-                                    <Typography variant="caption" color="error">{errors.transport}</Typography>
-                                )}
+                                {errors.transport && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
                             </FormControl>
                         </Box>
 
                         {/* ימי הגעה בשורה נפרדת */}
                         <Box sx={{ mt: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
-                                    ימי הגעה:
-                                    <span style={{ color: 'black', marginRight: 2 }}>*</span>
-                                </Typography>
+                                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', color: errors.arrivalDays ? 'error.main' : undefined }}>ימי הגעה:</Typography>
                                 {["ראשון", "שני", "שלישי", "רביעי", "חמישי"].map((day) => (
                                     <FormControlLabel
                                         key={day}
@@ -521,27 +564,34 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                                         return { ...prev, arrivalDays: newDays };
                                                     });
                                                 }}
-                                                required
+                                                sx={errors.arrivalDays ? { color: 'error.main' } : {}}
                                             />
                                         }
                                         label={day}
                                     />
                                 ))}
-                                {errors.arrivalDays && (
-                                    <Typography variant="caption" color="error">{errors.arrivalDays}</Typography>
-                                )}
                             </Box>
+                            {errors.arrivalDays && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
                         </Box>
 
                         {/* שדות נוספים */}
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                             <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                                <InputLabel>רמת תפקוד</InputLabel>
                                 <Select
                                     name="functionLevel"
                                     value={formData.functionLevel}
                                     onChange={handleChange}
+                                    displayEmpty
+                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'רמת תפקוד' }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: { textAlign: 'right', direction: 'rtl' }
+                                        }
+                                    }}
                                 >
+                                    <MenuItem value="" disabled hidden>
+                                        רמת תפקוד
+                                    </MenuItem>
                                     {[1, 2, 3, 4, 5, 6].map((n) => (
                                         <MenuItem key={n} value={n}>{n}</MenuItem>
                                     ))}
@@ -549,12 +599,21 @@ function AddProfileWindow({ open, onClose, onSave }) {
                             </FormControl>
 
                             <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                                <InputLabel>זכאות</InputLabel>
                                 <Select
                                     name="eligibility"
                                     value={formData.eligibility}
                                     onChange={handleChange}
+                                    displayEmpty
+                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'זכאות' }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: { textAlign: 'right', direction: 'rtl' }
+                                        }
+                                    }}
                                 >
+                                    <MenuItem value="" disabled hidden>
+                                        זכאות
+                                    </MenuItem>
                                     <MenuItem value="רווחה">רווחה</MenuItem>
                                     <MenuItem value="סיעוד">סיעוד</MenuItem>
                                     <MenuItem value="אחר">אחר</MenuItem>
@@ -566,12 +625,21 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 sx={{ maxWidth: "170px" }}
                                 disabled={formData.eligibility !== "סיעוד"}
                             >
-                                <InputLabel>חברת סיעוד</InputLabel>
                                 <Select
                                     name="nursingCompany"
                                     value={formData.nursingCompany}
                                     onChange={handleChange}
+                                    displayEmpty
+                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חברת סיעוד' }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: { textAlign: 'right', direction: 'rtl' }
+                                        }
+                                    }}
                                 >
+                                    <MenuItem value="" disabled hidden>
+                                        חברת סיעוד
+                                    </MenuItem>
                                     <MenuItem value="מטב">מט"ב</MenuItem>
                                     <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
                                     <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
@@ -587,12 +655,21 @@ function AddProfileWindow({ open, onClose, onSave }) {
                             </FormControl>
 
                             <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                                <InputLabel>חבר ב־</InputLabel>
                                 <Select
                                     name="membership"
                                     value={formData.membership}
                                     onChange={handleChange}
+                                    displayEmpty
+                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חבר ב־' }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: { textAlign: 'right', direction: 'rtl' }
+                                        }
+                                    }}
                                 >
+                                    <MenuItem value="" disabled hidden>
+                                        חבר ב־
+                                    </MenuItem>
                                     <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
                                     <MenuItem value="מרכז יום">מרכז יום</MenuItem>
                                     <MenuItem value="אחר">אחר</MenuItem>
