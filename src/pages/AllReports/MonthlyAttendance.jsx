@@ -11,6 +11,7 @@ import TextField from '@mui/material/TextField';
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 const typeColors = {
   regular: '#43a047', // ירוק
@@ -105,7 +106,7 @@ const MonthlyAttendance = () => {
               const pdfWidth = pdf.internal.pageSize.getWidth();
               const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
               pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-              pdf.save(`דו"ח נוכחות חודשי.pdf`);
+              pdf.save(`Monthly Attendance Report - ${dayjs(`${year}-${month}-01`).format('MMMM YYYY')}.pdf`);
             });
           }}
           sx={{
@@ -114,7 +115,66 @@ const MonthlyAttendance = () => {
             '&:active': { outline: 'none' }
           }}
         >
-          ייצוא ל־PDF
+           ייצוא ל־PDF
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            // Prepare data for Excel (Hebrew headers, same as table, no X or reasons, reverse columns)
+            const dayNumbers = days.map(day => day.format('D')).reverse();
+            const columns = [...dayNumbers, 'סה"כ מטפל', 'סה"כ ותיק', 'שם'];
+            const excelData = profiles.map(profile => {
+              const row = {};
+              // Days columns (right to left)
+              dayNumbers.forEach(dayNum => {
+                // Find the day object for this dayNum
+                const dayObj = days.find(d => d.format('D') === dayNum);
+                const dateStr = dayObj.format('YYYY-MM-DD');
+                const list = attendanceByDate[dateStr];
+                let value = '';
+                if (list) {
+                  const person = list.find(p => p.id === profile.id);
+                  if (person && person.attended === true) {
+                    value = '✔️';
+                  } // else leave empty
+                }
+                row[dayNum] = value;
+              });
+              // Totals and name
+              row['סה"כ ותיק'] = days.reduce((sum, day) => {
+                const dateStr = day.format('YYYY-MM-DD');
+                const list = attendanceByDate[dateStr];
+                if (list) {
+                  const person = list.find(p => p.id === profile.id);
+                  if (person && person.attended === true) {
+                    return sum + 1;
+                  }
+                }
+                return sum;
+              }, 0);
+              row['סה"כ מטפל'] = days.reduce((sum, day) => {
+                const dateStr = day.format('YYYY-MM-DD');
+                const list = attendanceByDate[dateStr];
+                if (list) {
+                  const person = list.find(p => p.id === profile.id);
+                  if (person && person.attended === true && person.caregiver) {
+                    return sum + 1;
+                  }
+                }
+                return sum;
+              }, 0);
+              row['שם'] = profile.name;
+              return row;
+            });
+            const ws = XLSX.utils.json_to_sheet(excelData, { header: columns });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'נוכחות חודשית');
+            XLSX.writeFile(wb, `דו"ח נוכחות חודשי - ${dayjs(`${year}-${month}-01`).format('MMMM YYYY')}.xlsx`);
+          }}
+          sx={{ ml: 2 }}
+        >
+           ייצוא ל־Excel
         </Button>
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>

@@ -4,6 +4,7 @@ import { Typography, CircularProgress, Box, Paper, Button, Container } from '@mu
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ExportPDFButton from '../../components/ExportPDFButton';
+import * as XLSX from 'xlsx';
 
 const AbsencePeople = () => {
   const [attendanceData, setAttendanceData] = useState(null);
@@ -67,11 +68,30 @@ const AbsencePeople = () => {
         >
           חזור
         </Button>
-
         <ExportPDFButton
           targetId="reportContent"
           fileName={`דוח היעדרויות - ${todayFormatted}.pdf`}
         />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            const columns = ['#', 'שם', 'יישוב', 'סיבת היעדרות'];
+            const excelData = absentMembers.map((person, index) => ({
+              '#': index + 1,
+              'שם': person.name,
+              'יישוב': person.city,
+              'סיבת היעדרות': person.reason || 'לא צוינה סיבה'
+            }));
+            const ws = XLSX.utils.json_to_sheet(excelData, { header: columns });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'נעדרים');
+            XLSX.writeFile(wb, `דוח היעדרויות - ${todayFormatted}.xlsx`);
+          }}
+          sx={{ ml: 8 }}
+        >
+          ייצוא ל־Excel
+        </Button>
       </Box>
 
       <div id="reportContent">
