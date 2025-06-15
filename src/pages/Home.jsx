@@ -269,8 +269,8 @@ function Home({ onLogout }) {
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2 }}>
                     <Typography variant="body1" sx={{
-                        textAlign: 'center',
-                        color: dialog.isSuccess ? '#2e7d32' : '#d32f2f',
+                        textAlign: 'right',
+                        color: dialog.isSuccess ? 'black' : '#d32f2f',
                         fontSize: '1.1rem',
                         fontWeight: 500
                     }}>
@@ -280,7 +280,7 @@ function Home({ onLogout }) {
                 <DialogActions sx={{
                     borderTop: '1px solid #e0e0e0',
                     p: 2,
-                    justifyContent: 'center'
+                    justifyContent: 'flex-end'
                 }}>
                     <Button
                         onClick={handleDialogClose}

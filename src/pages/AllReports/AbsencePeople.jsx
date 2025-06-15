@@ -101,7 +101,7 @@ const AbsencePeople = () => {
         <Box sx={{ ml: 2 }}>
           <ExportPDFButton
             targetId="reportContent"
-            fileName={`דוח היעדרות - ${todayFormatted}.pdf`}
+            fileName={`דוח חסרים - ${todayFormatted}.pdf`}
           />
         </Box>
 
@@ -119,8 +119,8 @@ const AbsencePeople = () => {
             }));
             const ws = XLSX.utils.json_to_sheet(excelData, { header: columns });
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'נעדרים');
-            XLSX.writeFile(wb, `דוח היעדרות - ${todayFormatted}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, 'חסרים');
+            XLSX.writeFile(wb, `דוח חסרים - ${todayFormatted}.xlsx`);
           }}
           sx={{ 
             ml: 2,
@@ -143,7 +143,7 @@ const AbsencePeople = () => {
             {/* כותרת */}
             <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px solid #f44336', pb: 2 }}>
               <Typography variant="h4" color="error" gutterBottom>
-                דוח היעדרויות יומי
+                דוח חסרים יומי
               </Typography>
               <Typography variant="h6" color="textSecondary">
                 תאריך: {todayFormatted}
@@ -163,14 +163,14 @@ const AbsencePeople = () => {
                 <Typography variant="h5" color="error">
                   {absentMembers.length}
                 </Typography>
-                <Typography variant="body2">סה"כ נעדרים</Typography>
+                <Typography variant="body2">סה"כ חסרים</Typography>
               </Box>
             </Box>
 
             {/* רשימת נעדרים */}
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" color="error" gutterBottom sx={{ borderBottom: '1px solid #f44336', pb: 1 }}>
-                רשימת נעדרים ({absentMembers.length})
+                רשימת חסרים ({absentMembers.length})
               </Typography>
               {absentMembers.length > 0 ? (
                 <Box sx={{ 
@@ -195,15 +195,15 @@ const AbsencePeople = () => {
                       <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
                         יישוב: {person.city}
                       </Typography>
-                      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
-                        סיבת היעדרות: {person.reason || 'לא צוינה סיבה'}
+                      <Typography variant="caption" color="black" sx={{ display: 'block', fontSize: '0.8rem' }}>
+                        סיבת היעדרות: {person.reason || 'ללא'}
                       </Typography>
                     </Box>
                   ))}
                 </Box>
               ) : (
                 <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
-                  אין נעדרים היום
+                  אין חסרים להיום!
                 </Typography>
               )}
             </Box>

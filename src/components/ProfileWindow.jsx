@@ -3,7 +3,7 @@ import { deleteProfile } from "../firebase";
 import { removePassengerFromTransports, getPassengerTransport } from "../utils/transportUtils";
 import {
     Dialog, DialogTitle, DialogContent, Typography, Button, TextField, MenuItem, Checkbox, FormControlLabel,
-    Box, Avatar
+    Box, Avatar, DialogActions
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
@@ -28,6 +28,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
     const [isEditing, setIsEditing] = useState(false);
     const [profile, setProfile] = useState(initialProfile || {});
     const [transportDetails, setTransportDetails] = useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     // עדכון הפרופיל והסעה כאשר initialProfile משתנה
     useEffect(() => {
@@ -47,17 +48,19 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
     }, [initialProfile]);
 
     const handleDelete = async () => {
-        const confirm = window.confirm(`האם למחוק את ${profile.name}?`);
-        if (confirm) {
-            try {
-                // קודם מוחקים את הנוסע מכל ההסעות
-                await removePassengerFromTransports(profile.id);
-                // אחר כך מוחקים את הפרופיל
-                await onDelete(profile.id);
-            } catch (error) {
-                console.error('Error deleting profile:', error);
-                alert('שגיאה במחיקת הפרופיל');
-            }
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            // קודם מוחקים את הנוסע מכל ההסעות
+            await removePassengerFromTransports(profile.id);
+            // אחר כך מוחקים את הפרופיל
+            await onDelete(profile.id);
+            setDeleteDialogOpen(false);
+        } catch (error) {
+            console.error('Error deleting profile:', error);
+            alert('שגיאה במחיקת הפרופיל');
         }
     };
 
@@ -305,6 +308,73 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                     )}
                 </Box>
             </DialogContent>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                dir="rtl"
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: '12px',
+                    }
+                }}
+            >
+                <DialogTitle sx={{
+                    backgroundColor: '#f5f5f5',
+                    borderBottom: '1px solid #e0e0e0',
+                    py: 2
+                }}>
+                    אישור מחיקה
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    <Typography variant="body1" sx={{
+                        textAlign: 'right',
+                        color: 'black',
+                        fontSize: '1.1rem',
+                        fontWeight: 500
+                    }}>
+                        האם אתה בטוח שברצונך למחוק את {profile.name}?
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{
+                    borderTop: '1px solid #e0e0e0',
+                    p: 2,
+                    justifyContent: 'flex-end'
+                }}>
+                    <Button
+                        onClick={() => setDeleteDialogOpen(false)}
+                        variant="outlined"
+                        sx={{
+                            borderColor: 'white',
+                            color: 'black',
+                            '&:hover': {
+                                borderColor: 'black',
+                                color: 'black'
+                            },
+                            minWidth: '100px'
+                        }}
+                    >
+                        ביטול
+                    </Button>
+                    <Button
+                        onClick={confirmDelete}
+                        variant="contained"
+                        sx={{
+                            backgroundColor: '#d32f2f',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: '#aa2424'
+                            },
+                            minWidth: '100px'
+                        }}
+                    >
+                        אישור
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Dialog>
     );
 }

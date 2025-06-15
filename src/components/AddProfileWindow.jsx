@@ -304,6 +304,39 @@ function AddProfileWindow({ open, onClose, onSave }) {
         }
     };
 
+    const validateAndSave = async (profileData) => {
+        let hasErrors = false;
+        const newErrors = {};
+
+        // בדיקת שדות חובה
+        if (!profileData.name) {
+            newErrors.name = 'שם הוא שדה חובה';
+            hasErrors = true;
+        }
+        if (!profileData.phone) {
+            newErrors.phone = 'טלפון הוא שדה חובה';
+            hasErrors = true;
+        }
+        if (!profileData.city) {
+            newErrors.city = 'עיר היא שדה חובה';
+            hasErrors = true;
+        }
+        if (!profileData.transport) {
+            newErrors.transport = 'סוג הסעה הוא שדה חובה';
+            hasErrors = true;
+        }
+        if (!profileData.arrivalDays || profileData.arrivalDays.length === 0) {
+            newErrors.arrivalDays = 'ימי הגעה הם שדה חובה';
+            hasErrors = true;
+        }
+
+        setErrors(newErrors);
+
+        if (!hasErrors) {
+            await handleSubmit();
+        }
+    };
+
     return (
         <>
             <Dialog

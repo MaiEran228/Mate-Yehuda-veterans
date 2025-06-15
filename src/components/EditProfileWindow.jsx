@@ -174,6 +174,16 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       hasErrors = true;
     }
 
+    // בדיקת שדות חובה נוספים
+    if (!profileData.transport) {
+      newErrors.transport = 'סוג הסעה הוא שדה חובה';
+      hasErrors = true;
+    }
+    if (!profileData.arrivalDays || profileData.arrivalDays.length === 0) {
+      newErrors.arrivalDays = 'ימי הגעה הם שדה חובה';
+      hasErrors = true;
+    }
+
     setErrors(newErrors);
 
     if (!hasErrors) {
@@ -401,10 +411,13 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
               <TextField
                 select
                 fullWidth
-                label="הסעה"
+                label="סוג הסעה"
                 value={initialProfile.transport || ''}
                 onChange={handleFieldChange("transport")}
                 sx={{ maxWidth: "170px" }}
+                name="transport"
+                error={!!errors.transport}
+                helperText={errors.transport}
               >
                 <MenuItem value="מונית">מונית</MenuItem>
                 <MenuItem value="מיניבוס">מיניבוס</MenuItem>
@@ -413,32 +426,36 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
               </TextField>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
-              <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap' }}>ימי הגעה:</Typography>
-              {[
-                { label: 'א', value: 'ראשון' },
-                { label: 'ב', value: 'שני' },
-                { label: 'ג', value: 'שלישי' },
-                { label: 'ד', value: 'רביעי' },
-                { label: 'ה', value: 'חמישי' }
-              ].map(({ label, value }) => (
-                <FormControlLabel
-                  key={value}
-                  control={
-                    <Checkbox
-                      checked={initialProfile.arrivalDays?.includes(value) || false}
-                      onChange={() => {
-                        const isSelected = initialProfile.arrivalDays?.includes(value);
-                        const updatedDays = isSelected
-                          ? initialProfile.arrivalDays.filter((d) => d !== value)
-                          : [...(initialProfile.arrivalDays || []), value];
-                        handleChange("arrivalDays")({ target: { value: updatedDays } });
-                      }}
-                    />
-                  }
-                  label={label}
-                />
-              ))}
+            <Box sx={{ mt: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', color: errors.arrivalDays ? 'error.main' : undefined }}>ימי הגעה:</Typography>
+                {[
+                  { label: 'א', value: 'ראשון' },
+                  { label: 'ב', value: 'שני' },
+                  { label: 'ג', value: 'שלישי' },
+                  { label: 'ד', value: 'רביעי' },
+                  { label: 'ה', value: 'חמישי' }
+                ].map(({ label, value }) => (
+                  <FormControlLabel
+                    key={value}
+                    control={
+                      <Checkbox
+                        checked={initialProfile.arrivalDays.includes(value)}
+                        onChange={() => {
+                          const isSelected = initialProfile.arrivalDays.includes(value);
+                          const updatedDays = isSelected
+                            ? initialProfile.arrivalDays.filter((d) => d !== value)
+                            : [...initialProfile.arrivalDays, value];
+                          handleChange("arrivalDays")({ target: { value: updatedDays } });
+                        }}
+                        sx={errors.arrivalDays ? { color: 'error.main' } : {}}
+                      />
+                    }
+                    label={label}
+                  />
+                ))}
+              </Box>
+              {errors.arrivalDays && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
             </Box>
 
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>

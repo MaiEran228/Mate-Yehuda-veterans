@@ -73,8 +73,8 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                             arrivalDays: profile.arrivalDays,
                         };
                     }
-                    return attendance;
-                });
+                    return null; // אם הפרופיל לא נמצא, נחזיר null
+                }).filter(Boolean); // הסר את כל ה-null
 
                 // הוספת פרופילים חדשים שלא היו בנוכחות
                 const existingIds = updatedAttendance.map(a => a.id);

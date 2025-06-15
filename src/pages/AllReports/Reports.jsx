@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const reports = [
   { name: 'דו"ח נוכחות יומי', path: '/AllReports/DailyAttendance', row: 1 },
-  { name: 'דו"ח היעדרויות יומי', path: '/AllReports/AbsencePeople', row: 1 },
+  { name: 'דו"ח חסרים יומי', path: '/AllReports/AbsencePeople', row: 1 },
   { name: 'ימי הולדת החודש', path: '/AllReports/Birthday', row: 1 },
   { name: 'דו"ח נוכחות חודשי', path: '/AllReports/MonthlyAttendance', row: 2 },
   { name: 'חישוב זכאות לפי ימי השבוע', path: '/AllReports/DaysLeft', row: 2 },

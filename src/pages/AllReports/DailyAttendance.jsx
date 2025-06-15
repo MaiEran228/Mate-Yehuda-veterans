@@ -156,7 +156,7 @@ const DailyAttendance = () => {
               <Typography variant="h5" color="error.main">
                 {absentMembers.length}
               </Typography>
-              <Typography variant="body2">נעדרים</Typography>
+              <Typography variant="body2">חסרים</Typography>
             </Box>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h5" color="primary">
@@ -226,7 +226,7 @@ const DailyAttendance = () => {
                 pageBreakAfter: 'avoid'
               }
             }}>
-              רשימת נעדרים ({absentMembers.length})
+              רשימת חסרים ({absentMembers.length})
             </Typography>
             {absentMembers.length > 0 ? (
               <Box sx={{ 
