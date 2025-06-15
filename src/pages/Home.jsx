@@ -17,7 +17,7 @@ function Home({ onLogout }) {
     const attendanceRef = useRef();
     const [modalOpen, setModalOpen] = useState(false);
     const navigate = useNavigate();
-    const today = dayjs().format('YYYY-MM-DD');
+    const today = dayjs().format('DD/MM/YYYY');
     const todayFormatted = dayjs().format('DD/MM/YYYY');
     
     // Add dialog state

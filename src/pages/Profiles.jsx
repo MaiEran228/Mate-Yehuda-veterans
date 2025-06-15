@@ -94,63 +94,51 @@ function Profiles() {
           gap: 2
         }}>
           <TextField
-            placeholder="חיפוש לפי שם או יישוב"
-            variant="outlined"
+            fullWidth
+            placeholder="חיפוש לפי שם או אזור מגורים..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            dir="rtl"
-            inputProps={{
-              style: { textAlign: 'right' }
-            }}
-            InputLabelProps={{
-              sx: {
-                right: 14,
-                left: 'unset',
-                textAlign: 'right',
-                transformOrigin: 'top right',
-                direction: 'rtl'
-              }
-            }}
+            variant="outlined"
+            size="small"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ ml: 0.5 }} />
+                  <SearchIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
                 </InputAdornment>
               ),
-              endAdornment: (
-                searchTerm && (
-                  <InputAdornment position="end">
-                    <IconButton
-                      size="small"
-                      onClick={() => setSearchTerm('')}
-                      edge="end"
-                      aria-label="נקה חיפוש"
-                    >
-                      <CloseIcon />
-                    </IconButton>
-                  </InputAdornment>
-                )
-              )
-            }}
-            sx={{ 
-              width: '300px',
-              '& .MuiOutlinedInput-root': {
-                height: 40,
-                fontSize: '0.9rem',
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchTerm('')}
+                    edge="end"
+                    sx={{ mr: -0.5 }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+              sx: {
+                backgroundColor: '#fff',
+                '&:hover': {
+                  backgroundColor: '#fff',
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(118, 126, 136, 0.2)',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(118, 126, 136, 0.4)',
+                },
                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#888',
+                  borderColor: 'rgba(118, 126, 136, 0.6)',
                 },
               },
-              '& .MuiInputLabel-root': {
-                fontSize: '0.9rem',
-                transform: 'translate(14px, 8px) scale(1)'
+            }}
+            sx={{
+              maxWidth: '400px',
+              '& .MuiInputBase-root': {
+                height: '40px',
               },
-              '& .MuiInputLabel-root.Mui-focused, & .MuiInputLabel-root.MuiFormLabel-filled': {
-                transform: 'translate(14px, -9px) scale(0.75)'
-              },
-              '& .MuiInputBase-input': {
-                textAlign: 'right'
-              }
             }}
           />
           <Box sx={{ flex: 1 }} />

@@ -116,73 +116,52 @@ function Transport() {
         mb: 6
       }}>
         <Box sx={{ width: 300 }}>
-          <Autocomplete
-            freeSolo
-            options={availableCities}
+          <TextField
+            fullWidth
+            placeholder="חיפוש לפי שם או אזור מגורים..."
             value={searchTerm}
-            onChange={(event, newValue) => setSearchTerm(newValue || '')}
-            onInputChange={(event, newValue) => setSearchTerm(newValue)}
-            filterOptions={(options, state) => {
-              const inputValue = state.inputValue.toLowerCase();
-              return options.filter(option => 
-                option.toLowerCase().startsWith(inputValue)
-              );
+            onChange={(e) => setSearchTerm(e.target.value)}
+            variant="outlined"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchTerm('')}
+                    edge="end"
+                    sx={{ mr: -0.5 }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+              sx: {
+                backgroundColor: '#fff',
+                '&:hover': {
+                  backgroundColor: '#fff',
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(118, 126, 136, 0.2)',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(118, 126, 136, 0.4)',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(118, 126, 136, 0.6)',
+                },
+              },
             }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="חיפוש לפי יישוב"
-                variant="outlined"
-                size="small"
-                dir="rtl"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start" sx={{ position: 'absolute', right: 0, zIndex: 1 }}>
-                      <SearchIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: searchTerm && (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        onClick={() => setSearchTerm('')}
-                        edge="end"
-                      >
-                        <CloseIcon fontSize="small" />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                  sx: {
-                    paddingRight: '40px !important'
-                  }
-                }}
-                sx={{ 
-                  width: 280,
-                  '& .MuiOutlinedInput-root': {
-                    height: 36,
-                    fontSize: '0.9rem',
-                    color: 'rgb(85, 105, 125)',
-                    '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
-                    '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
-                  }
-                }}
-              />
-            )}
             sx={{
-              width: 280,
-              '& .MuiAutocomplete-listbox': {
-                backgroundColor: 'white',
-                border: '1px solid rgba(0, 0, 0, 0.12)',
-                borderRadius: '4px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                '& .MuiAutocomplete-option': {
-                  padding: '8px 16px',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                  }
-                }
-              }
+              maxWidth: '400px',
+              '& .MuiInputBase-root': {
+                height: '40px',
+              },
             }}
           />
         </Box>

@@ -9,6 +9,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 import EditIcon from '@mui/icons-material/Edit';
 import EditProfileWindow from "./EditProfileWindow";
+import dayjs from "dayjs";
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
 const DAYS = ["'א", "'ב", "'ג", "'ד", "'ה"];
@@ -211,7 +212,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                             </Typography>
                             <Typography sx={{ my: 0 }}>
                                 <Box component="span" fontWeight="bold" fontSize="1.1rem">תאריך לידה: </Box>
-                                <Box component="span">{profile.birthDate}</Box>
+                                <Box component="span">{dayjs(profile.birthDate).format('DD/MM/YYYY')}</Box>
                             </Typography>
                             <Typography sx={{ my: 0 }}>
                                 <Box component="span" fontWeight="bold" fontSize="1.1rem">מין: </Box>
@@ -252,13 +253,15 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                                 <Box
                                     component="span"
                                     sx={{
-                                        color: transportDetails ? 'text.primary' : 'error.main',
-                                        fontWeight: transportDetails ? 'normal' : 'medium'
+                                        color: (profile.isPrivateTransport || profile.transport === 'פרטי') ? 'text.primary' : (transportDetails ? 'text.primary' : 'error.main'),
+                                        fontWeight: (profile.isPrivateTransport || profile.transport === 'פרטי') ? 'normal' : (transportDetails ? 'normal' : 'medium')
                                     }}
                                 >
-                                    {transportDetails
-                                        ? `מספר ${transportDetails.serialNumber} (${transportDetails.cities.join(' -> ')})`
-                                        : "נדרש לשבץ להסעה"}
+                                    {(profile.isPrivateTransport || profile.transport === 'פרטי')
+                                        ? "לא נדרשת הסעה"
+                                        : (transportDetails
+                                            ? `מספר ${transportDetails.serialNumber} (${transportDetails.cities.join(' -> ')})`
+                                            : "נדרש לשבץ להסעה")}
                                 </Box>
                             </Typography>
                             

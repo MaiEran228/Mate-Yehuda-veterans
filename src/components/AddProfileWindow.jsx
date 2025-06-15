@@ -183,6 +183,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
             console.log('Saving profile with data:', profileToSave); // For debugging
 
             if (profileToSave.transport === 'פרטי') {
+                profileToSave.isPrivateTransport = true;
                 await onSave(profileToSave);
                 setFormData(initialFormData);
                 setErrors({});

@@ -44,7 +44,7 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState('city');
     const [searchQuery, setSearchQuery] = useState('');
-    const [currentDate] = useState(dayjs().format('YYYY-MM-DD'));
+    const [currentDate] = useState(dayjs().format('DD/MM/YYYY'));
 
     useImperativeHandle(ref, () => ({
         getAttendanceData: () => rows,

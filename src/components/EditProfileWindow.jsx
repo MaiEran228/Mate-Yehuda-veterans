@@ -70,6 +70,12 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   const handleAssignTransport = async () => {
     setLoading(true);
     try {
+      if (initialProfile.transport === "פרטי") {
+        await removePassengerFromTransports(initialProfile.id);
+        setSuccessDialog({ open: true, message: "דרך ההגעה השתנתה לפרטי" });
+        setLoading(false);
+        return;
+      }
       // קודם מסיר את הנוסע מההסעה הקודמת
       await removePassengerFromTransports(initialProfile.id);
 
@@ -92,9 +98,8 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
           hasCaregiver: initialProfile.hasCaregiver || false,
           arrivalDays: initialProfile.arrivalDays || []
         });
-        alert(`${initialProfile.name} שובץ להסעה מספר ${transport.serialNumber} - ${transport.cities.join(' -> ')}`);
-        
-        // עדכון הנתונים המקוריים לאחר שיבוץ מוצלח
+        const successMessage = `${initialProfile.name} שובץ להסעה מספר ${transport.serialNumber} - ${transport.cities.join(' -> ')}`;
+        setSuccessDialog({ open: true, message: successMessage });
         setOriginalTransportData({
           city: initialProfile.city,
           transport: initialProfile.transport,
@@ -106,7 +111,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       }
     } catch (error) {
       console.error('Error assigning transport:', error);
-      alert('אירעה שגיאה בשיבוץ להסעה: ' + error.message);
+      setSuccessDialog({ open: true, message: 'אירעה שגיאה בשיבוץ להסעה: ' + error.message });
     } finally {
       setLoading(false);
     }
@@ -609,7 +614,9 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         fullWidth
         dir="rtl"
       >
-        <DialogTitle>הפרופיל נשמר</DialogTitle>
+        <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0' }}>
+          עדכון הסעה
+        </DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
             {successDialog.message}
