@@ -7,6 +7,14 @@ import AddTransportDialog from '../components/AddTransportDialog';
 import EditTransportDialog from '../components/EditTransportDialog';
 import ViewPassengersDialog from '../components/ViewPassengersDialog';
 import { transportService } from '../firebase';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
+import TableBody from '@mui/material/TableBody';
+import { calculateAvailableSeatsByDay } from '../utils/transportUtils';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 function Transport() {
   const [data, setData] = useState([]);
@@ -20,6 +28,7 @@ function Transport() {
   const [editDialog, setEditDialog] = useState({ open: false, index: null, data: null });
   const [viewDialog, setViewDialog] = useState({ open: false, passengers: [], days: [] });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, index: null });
+  const [seatsDialogOpen, setSeatsDialogOpen] = useState(false);
 
   // Subscribe to transports
   useEffect(() => {
@@ -198,29 +207,24 @@ function Transport() {
             },
             '& .MuiInputLabel-root': {
               fontSize: '0.85rem',
-              color: 'rgb(85, 105, 125)',
-              '&.Mui-focused': { color: '#7b8f99' }
             }
           }}
-        >
-          <option value="">ללא מיון</option>
-          <option value="days">ימים</option>
-          <option value="cities">יישובים</option>
-          <option value="seats">מקומות פנויים</option>
-          <option value="type">סוג הסעה</option>
-        </TextField>
+        />
 
         <Button
           variant="contained"
-          color="primary"
           onClick={handleAddOpen}
-          size="small"
-          sx={{ 
-            height: 36,
-            fontSize: '0.9rem'
-          }}
+          sx={{ height: 40, fontSize: '1rem', minWidth: '120px' }}
         >
           הוספת הסעה
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          sx={{ height: 40, fontSize: '1rem', minWidth: '150px' }}
+          onClick={() => setSeatsDialogOpen(true)}
+        >
+          מקומות פנויים בהסעה
         </Button>
       </Box>
 
@@ -284,6 +288,66 @@ function Transport() {
           <Button onClick={handleDeleteConfirm} color="error" variant="contained">
             מחק
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* דיאלוג מקומות פנויים */}
+      <Dialog open={seatsDialogOpen} onClose={() => setSeatsDialogOpen(false)} maxWidth="md" fullWidth dir="rtl">
+        <DialogTitle sx={{ fontWeight: 'bold' }}>רשימת מקומות פנויים בכל ההסעות</DialogTitle>
+        <DialogContent>
+          <div id="seatsReportContent">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>סוג הסעה</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>יישובים</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ימים</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>מקומות פנויים (לפי יום)</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.map((row, idx) => {
+                  const availableSeatsByDay = calculateAvailableSeatsByDay(row.type, row.passengers, row.days);
+                  return (
+                    <TableRow key={row.id || idx}>
+                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell>{row.type}</TableCell>
+                      <TableCell>{(row.cities || []).join(', ')}</TableCell>
+                      <TableCell>{(row.days || []).join(', ')}</TableCell>
+                      <TableCell>
+                        {row.days && row.days.length > 0 ? row.days.map(day => (
+                          <Box key={day} component="span" sx={{ mr: 1 }}>
+                            <b>{day}:</b> {availableSeatsByDay[day]}
+                          </Box>
+                        )) : '—'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={async () => {
+              const input = document.getElementById('seatsReportContent');
+              if (!input) return;
+              const canvas = await html2canvas(input);
+              const imgData = canvas.toDataURL('image/png');
+              const pdf = new jsPDF('p', 'mm', 'a4');
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+              pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+              pdf.save('רשימת מקומות פנויים בהסעות.pdf');
+            }}
+            color="primary"
+            variant="outlined"
+          >
+            ייצוא ל־PDF
+          </Button>
+          <Button onClick={() => setSeatsDialogOpen(false)} color="primary" variant="contained">סגור</Button>
         </DialogActions>
       </Dialog>
     </>

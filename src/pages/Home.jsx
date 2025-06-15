@@ -17,9 +17,9 @@ function Home({ onLogout }) {
     const attendanceRef = useRef();
     const [modalOpen, setModalOpen] = useState(false);
     const navigate = useNavigate();
-    const today = dayjs().format('DD/MM/YYYY');
+    const today = dayjs().format('YYYY-MM-DD');
     const todayFormatted = dayjs().format('DD/MM/YYYY');
-    
+   
     // Add dialog state
     const [dialog, setDialog] = useState({
         open: false,
@@ -110,16 +110,16 @@ function Home({ onLogout }) {
     const absentMembers = reportData.filter(person => !person.attended);
 
     return (
-        <Box sx={{ 
-            height: '100vh', 
-            display: 'flex', 
+        <Box sx={{
+            height: '100vh',
+            display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden' // מונע גלילה בכלל
         }}>
             <Header onLogout={onLogout} />
-            
+           
             {/* Static Content Container */}
-            <Box sx={{ 
+            <Box sx={{
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
@@ -127,19 +127,19 @@ function Home({ onLogout }) {
                 overflow: 'hidden' // מונע גלילה
             }}>
                 {/* Header Section with Date and Buttons */}
-                <Box sx={{ 
+                <Box sx={{
                     width: '95%',
                     maxWidth: '1800px',
                     margin: '0 auto 24px auto', // מרווח קבוע מהטבלה
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                 }}>
                     {/* Date Display - Right Side */}
-                    <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 2 
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2
                     }}>
                         <Typography
                             variant="h6"
@@ -175,22 +175,22 @@ function Home({ onLogout }) {
                     </Box>
 
                     {/* Buttons - Left Side */}
-                    <Box sx={{ 
-                        display: 'flex', 
-                        gap: 2 
+                    <Box sx={{
+                        display: 'flex',
+                        gap: 2
                     }}>
                         <Button
                             variant="contained"
                             onClick={handleSave}
-                            sx={{ 
-                                backgroundColor: 'rgba(142, 172, 183, 0.72)', 
+                            sx={{
+                                backgroundColor: 'rgba(142, 172, 183, 0.72)',
                                 border: 'none',
                                 outline: 'none',
-                                ':hover': { 
+                                ':hover': {
                                     backgroundColor: 'rgb(185, 205, 220)',
                                     border: 'none',
                                     outline: 'none'
-                                }, 
+                                },
                                 fontWeight: 'bold',
                                 color: 'black',
                                 '&:focus': {
@@ -211,11 +211,11 @@ function Home({ onLogout }) {
                             variant="outlined"
                             onClick={() => navigate('/AllReports/AbsencePeople', { state: { from: 'home' } })}
                             sx={{
-                                border: '2px solid rgba(64, 99, 112, 0.72)', 
-                                color: 'rgba(64, 99, 112, 0.72)', 
+                                border: '2px solid rgba(64, 99, 112, 0.72)',
+                                color: 'rgba(64, 99, 112, 0.72)',
                                 fontWeight: 'bold',
-                                ':hover': { 
-                                    borderColor: '#7b8f99', 
+                                ':hover': {
+                                    borderColor: '#7b8f99',
                                     color: '#5a676e',
                                     outline: 'none'
                                 },
@@ -234,7 +234,7 @@ function Home({ onLogout }) {
                 </Box>
 
                 {/* Table Section - Static Position */}
-                <Box sx={{ 
+                <Box sx={{
                     width: '95%',
                     maxWidth: '1800px',
                     margin: '0 auto',
@@ -260,7 +260,7 @@ function Home({ onLogout }) {
                     }
                 }}
             >
-                <DialogTitle sx={{ 
+                <DialogTitle sx={{
                     backgroundColor: '#f5f5f5',
                     borderBottom: '1px solid #e0e0e0',
                     py: 2
@@ -268,7 +268,7 @@ function Home({ onLogout }) {
                     {dialog.isSuccess ? 'שמירת נתונים' : 'שגיאה'}
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2 }}>
-                    <Typography variant="body1" sx={{ 
+                    <Typography variant="body1" sx={{
                         textAlign: 'center',
                         color: dialog.isSuccess ? '#2e7d32' : '#d32f2f',
                         fontSize: '1.1rem',
@@ -277,7 +277,7 @@ function Home({ onLogout }) {
                         {dialog.message}
                     </Typography>
                 </DialogContent>
-                <DialogActions sx={{ 
+                <DialogActions sx={{
                     borderTop: '1px solid #e0e0e0',
                     p: 2,
                     justifyContent: 'center'

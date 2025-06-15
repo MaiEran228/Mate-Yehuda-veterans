@@ -44,7 +44,7 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState('city');
     const [searchQuery, setSearchQuery] = useState('');
-    const [currentDate] = useState(dayjs().format('DD/MM/YYYY'));
+    const [currentDate] = useState(dayjs().format('YYYY-MM-DD'));
 
     useImperativeHandle(ref, () => ({
         getAttendanceData: () => rows,
@@ -186,7 +186,7 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
 
     const sortedRows = [...filteredRows].sort((a, b) => {
         if (!a[orderBy] || !b[orderBy]) return 0;
-        
+       
         const comparison = a[orderBy].toLowerCase().localeCompare(b[orderBy].toLowerCase());
         return order === 'asc' ? comparison : -comparison;
     });
@@ -306,13 +306,13 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                         }}
                     >
                             <TableRow>
-                            <TableCell 
-                                align="right" 
-                                sx={{ 
-                                    width: '30%', 
-                                    backgroundColor: 'rgba(142, 172, 183, 0.72)', 
-                                    height: '52px', 
-                                    fontSize: '1.1rem', 
+                            <TableCell
+                                align="right"
+                                sx={{
+                                    width: '30%',
+                                    backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                                    height: '52px',
+                                    fontSize: '1.1rem',
                                     fontWeight: 'bold',
                                     '& .MuiTableSortLabel-root': {
                                         '&:hover': {
@@ -327,8 +327,8 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                                     },
                                 }}
                             >
-                                <Tooltip 
-                                    title="מיון לפי אזור מגורים" 
+                                <Tooltip
+                                    title="מיון לפי אזור מגורים"
                                     placement="top"
                                     arrow
                                 >
@@ -351,13 +351,13 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                                     </TableSortLabel>
                                 </Tooltip>
                             </TableCell>
-                            <TableCell 
-                                align="right" 
-                                sx={{ 
-                                    width: '30%', 
-                                    backgroundColor: 'rgba(142, 172, 183, 0.72)', 
-                                    height: '52px', 
-                                    fontSize: '1.1rem', 
+                            <TableCell
+                                align="right"
+                                sx={{
+                                    width: '30%',
+                                    backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                                    height: '52px',
+                                    fontSize: '1.1rem',
                                     fontWeight: 'bold',
                                     '& .MuiTableSortLabel-root': {
                                         '&:hover': {
@@ -372,8 +372,8 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                                     },
                                 }}
                             >
-                                <Tooltip 
-                                    title="מיון לפי שם" 
+                                <Tooltip
+                                    title="מיון לפי שם"
                                     placement="top"
                                     arrow
                                 >
@@ -523,8 +523,8 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                                                         }}
                                                     >
                                                         {reasonOptions.map((option) => (
-                                                            <MenuItem 
-                                                                key={option} 
+                                                            <MenuItem
+                                                                key={option}
                                                                 value={option}
                                                                 sx={{
                                                                     fontSize: '0.9rem',

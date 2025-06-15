@@ -5,6 +5,8 @@ import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ExportPDFButton from '../../components/ExportPDFButton';
 import * as XLSX from 'xlsx';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 const AbsencePeople = () => {
   const [attendanceData, setAttendanceData] = useState(null);
@@ -30,32 +32,40 @@ const AbsencePeople = () => {
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      const [attendance, allProfiles] = await Promise.all([
-        fetchAttendanceByDate(selectedDate),
-        fetchAllProfiles()
-      ]);
-      if (attendance && attendance.attendanceList) {
-        setAttendanceData(attendance);
-      } else {
-        setOpenNoData(true);
+    setLoading(true);
+    const unsubscribeAttendance = onSnapshot(
+      doc(db, 'attendance', selectedDate),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          setAttendanceData(docSnapshot.data());
+        } else {
+          setOpenNoData(true);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching attendance:", error);
+        setLoading(false);
       }
+    );
+
+    return () => unsubscribeAttendance();
+  }, [selectedDate]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const allProfiles = await fetchAllProfiles();
       setProfiles(allProfiles);
-      setLoading(false);
     };
     loadData();
-  }, [selectedDate]);
+  }, []);
 
   if (loading) return <CircularProgress sx={{ m: 4 }} />;
 
-  // מצא את מי שהיו אמורים להגיע היום
-  const supposedToArrive = profiles.filter(p => Array.isArray(p.arrivalDays) && p.arrivalDays.includes(todayWeekday));
-  // מצא את מי שלא הגיע מתוך אלו שהיו אמורים להגיע
-  const absentMembers = supposedToArrive.filter(profile => {
-    const attendance = attendanceData.attendanceList.find(a => a.id === profile.id);
-    return !attendance || attendance.attended === false;
-  }).sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+  // מציג את כל מי שמופיע בטבלת הנוכחות כנעדר (attended: false)
+  const absentMembers = attendanceData.attendanceList
+    .filter(person => person.attended === false)
+    .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
 
   return (
     <Container maxWidth="lg" sx={{ mt: 0.5 }}>

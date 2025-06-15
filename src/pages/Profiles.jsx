@@ -8,6 +8,8 @@ import { Grid, Typography, Button, TextField, Box, AppBar, Toolbar, IconButton }
 import InputAdornment from '@mui/material/InputAdornment';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
+import { collection, getDocs, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function Profiles() {
   const [profiles, setProfiles] = useState([]);
@@ -30,10 +32,29 @@ function Profiles() {
   };
 
   const handleDeleteProfile = async (profileId) => {
-    await deleteProfile(profileId);
-    const data = await fetchAllProfiles();
-    setProfiles(data);
-    setSelectedProfile(null);
+    try {
+      // Delete the profile
+      await deleteProfile(profileId);
+
+      // Delete attendance records for the deleted profile
+      const attendanceRef = collection(db, 'attendance');
+      const attendanceSnapshot = await getDocs(attendanceRef);
+      attendanceSnapshot.forEach(async (doc) => {
+        const attendanceData = doc.data();
+        const attendanceList = attendanceData.attendanceList || [];
+        const updatedAttendanceList = attendanceList.filter(person => person.id !== profileId);
+        if (updatedAttendanceList.length !== attendanceList.length) {
+          await updateDoc(doc.ref, { attendanceList: updatedAttendanceList });
+        }
+      });
+
+      // Update the local profiles list
+      const data = await fetchAllProfiles();
+      setProfiles(data);
+      setSelectedProfile(null);
+    } catch (error) {
+      console.error('Error deleting profile and attendance records:', error);
+    }
   };
 
   // פונקציה חדשה לעדכון פרופיל
