@@ -1,299 +1,264 @@
 import React from 'react';
 import { Button } from '@mui/material';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { font, fontBold } from '../fonts/AlefHebrew';
+import dayjs from 'dayjs';
 
-const ExportPDFButton = ({ targetId, fileName = 'document.pdf' }) => {
-  const exportToPDF = async () => {
-    const element = document.getElementById(targetId);
-    if (!element) {
-      alert('לא נמצא אלמנט לייצוא');
-      return;
+const ExportPDFButton = ({ 
+  data, 
+  fileName, 
+  columns, 
+  title, 
+  subtitle,
+  reportDate,
+  customStyles,
+  buttonText = "ייצא ל-PDF",
+  buttonProps = {},
+  headerInfo = null,
+  footerInfo = null,
+  summaryData = null
+}) => {
+  
+  // פונקציה להפיכת טקסט עברי למצב RTL נכון
+  const reverseHebrewText = (text) => {
+    if (!text) return text;
+    
+    // בדיקה אם יש טקסט עברי
+    const hebrewRegex = /[\u0590-\u05FF]/;
+    if (!hebrewRegex.test(text)) {
+      return text; // אם אין עברית, החזר כמו שהוא
+    }
+    
+    // הפיכת הטקסט כדי להציג נכון ב-PDF
+    return text.split('').reverse().join('');
+  };
+
+  // פונקציה לעיבוד טקסט מעורב (עברית + מספרים)
+  const processHebrewText = (text) => {
+    if (!text) return text;
+    
+    const hebrewRegex = /[\u0590-\u05FF]/;
+    if (!hebrewRegex.test(text)) {
+      return text; // אין עברית
     }
 
+    // אם יש גם מספרים וגם עברית, נטפל בזה בצורה מיוחדת
+    const mixedRegex = /^(\d+\.?\s*)(.+)$/;
+    const match = text.match(mixedRegex);
+    
+    if (match) {
+      // יש מספר בתחילה - נשאיר את המספר במקום ונהפוך רק את החלק העברי
+      const number = match[1];
+      const hebrewPart = match[2];
+      return number + reverseHebrewText(hebrewPart);
+    }
+    
+    return reverseHebrewText(text);
+  };
+  
+  const handleExport = () => {
+    const doc = new jsPDF();
+    
+    // הוספת הפונטים העבריים
     try {
-      // הוספת מחלקה למצב הדפסה
-      element.classList.add('printing');
+      doc.addFileToVFS('AlefHebrew.ttf', font);
+      doc.addFont('AlefHebrew.ttf', 'AlefHebrew', 'normal');
       
-      // המתנה קצרה כדי שהסגנונות יתעדכנו
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      const captureElements = [];
-
-      // לכידת כותרת וסיכום כיחידה אחת
-      const headerSection = element.querySelector('.header-section');
-      const summarySection = element.querySelector('.summary-section');
+      doc.addFileToVFS('AlefHebrew-Bold.ttf', fontBold);
+      doc.addFont('AlefHebrew-Bold.ttf', 'AlefHebrew', 'bold');
       
-      if (headerSection && summarySection) {
-        // יצירת div זמני שמכיל את הכותרת והסיכום
-        const headerSummaryContainer = document.createElement('div');
-        headerSummaryContainer.style.cssText = `
-          background: white;
-          padding: 20px;
-          width: ${element.offsetWidth}px;
-        `;
-        
-        // שכפול הכותרת והסיכום
-        const headerClone = headerSection.cloneNode(true);
-        const summaryClone = summarySection.cloneNode(true);
-        
-        headerSummaryContainer.appendChild(headerClone);
-        headerSummaryContainer.appendChild(summaryClone);
-        
-        // הוספה זמנית ל-DOM
-        document.body.appendChild(headerSummaryContainer);
-        
-        const headerCanvas = await html2canvas(headerSummaryContainer, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          letterRendering: true,
-          imageTimeout: 0
-        });
-        
-        captureElements.push({
-          canvas: headerCanvas,
-          type: 'header',
-          height: headerCanvas.height
-        });
-        
-        // הסרה מה-DOM
-        document.body.removeChild(headerSummaryContainer);
-      }
+      // הגדרת הפונט כברירת מחדל
+      doc.setFont('AlefHebrew', 'normal');
+    } catch (error) {
+      console.error('Error loading fonts:', error);
+      // שימוש בפונט ברירת מחדל
+      doc.setFont('helvetica', 'normal');
+    }
 
-      // לכידת כותרת "רשימת נוכחים"
-      const presentTitleElement = element.querySelector('.present-section h6');
-      if (presentTitleElement) {
-        const titleCanvas = await html2canvas(presentTitleElement, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          letterRendering: true,
-          imageTimeout: 0
-        });
-        
-        captureElements.push({
-          canvas: titleCanvas,
-          type: 'section-title',
-          height: titleCanvas.height
-        });
-      }
-
-      // לכידת כל פרופיל נוכח בנפרד עם הקטנה
-      const presentProfiles = element.querySelectorAll('.present-section .MuiBox-root:not(:first-child) > .MuiBox-root');
-      for (let i = 0; i < presentProfiles.length; i++) {
-        const profile = presentProfiles[i];
-        
-        // הקטנת הפרופיל זמנית עבור הלכידה
-        const originalStyle = profile.style.cssText;
-        profile.style.cssText += 'transform: scale(0.85); transform-origin: top right; font-size: 0.8em;';
-        
-        const profileCanvas = await html2canvas(profile, {
-          scale: 1.8, // הקטנת scale קלה
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          backgroundColor: '#e8f5e8',
-          letterRendering: true,
-          imageTimeout: 0
-        });
-        
-        // החזרת הסטייל המקורי
-        profile.style.cssText = originalStyle;
-        
-        captureElements.push({
-          canvas: profileCanvas,
-          type: 'present-profile',
-          height: profileCanvas.height,
-          index: i
-        });
-      }
-
-      // לכידת כותרת "רשימת נעדרים"
-      const absentTitleElement = element.querySelector('.absent-section h6');
-      if (absentTitleElement) {
-        const titleCanvas = await html2canvas(absentTitleElement, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          letterRendering: true,
-          imageTimeout: 0
-        });
-        
-        captureElements.push({
-          canvas: titleCanvas,
-          type: 'section-title',
-          height: titleCanvas.height
-        });
-      }
-
-      // לכידת כל פרופיל נעדר בנפרד עם הקטנה
-      const absentProfiles = element.querySelectorAll('.absent-section .MuiBox-root:not(:first-child) > .MuiBox-root');
-      for (let i = 0; i < absentProfiles.length; i++) {
-        const profile = absentProfiles[i];
-        
-        // הקטנת הפרופיל זמנית עבור הלכידה
-        const originalStyle = profile.style.cssText;
-        profile.style.cssText += 'transform: scale(0.85); transform-origin: top right; font-size: 0.8em;';
-        
-        const profileCanvas = await html2canvas(profile, {
-          scale: 1.8, // הקטנת scale קלה
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          backgroundColor: '#ffebee',
-          letterRendering: true,
-          imageTimeout: 0
-        });
-        
-        // החזרת הסטייל המקורי
-        profile.style.cssText = originalStyle;
-        
-        captureElements.push({
-          canvas: profileCanvas,
-          type: 'absent-profile',
-          height: profileCanvas.height,
-          index: i
-        });
-      }
-
-      // לכידת כותרת התחתונה
-      const footerSection = element.querySelector('.footer-section');
-      if (footerSection) {
-        const footerCanvas = await html2canvas(footerSection, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          letterRendering: true,
-          imageTimeout: 0
-        });
-        
-        captureElements.push({
-          canvas: footerCanvas,
-          type: 'footer',
-          height: footerCanvas.height
-        });
-      }
-
-      // הסרת מחלקת ההדפסה
-      element.classList.remove('printing');
-
-      // יצירת PDF
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
+    // פונקציה לכתיבת טקסט עברי מימין לשמאל
+    const writeHebrewText = (text, x, y, options = {}) => {
+      const { fontSize = 12, fontStyle = 'normal', align = 'center' } = options;
       
-      const availableWidth = pageWidth - (margin * 2);
-      const availableHeight = pageHeight - (margin * 2);
-      
-      let currentPageHeight = 0;
-      let isFirstPage = true;
-      
-      // מעבר על כל האלמנטים שנלכדו
-      for (let i = 0; i < captureElements.length; i++) {
-        const element = captureElements[i];
-        const imgData = element.canvas.toDataURL('image/jpeg', 0.95);
-        const imgWidth = availableWidth;
-        const imgHeight = (element.height * imgWidth) / element.canvas.width;
-        
-        // בדיקה מיוחדת לפרופילים - 3 עמודות במקום 2
-        if (element.type === 'present-profile' || element.type === 'absent-profile') {
-          const columnsPerRow = 3; // 3 עמודות
-          const spacing = 3; // רווח בין עמודות
-          const profileWidth = (availableWidth - (spacing * (columnsPerRow - 1))) / columnsPerRow;
-          const profileHeight = (element.height * profileWidth * 0.8) / element.canvas.width; // הקטנת גובה ב-20%
-          
-          // בדיקה אם זה תחילת סוג חדש של פרופילים או שצריך עמוד חדש
-          if (currentPageHeight + profileHeight > availableHeight) {
-            pdf.addPage();
-            currentPageHeight = 0;
-          }
-          
-          // חישוב מיקום לפי מספר העמודה (0, 1, 2)
-          const columnIndex = element.index % columnsPerRow;
-          const xPosition = margin + (columnIndex * (profileWidth + spacing));
-          
-          // אם זו עמודה ראשונה של שורה חדשה, נוסיף רווח
-          if (columnIndex === 0 && element.index > 0) {
-            currentPageHeight += 2; // רווח קטן יותר בין שורות
-          }
-          
-          pdf.addImage(imgData, 'JPEG', xPosition, margin + currentPageHeight, profileWidth, profileHeight, '', 'FAST');
-          
-          // עדכון גובה הדף רק אחרי העמודה האחרונה בשורה או הפרופיל האחרון
-          const isLastInRow = columnIndex === columnsPerRow - 1;
-          const isLastProfile = element.index === captureElements.filter(el => el.type === element.type).length - 1;
-          
-          if (isLastInRow || isLastProfile) {
-            currentPageHeight += profileHeight;
-          }
-          
+      try {
+        // הגדרת הפונט
+        if (fontStyle === 'bold') {
+          doc.setFont('AlefHebrew', 'bold');
         } else {
-          // עבור אלמנטים אחרים (כותרות, סיכום וכו')
-          if (!isFirstPage && (currentPageHeight + imgHeight > availableHeight)) {
-            pdf.addPage();
-            currentPageHeight = 0;
-          }
-          
-          pdf.addImage(imgData, 'JPEG', margin, margin + currentPageHeight, imgWidth, imgHeight, '', 'FAST');
-          currentPageHeight += imgHeight + 5;
-          
-          // בדיקה אם נגמר מקום בעמוד
-          if (currentPageHeight >= availableHeight - 20) {
-            if (i < captureElements.length - 1) {
-              pdf.addPage();
-              currentPageHeight = 0;
-            }
-          }
+          doc.setFont('AlefHebrew', 'normal');
+        }
+      } catch (error) {
+        doc.setFont('helvetica', fontStyle);
+      }
+      
+      doc.setFontSize(fontSize);
+      
+      // עיבוד הטקסט לעברית
+      const processedText = processHebrewText(text);
+      
+      // חישוב מיקום בהתאם ליישור
+      let finalX = x;
+      if (align === 'center') {
+        const textWidth = doc.getTextWidth(processedText);
+        finalX = (doc.internal.pageSize.width - textWidth) / 2;
+      } else if (align === 'right') {
+        const textWidth = doc.getTextWidth(processedText);
+        finalX = doc.internal.pageSize.width - textWidth - 20;
+      } else if (align === 'left') {
+        finalX = 20;
+      }
+      
+      doc.text(processedText, finalX, y);
+    };
+
+    let yPosition = 20;
+
+    // כותרת ראשית
+    if (title) {
+      writeHebrewText(title, 0, yPosition, { fontSize: 18, fontStyle: 'bold', align: 'center' });
+      yPosition += 10;
+    }
+
+    // כותרת משנה
+    if (subtitle) {
+      writeHebrewText(subtitle, 0, yPosition, { fontSize: 14, align: 'center' });
+      yPosition += 15;
+    }
+
+    // מידע נוסף בכותרת
+    if (headerInfo) {
+      headerInfo.forEach(info => {
+        writeHebrewText(info, 0, yPosition, { fontSize: 12, align: 'center' });
+        yPosition += 7;
+      });
+      yPosition += 10;
+    }
+
+    // נתוני סיכום (אם קיימים)
+    if (summaryData) {
+      summaryData.forEach(summary => {
+        writeHebrewText(summary, 0, yPosition, { fontSize: 16, fontStyle: 'bold', align: 'center' });
+        yPosition += 8;
+      });
+      yPosition += 15;
+    }
+
+    // הכנת נתוני הטבלה עם עיבוד עברית
+    const tableHeaders = columns.map(col => processHebrewText(col.header || col.key));
+    const tableBody = data.map(item => 
+      columns.map(col => {
+        let value = '';
+        if (col.formatter) {
+          value = col.formatter(item[col.key], item);
+        } else {
+          value = item[col.key] || col.defaultValue || '';
         }
         
-        isFirstPage = false;
-      }
+        // עיבוד הערך לעברית
+        return processHebrewText(String(value));
+      })
+    );
 
-      // שמירת הקובץ
-      pdf.save(fileName);
+    // הגדרות סגנון עם בדיקות בטיחות
+    const safeCustomStyles = customStyles || {};
+    const styles = {
+      font: 'AlefHebrew',
+      fontSize: 10,
+      cellPadding: 5,
+      overflow: 'linebreak',
+      halign: 'center',
+      valign: 'middle',
+      fontStyle: 'normal',
+      textColor: [0, 0, 0],
+      ...(safeCustomStyles.styles || {})
+    };
+
+    const headStyles = {
+      fillColor: [66, 139, 202],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'center',
+      font: 'AlefHebrew',
+      fontSize: 11,
+      ...(safeCustomStyles.headStyles || {})
+    };
+
+    // יצירת הטבלה עם תמיכה ב-RTL
+    autoTable(doc, {
+      head: [tableHeaders],
+      body: tableBody,
+      startY: yPosition,
+      theme: 'grid',
+      styles: styles,
+      headStyles: headStyles,
+      columnStyles: safeCustomStyles.columnStyles || {},
+      tableLineWidth: 0.1,
+      tableLineColor: [0, 0, 0],
       
-      console.log(`PDF נוצר בהצלחה עם ${captureElements.length} אלמנטים נפרדים`);
+      // callback functions עם תמיכה בעברית
+      didParseCell: function(data) {
+        if (data && data.styles) {
+          try {
+            data.styles.font = 'AlefHebrew';
+            if (data.section === 'head') {
+              data.styles.fontStyle = 'bold';
+            } else {
+              data.styles.fontStyle = 'normal';
+            }
+            
+            // וידוא שהטקסט מעובד נכון
+            if (data.cell && data.cell.text && Array.isArray(data.cell.text)) {
+              data.cell.text = data.cell.text.map(text => processHebrewText(String(text)));
+            }
+          } catch (error) {
+            console.warn('Font setting error in didParseCell:', error);
+          }
+        }
+      },
       
-    } catch (error) {
-      console.error('שגיאה ביצירת PDF:', error);
-      alert('שגיאה ביצירת קובץ PDF. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
-    } finally {
-      // וידוא הסרת מחלקת ההדפסה
-      element.classList.remove('printing');
+      willDrawCell: function(data) {
+        try {
+          if (data && data.section === 'head') {
+            doc.setFont('AlefHebrew', 'bold');
+          } else {
+            doc.setFont('AlefHebrew', 'normal');
+          }
+        } catch (error) {
+          doc.setFont('helvetica', 'normal');
+        }
+      },
+      
+      ...(safeCustomStyles.tableOptions || {})
+    });
+
+    // מידע בתחתית הדף
+    if (footerInfo && Array.isArray(footerInfo)) {
+      const finalY = doc.lastAutoTable?.finalY || yPosition + 50;
+      
+      footerInfo.forEach((info, index) => {
+        if (info && info.text) {
+          const footerY = finalY + 20 + (index * 7);
+          writeHebrewText(info.text, 0, footerY, { 
+            fontSize: 10, 
+            align: info.align || 'center' 
+          });
+        }
+      });
     }
+
+    // שמירת הקובץ
+    const finalFileName = fileName || `דוח_${dayjs().format('DD-MM-YYYY')}.pdf`;
+    doc.save(finalFileName);
   };
 
   return (
-    <Button
-      variant="contained"
-      onClick={exportToPDF}
-      sx={{
-        ml: 2,
-        '&:focus': {
-          outline: 'none'
-        },
-        '&:active': {
-          outline: 'none'
-        }
-      }}
+    <Button 
+      variant="contained" 
+      color="primary" 
+      onClick={handleExport}
+      {...buttonProps}
     >
-      ייצוא ל־PDF
+      {buttonText}
     </Button>
   );
 };

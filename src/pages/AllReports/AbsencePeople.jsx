@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { fetchAttendanceByDate, fetchAllProfiles } from '../../firebase';
-import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Divider } from '@mui/material';
+import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ExportPDFButton from '../../components/ExportPDFButton';
@@ -61,6 +61,7 @@ const AbsencePeople = () => {
   }, []);
 
   if (loading) return <CircularProgress sx={{ m: 4 }} />;
+  
   if (!attendanceData) {
     return (
       <Dialog
@@ -118,10 +119,111 @@ const AbsencePeople = () => {
     .filter(person => person.attended === false)
     .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
 
+  // הגדרת עמודות עבור ה-PDF - בסדר RTL (מימין לשמאל)
+  const pdfColumns = [
+    { 
+      key: 'reason', 
+      header: 'סיבת היעדרות', 
+      defaultValue: 'לא צוינה סיבה',
+      formatter: (value) => value || 'לא צוינה סיבה'
+    },
+    { key: 'city', header: 'יישוב', defaultValue: 'לא צוין' },
+    { key: 'name', header: 'שם', defaultValue: '' },
+    { key: 'serialNumber', header: 'מס\'', defaultValue: '' }
+  ];
+
+  // נתונים מובנים לייצוא PDF - בסדר RTL
+  const pdfData = absentMembers.map((person, index) => ({
+    reason: person.reason || 'לא צוינה סיבה',
+    city: person.city || 'לא צוין',
+    name: person.name || '',
+    serialNumber: index + 1
+  }));
+
+  // הגדרות עבור ה-PDF
+  const pdfConfig = {
+    title: 'דוח חסרים יומי',
+    subtitle: 'מעון יום לותיקים',
+    headerInfo: [
+      `תאריך: ${todayFormatted}`,
+      `יום: ${todayWeekday}`
+    ],
+    summaryData: [
+      `סה"כ חסרים: ${absentMembers.length}`
+    ],
+    footerInfo: [
+      { text: 'מעון יום לותיקים - דוח אוטומטי', align: 'center' },
+      { text: `נוצר בתאריך: ${dayjs().format('DD/MM/YYYY HH:mm')}`, align: 'center' }
+    ],
+    customStyles: {
+      styles: {
+        fontSize: 11,
+        cellPadding: 6,
+        font: 'AlefHebrew'
+      },
+      headStyles: {
+        fillColor: [211, 47, 47], // צבע אדום כמו בדוח המקורי
+        fontSize: 12,
+        font: 'AlefHebrew'
+      }
+    }
+  };
+
   return (
     <>
+      <style>{`
+        @media print {
+          @page {
+            size: A4;
+            margin: 1.5cm;
+          }
+          
+          body {
+            font-family: Arial, Helvetica, sans-serif !important;
+            direction: rtl;
+            color: black !important;
+            background: white !important;
+          }
+          
+          * {
+            font-family: Arial, Helvetica, sans-serif !important;
+            color: black !important;
+            background: white !important;
+            -webkit-print-color-adjust: exact;
+          }
+          
+          .no-print {
+            display: none !important;
+          }
+          
+          .print-table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+          }
+          
+          .print-table th,
+          .print-table td {
+            border: 1px solid #333 !important;
+            padding: 8px;
+            text-align: center;
+          }
+          
+          .print-table th {
+            background-color: #f5f5f5 !important;
+            font-weight: bold;
+          }
+        }
+        
+        .hebrew-text {
+          font-family: Arial, Helvetica, sans-serif;
+          direction: ltr;
+          text-align: right;
+        }
+      `}</style>
+
       {/* שורת כפתורים - מחוץ ל-Container של הדוח */}
-      <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2 }}>
+      <Box className="no-print" sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2 }}>
         <Button
           variant="outlined"
           color="primary"
@@ -140,35 +242,68 @@ const AbsencePeople = () => {
           InputLabelProps={{ shrink: true }}
         />
       </Box>
-      <Box sx={{
-        position: 'absolute', left: 32, top: 90, zIndex: 10,
+
+      <Box className="no-print" sx={{
+        position: 'absolute', 
+        left: 32, 
+        top: 90, 
+        zIndex: 10,
+        display: 'flex',
+        gap: 2,
         '@media (max-width:600px)': {
-          left: 8, top: 80 // מסכים קטנים
+          left: 8, 
+          top: 80,
+          flexDirection: 'column'
         }
       }}>
         <ExportPDFButton
-          targetId="reportContent"
-          fileName={`דוח נעדרים - ${todayFormatted}.pdf`}
+          data={pdfData}
+          columns={pdfColumns}
+          fileName={`דוח חסרים - ${todayFormatted}.pdf`}
+          title={pdfConfig.title}
+          subtitle={pdfConfig.subtitle}
+          headerInfo={pdfConfig.headerInfo}
+          summaryData={pdfConfig.summaryData}
+          footerInfo={pdfConfig.footerInfo}
+          customStyles={pdfConfig.customStyles}
+          buttonText="ייצא ל-PDF"
+          buttonProps={{
+            disableRipple: true,
+            sx: {
+              '&:focus': { outline: 'none' },
+              '&:active': { outline: 'none' }
+            }
+          }}
         />
         <Button
           variant="contained"
-          color="primary"
+          color="secondary"
           disableRipple
           onClick={() => {
-            const columns = ['#', 'שם', 'יישוב', 'סיבת היעדרות'];
             const excelData = absentMembers.map((person, index) => ({
-              '#': index + 1,
+              'מס': index + 1,
               'שם': person.name,
-              'יישוב': person.city,
-              'סיבת היעדרות': person.reason || 'לא צוינה סיבה'
+              'יישוב': person.city || 'לא צוין',
+              'סיבת היעדרות': person.reason || 'לא צוינה סיבה',
+              'תאריך': todayFormatted
             }));
-            const ws = XLSX.utils.json_to_sheet(excelData, { header: columns });
+            
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            
+            // הגדרת רוחב עמודות
+            ws['!cols'] = [
+              { wch: 5 },   // מס
+              { wch: 25 },  // שם  
+              { wch: 15 },  // יישוב
+              { wch: 20 },  // סיבת היעדרות
+              { wch: 12 }   // תאריך
+            ];
+            
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'חסרים');
             XLSX.writeFile(wb, `דוח חסרים - ${todayFormatted}.xlsx`);
           }}
           sx={{
-            ml: 2,
             '&:focus': { outline: 'none' },
             '&:active': { outline: 'none' }
           }}
@@ -177,101 +312,299 @@ const AbsencePeople = () => {
         </Button>
       </Box>
 
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'start',
-          width: '100%',
-          px: { xs: 2, md: 8 },
-        }}
-      >
-        <Container maxWidth={false} // או false
-          sx={{ mt: 2, maxWidth: '900px', width: '100%', }}>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'start',
+        width: '100%',
+        px: { xs: 2, md: 8 },
+      }}>
+        <Container maxWidth={false} sx={{ mt: 2, maxWidth: '900px', width: '100%' }}>
           {attendanceData && attendanceData.attendanceList ? (
-            <div id="reportContent">
-              <Paper sx={{width: '210mm', margin: '0 auto',p: 4,outline: 'none'}}>
-                {/* כותרת */}
-                <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px solid #f44336', pb: 2 }}>
-                  <Typography variant="h4" color="error" gutterBottom>
+            <div id="reportContent" className="hebrew-text">
+              <Paper sx={{
+                width: '210mm',
+                minHeight: '297mm',
+                margin: '0 auto',
+                p: 4,
+                outline: 'none',
+                fontFamily: 'Arial, Helvetica, sans-serif',
+                direction: 'rtl',
+                backgroundColor: 'white',
+                '@media print': {
+                  width: '100%',
+                  minHeight: 'auto',
+                  margin: 0,
+                  padding: '20px',
+                  boxShadow: 'none',
+                  border: 'none'
+                }
+              }}>
+
+                {/* כותרת ראשית */}
+                <Box sx={{
+                  textAlign: 'center',
+                  mb: 4,
+                  pb: 2,
+                  borderBottom: '3px solid #d32f2f'
+                }}>
+                  <Typography variant="h3" sx={{
+                    fontWeight: 'bold',
+                    color: '#d32f2f',
+                    mb: 1,
+                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    '@media print': {
+                      fontSize: '24pt',
+                      color: '#000'
+                    }
+                  }}>
                     דוח חסרים יומי
                   </Typography>
-                  <Typography variant="h6" color="textSecondary">
-                    תאריך: {todayFormatted}
+                  <Typography variant="h5" sx={{
+                    color: '#666',
+                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    '@media print': {
+                      fontSize: '16pt',
+                      color: '#000'
+                    }
+                  }}>
+                    מעון יום לותיקים
                   </Typography>
                 </Box>
 
-                {/* סיכום כללי */}
+                {/* פרטי התאריך */}
                 <Box sx={{
                   display: 'flex',
-                  justifyContent: 'space-around',
-                  mb: 4,
+                  justifyContent: 'space-between',
+                  mb: 3,
                   p: 2,
-                  backgroundColor: '#fff3f3',
-                  borderRadius: 1
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: 1,
+                  '@media print': {
+                    backgroundColor: 'transparent',
+                    border: '1px solid #333'
+                  }
                 }}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h5" color="error">
-                      {absentMembers.length}
+                  <Box>
+                    <Typography variant="body1" sx={{
+                      fontWeight: 'bold',
+                      fontFamily: 'Arial, Helvetica, sans-serif'
+                    }}>
+                      תאריך: {todayFormatted}
                     </Typography>
-                    <Typography variant="body2">סה"כ חסרים</Typography>
+                    <Typography variant="body2" sx={{
+                      color: '#666',
+                      fontFamily: 'Arial, Helvetica, sans-serif',
+                      '@media print': { color: '#000' }
+                    }}>
+                      יום: {todayWeekday}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography variant="body2" sx={{
+                      color: '#666',
+                      fontFamily: 'Arial, Helvetica, sans-serif',
+                      '@media print': { color: '#000' }
+                    }}>
+                      דוח נוצר: {dayjs().format('DD/MM/YYYY HH:mm')}
+                    </Typography>
                   </Box>
                 </Box>
 
-                {/* רשימת נעדרים */}
-                <Box sx={{ mb: 4 }}>
-                  <Typography variant="h6" color="error" gutterBottom sx={{ borderBottom: '1px solid #f44336', pb: 1 }}>
-                    רשימת חסרים ({absentMembers.length})
-                  </Typography>
-                  {absentMembers.length > 0 ? (
-                    <Box sx={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                      gap: 1.5,
-                      mt: 2,
+                {/* סיכום סטטיסטי */}
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  mb: 4,
+                  p: 3,
+                  backgroundColor: '#ffebee',
+                  borderRadius: 2,
+                  border: '2px solid #d32f2f',
+                  '@media print': {
+                    backgroundColor: 'transparent',
+                    border: '2px solid #333'
+                  }
+                }}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h2" sx={{
+                      color: '#d32f2f',
+                      fontWeight: 'bold',
+                      mb: 1,
+                      fontFamily: 'Arial, Helvetica, sans-serif',
                       '@media print': {
-                        pageBreakInside: 'avoid'
+                        fontSize: '36pt',
+                        color: '#000'
                       }
                     }}>
-                      {absentMembers.map((person, index) => (
-                        <Box key={person.id} sx={{
-                          p: 1.5,
-                          backgroundColor: '#ffebee',
-                          borderRadius: 1,
-                          fontSize: '0.9rem'
-                        }}>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: 'inherit' }}>
-                            {index + 1}. {person.name}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
-                            יישוב: {person.city}
-                          </Typography>
-                          <Typography variant="caption" color="black" sx={{ display: 'block', fontSize: '0.8rem' }}>
-                            סיבת היעדרות: {person.reason || 'ללא'}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
-                      אין חסרים להיום!
+                      {absentMembers.length}
                     </Typography>
-                  )}
+                    <Typography variant="h6" sx={{
+                      color: '#d32f2f',
+                      fontWeight: 'bold',
+                      fontFamily: 'Arial, Helvetica, sans-serif',
+                      '@media print': {
+                        fontSize: '14pt',
+                        color: '#000'
+                      }
+                    }}>
+                      סה"כ חסרים
+                    </Typography>
+                  </Box>
                 </Box>
 
-                {/* חתימה */}
+                {/* רשימת חסרים - טבלה */}
+                {absentMembers.length > 0 ? (
+                  <Box sx={{ mb: 4 }}>
+                    <Typography variant="h5" sx={{
+                      mb: 3,
+                      fontWeight: 'bold',
+                      color: '#d32f2f',
+                      borderBottom: '2px solid #d32f2f',
+                      pb: 1,
+                      fontFamily: 'Arial, Helvetica, sans-serif',
+                      '@media print': {
+                        fontSize: '18pt',
+                        color: '#000',
+                        borderBottom: '2px solid #000'
+                      }
+                    }}>
+                      רשימת חסרים ({absentMembers.length})
+                    </Typography>
+
+                    <TableContainer component={Paper} sx={{
+                      '@media print': {
+                        boxShadow: 'none',
+                        border: 'none'
+                      }
+                    }}>
+                      <Table className="print-table" sx={{
+                        '& .MuiTableCell-root': {
+                          fontFamily: 'Arial, Helvetica, sans-serif',
+                          textAlign: 'center',
+                          border: '1px solid #ddd',
+                          '@media print': {
+                            border: '1px solid #333 !important',
+                            fontSize: '12pt'
+                          }
+                        }
+                      }}>
+                        <TableHead>
+                          <TableRow sx={{
+                            backgroundColor: '#f5f5f5',
+                            '@media print': {
+                              backgroundColor: '#f5f5f5 !important'
+                            }
+                          }}>
+                            <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>מס'</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '35%' }}>שם</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>יישוב</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '30%' }}>סיבת היעדרות</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {absentMembers.map((person, index) => (
+                            <TableRow key={person.id || index} sx={{
+                              '&:nth-of-type(even)': {
+                                backgroundColor: '#fafafa',
+                                '@media print': {
+                                  backgroundColor: '#fafafa !important'
+                                }
+                              }
+                            }}>
+                              <TableCell sx={{ fontWeight: 'bold' }}>
+                                {index + 1}
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }}>
+                                {person.name}
+                              </TableCell>
+                              <TableCell>
+                                {person.city || 'לא צוין'}
+                              </TableCell>
+                              <TableCell>
+                                {person.reason || 'לא צוינה סיבה'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                ) : (
+                  <Box sx={{
+                    textAlign: 'center',
+                    p: 4,
+                    backgroundColor: '#e8f5e8',
+                    borderRadius: 2,
+                    border: '2px solid #4caf50',
+                    mb: 4,
+                    '@media print': {
+                      backgroundColor: 'transparent',
+                      border: '2px solid #333'
+                    }
+                  }}>
+                    <Typography variant="h5" sx={{
+                      color: '#4caf50',
+                      fontWeight: 'bold',
+                      fontFamily: 'Arial, Helvetica, sans-serif',
+                      '@media print': {
+                        fontSize: '18pt',
+                        color: '#000'
+                      }
+                    }}>
+                      🎉 אין חסרים היום! 🎉
+                    </Typography>
+                    <Typography variant="body1" sx={{
+                      mt: 1,
+                      color: '#2e7d32',
+                      fontFamily: 'Arial, Helvetica, sans-serif',
+                      '@media print': {
+                        color: '#000'
+                      }
+                    }}>
+                      כל החברים נוכחים במעון
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* חתימה וחותמת */}
                 <Box sx={{
-                  mt: 4,
-                  pt: 2,
-                  borderTop: '1px solid #e0e0e0',
-                  textAlign: 'center',
+                  mt: 'auto',
+                  pt: 4,
+                  borderTop: '2px solid #e0e0e0',
                   '@media print': {
+                    marginTop: '50px',
+                    borderTop: '2px solid #333',
                     pageBreakInside: 'avoid'
                   }
                 }}>
-                  <Typography variant="caption" color="textSecondary">
-                    דוח נוצר ב-{dayjs().format('DD/MM/YYYY HH:mm')} | מעון יום לותיקים
-                  </Typography>
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <Box>
+                      <Typography variant="body2" sx={{
+                        fontFamily: 'Arial, Helvetica, sans-serif',
+                        mb: 3,
+                        '@media print': { fontSize: '10pt' }
+                      }}>
+                        חתימת אחראי: ___________________
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{
+                        color: '#666',
+                        fontFamily: 'Arial, Helvetica, sans-serif',
+                        '@media print': {
+                          color: '#000',
+                          fontSize: '9pt'
+                        }
+                      }}>
+                        מעון יום לותיקים<br />
+                        דוח אוטומטי - {dayjs().format('DD/MM/YYYY HH:mm')}
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
               </Paper>
             </div>
