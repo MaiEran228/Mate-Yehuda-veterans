@@ -74,8 +74,18 @@ const Reports = () => {
                   whiteSpace: 'pre-wrap',
                   padding: { xs: '8px', sm: '10px' },
                   '&:hover': {
-                    backgroundColor: 'rgba(142, 172, 183, 0.85)'
-                  }
+                    backgroundColor: 'rgba(142, 172, 183, 0.85)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                    transition: 'all 0.2s ease-in-out'
+                  },
+                  '&:focus': { outline: 'none' },
+                  '&:active': { 
+                    outline: 'none',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  },
+                  transition: 'all 0.2s ease-in-out'
                 }}
               >
                 {report.name}
@@ -105,8 +115,18 @@ const Reports = () => {
                   whiteSpace: 'pre-wrap',
                   padding: { xs: '8px', sm: '10px' },
                   '&:hover': {
-                    backgroundColor: 'rgba(142, 172, 183, 0.85)'
-                  }
+                    backgroundColor: 'rgba(142, 172, 183, 0.85)',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                    transition: 'all 0.2s ease-in-out'
+                  },
+                  '&:focus': { outline: 'none' },
+                  '&:active': { 
+                    outline: 'none',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  },
+                  transition: 'all 0.2s ease-in-out'
                 }}
               >
                 {report.name}

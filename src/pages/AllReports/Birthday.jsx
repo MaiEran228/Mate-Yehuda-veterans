@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAllProfiles } from '../../firebase';
-import { Typography, CircularProgress, Box, Paper, Button, Container, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Typography, CircularProgress, Box, Paper, Button, Container, Select, MenuItem, FormControl, InputLabel, TextField } from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/he';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -19,6 +19,7 @@ const Birthday = () => {
   const from = location.state?.from;
   const todayFormatted = dayjs().format('DD/MM/YYYY');
   const [selectedMonth, setSelectedMonth] = useState('all');
+  const [selectedDate, setSelectedDate] = useState(todayFormatted);
 
   const handleBack = () => {
     if (from === 'home') {
@@ -73,29 +74,51 @@ const Birthday = () => {
   ];
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 0.5 }}>
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-        <Button 
-          variant="outlined" 
+    <>
+      {/* שורת כפתורים - מחוץ ל-Container של הדוח */}
+      <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Button
+          variant="outlined"
+          color="primary"
           onClick={handleBack}
-          sx={{ 
-            ml: 2,
-            '&:focus': {
-              outline: 'none'
-            },
-            '&:active': {
-              outline: 'none'
-            }
-          }}
+          sx={{ ml: 2 }}
         >
           חזור
         </Button>
-
+        <TextField
+          label="תאריך"
+          type="date"
+          size="small"
+          value={selectedDate}
+          onChange={e => setSelectedDate(e.target.value)}
+          sx={{ ml: 2, minWidth: 140 }}
+          InputLabelProps={{ shrink: true }}
+        />
+        <FormControl size="small" sx={{ minWidth: 120, ml: 2 }}>
+          <InputLabel id="month-select-label">חודש</InputLabel>
+          <Select
+            labelId="month-select-label"
+            value={selectedMonth}
+            label="חודש"
+            onChange={e => setSelectedMonth(e.target.value)}
+          >
+            <MenuItem value="all">הכל</MenuItem>
+            {hebrewMonths.map((month, idx) => (
+              <MenuItem key={idx + 1} value={(idx + 1).toString()}>{month}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      <Box sx={{
+        position: 'absolute', left: 32, top: 90, zIndex: 10,
+        '@media (max-width:600px)': {
+          left: 8, top: 80 // מסכים קטנים
+        }
+      }}>
         <ExportPDFButton
           targetId="reportContent"
-          fileName={`דוח ימי הולדת - ${todayFormatted}.pdf`}
+          fileName={`ימי הולדת - ${todayFormatted}.pdf`}
         />
-
         <Button
           variant="contained"
           color="primary"
@@ -121,139 +144,131 @@ const Birthday = () => {
         >
           ייצוא ל־Excel
         </Button>
-        <FormControl size="small" sx={{ minWidth: 120, ml: 2 }}>
-          <InputLabel id="month-select-label">חודש</InputLabel>
-          <Select
-            labelId="month-select-label"
-            value={selectedMonth}
-            label="חודש"
-            onChange={e => setSelectedMonth(e.target.value)}
-          >
-            <MenuItem value="all">הכל</MenuItem>
-            {hebrewMonths.map((month, idx) => (
-              <MenuItem key={idx+1} value={(idx+1).toString()}>{month}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
       </Box>
 
-      <div id="reportContent" dir="rtl">
-        <Paper sx={{
-          width: '210mm',
-          margin: '0 auto',
-          p: 4,
-          outline: 'none'
-        }}>
-          {/* כותרת */}
-          <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px solid #1976d2', pb: 2 }}>
-            <Typography variant="h4" color="primary" gutterBottom>
-              דוח ימי הולדת שנתי
-            </Typography>
-            <Typography variant="h6" color="textSecondary">
-              נוצר בתאריך: {todayFormatted}
-            </Typography>
-          </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'start', width: '100%', px: { xs: 2, md: 8 }, }}>
+        <Container maxWidth={false}
+          sx={{ mt: 2, maxWidth: '900px', width: '100%', }}>
 
-          {/* סיכום */}
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'space-around',
-            mb: 4,
-            p: 2,
-            backgroundColor: '#e3f2fd',
-            borderRadius: 1
-          }}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h5" color="primary">
-                {profiles.filter(p => p.birthDate).length}
-              </Typography>
-              <Typography variant="body2">סה"כ ימי הולדת</Typography>
-            </Box>
-          </Box>
-
-          {/* רשימת ימי הולדת לפי חודשים */}
-          {Object.entries(filteredProfilesByMonth)
-            .sort(([a], [b]) => Number(a) - Number(b))
-            .map(([monthNum, monthProfiles]) => (
-              <Box 
-                key={monthNum} 
-                sx={{ 
-                  mb: 4,
-                  '@media print': {
-                    pageBreakInside: 'avoid'
-                  }
-                }}
-              >
-                <Typography 
-                  variant="h6" 
-                  color="primary" 
-                  gutterBottom 
-                  sx={{ 
-                    borderBottom: '1px solid #1976d2',
-                    pb: 1,
-                    mb: 2
-                  }}
-                >
-                  {hebrewMonths[Number(monthNum) - 1]} ({monthProfiles.length})
+          <div id="reportContent" dir="rtl">
+            <Paper sx={{
+              width: '210mm',
+              margin: '0 auto',
+              p: 4,
+              outline: 'none'
+            }}>
+              {/* כותרת */}
+              <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px solid #1976d2', pb: 2 }}>
+                <Typography variant="h4" color="primary" gutterBottom>
+                  דוח ימי הולדת שנתי
                 </Typography>
-                <Box sx={{ 
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-                  gap: 2
-                }}>
-                  {monthProfiles.map((profile) => (
-                    <Paper
-                      key={profile.id}
-                      elevation={1}
-                      sx={{
-                        p: 2,
-                        backgroundColor: '#e3f2fd',
-                        borderRadius: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 2
-                      }}
-                    >
-                      <CakeIcon sx={{ color: '#1976d2', fontSize: 32 }} />
-                      <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                          {profile.name}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          {profile.birthDate ? (() => {
-                            const birthDate = dayjs(profile.birthDate);
-                            return `תאריך לידה: ${birthDate.format('DD/MM/YYYY')}`;
-                          })() : 'תאריך לידה לא צוין'}
-                        </Typography>
-                        {profile.birthDate && (
-                          <Typography variant="body2" color="textSecondary">
-                            {`גיל: ${dayjs().diff(dayjs(profile.birthDate), 'year')}`}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Paper>
-                  ))}
+                <Typography variant="h6" color="textSecondary">
+                  נוצר בתאריך: {todayFormatted}
+                </Typography>
+              </Box>
+
+              {/* סיכום */}
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-around',
+                mb: 4,
+                p: 2,
+                backgroundColor: '#e3f2fd',
+                borderRadius: 1
+              }}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h5" color="primary">
+                    {profiles.filter(p => p.birthDate).length}
+                  </Typography>
+                  <Typography variant="body2">סה"כ ימי הולדת</Typography>
                 </Box>
               </Box>
-            ))}
 
-          {/* חתימה */}
-          <Box sx={{ 
-            mt: 4,
-            pt: 2,
-            borderTop: '1px solid #e0e0e0',
-            textAlign: 'center',
-            '@media print': {
-              pageBreakInside: 'avoid'
-            }
-          }}>
-            <Typography variant="caption" color="textSecondary">
-              דוח נוצר ב-{dayjs().format('DD/MM/YYYY HH:mm')} | מעון יום לותיקים
-            </Typography>
-          </Box>
-        </Paper>
-      </div>
-    </Container>
+              {/* רשימת ימי הולדת לפי חודשים */}
+              {Object.entries(filteredProfilesByMonth)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([monthNum, monthProfiles]) => (
+                  <Box
+                    key={monthNum}
+                    sx={{
+                      mb: 4,
+                      '@media print': {
+                        pageBreakInside: 'avoid'
+                      }
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      color="primary"
+                      gutterBottom
+                      sx={{
+                        borderBottom: '1px solid #1976d2',
+                        pb: 1,
+                        mb: 2
+                      }}
+                    >
+                      {hebrewMonths[Number(monthNum) - 1]} ({monthProfiles.length})
+                    </Typography>
+                    <Box sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                      gap: 2
+                    }}>
+                      {monthProfiles.map((profile) => (
+                        <Paper
+                          key={profile.id}
+                          elevation={1}
+                          sx={{
+                            p: 2,
+                            backgroundColor: '#e3f2fd',
+                            borderRadius: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2
+                          }}
+                        >
+                          <CakeIcon sx={{ color: '#1976d2', fontSize: 32 }} />
+                          <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                              {profile.name}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                              {profile.birthDate ? (() => {
+                                const birthDate = dayjs(profile.birthDate);
+                                return `תאריך לידה: ${birthDate.format('DD/MM/YYYY')}`;
+                              })() : 'תאריך לידה לא צוין'}
+                            </Typography>
+                            {profile.birthDate && (
+                              <Typography variant="body2" color="textSecondary">
+                                {`גיל: ${dayjs().diff(dayjs(profile.birthDate), 'year')}`}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Paper>
+                      ))}
+                    </Box>
+                  </Box>
+                ))}
+
+              {/* חתימה */}
+              <Box sx={{
+                mt: 4,
+                pt: 2,
+                borderTop: '1px solid #e0e0e0',
+                textAlign: 'center',
+                '@media print': {
+                  pageBreakInside: 'avoid'
+                }
+              }}>
+                <Typography variant="caption" color="textSecondary">
+                  דוח נוצר ב-{dayjs().format('DD/MM/YYYY HH:mm')} | מעון יום לותיקים
+                </Typography>
+              </Box>
+            </Paper>
+          </div>
+        </Container>
+      </Box>
+    </>
   );
 };
 

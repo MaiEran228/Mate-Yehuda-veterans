@@ -98,92 +98,106 @@ const DaysLeft = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 0.5 }}>
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <TextField
-            label="בחר חודש"
-            type="month"
-            size="small"
-            value={selectedMonth}
-            onChange={e => setSelectedMonth(e.target.value)}
-            sx={{ ml: 2, minWidth: 140 }}
-            InputLabelProps={{ shrink: true }}
-          />
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={() => navigate('/Reports')}
-            sx={{ ml: 2 }}
-          >
-            חזור
-          </Button>
-          <Button variant="contained" onClick={handleExportPDF} sx={{ ml: 2 }}>
-            ייצוא ל־PDF
-          </Button>
-        </Box>
-        <Button variant="outlined" color="secondary" onClick={() => setExtraOpen(true)}>
-          רשימת אנשים עם ימי אקסטרה
+    <>
+      {/* שורת כפתורים - מחוץ ל-Container של הדוח */}
+      <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => navigate('/Reports')}
+          sx={{ ml: 2 }}
+        >
+          חזור
+        </Button>
+        <TextField
+          label="חודש"
+          type="month"
+          size="small"
+          value={selectedMonth}
+          onChange={e => setSelectedMonth(e.target.value)}
+          sx={{ ml: 2, minWidth: 140 }}
+          InputLabelProps={{ shrink: true }}
+        />
+      </Box>
+      <Box sx={{
+        position: 'absolute', left: 32, top: 90, zIndex: 10,
+        '@media (max-width:600px)': {
+          left: 8, top: 80 // מסכים קטנים
+        }
+      }}>
+        <Button variant="contained" onClick={handleExportPDF} sx={{ ml: 2 }}>
+          ייצוא ל־PDF
         </Button>
       </Box>
-      {loading ? (
-        <CircularProgress sx={{ m: 4 }} />
-      ) : (
-        <div id="daysLeftReportContent">
-          <Paper sx={{ width: '100%', maxWidth: '100%', p: 4, outline: 'none', mx: 'auto' }}>
-            <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px solid #1976d2', pb: 2 }}>
-              <Typography variant="h4" color="primary" gutterBottom>
-                דוח ימים נותרים
-              </Typography>
-              <Typography variant="h6" color="textSecondary">
-                חודש: {dayjs(selectedMonth).format('MM/YYYY')}
-              </Typography>
-            </Box>
-            <Box sx={{ mt: 4 }}>
-              <Typography variant="h6" gutterBottom sx={{ borderBottom: '1px solid #4caf50', pb: 1 }}>
-                טבלת יתרת ימי זכאות לחודש
-              </Typography>
-              <Box sx={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', minWidth: '1100px', borderCollapse: 'collapse', direction: 'rtl' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ border: '1px solid #ccc', padding: 16 }}>שם</th>
-                      <th style={{ border: '1px solid #ccc', padding: 16 }}>יתרת ימי זכאות החודש</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {people.map(person => (
-                      <tr key={person.id} style={{ minHeight: 48, backgroundColor: person.missed ? '#ffeaea' : undefined }}>
-                        <td style={{ border: '1px solid #ccc', padding: 16 }}>{person.name}</td>
-                        <td style={{ border: '1px solid #ccc', padding: 16 }}>{person.remaining}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Box>
-            </Box>
-          </Paper>
-        </div>
-      )}
-      <Dialog open={extraOpen} onClose={() => setExtraOpen(false)}>
-        <DialogTitle>רשימת אנשים עם ימי אקסטרה</DialogTitle>
-        <DialogContent>
-          {extraPeople.length === 0 ? (
-            <div>אין אנשים עם ימי אקסטרה החודש.</div>
+
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'start', width: '100%', px: { xs: 2, md: 8 }, }}>
+        <Container maxWidth={false}
+          sx={{ mt: 2, maxWidth: '900px', width: '100%', }}>
+          {loading ? (
+            <CircularProgress sx={{ m: 4 }} />
           ) : (
-            <ul style={{ direction: 'rtl', paddingRight: 0 }}>
-              {extraPeople.map(p => (
-                <li key={p.id}>{p.name}</li>
-              ))}
-            </ul>
+            <div id="daysLeftReportContent">
+              <Paper sx={{
+                width: '210mm',
+                margin: '0 auto',
+                p: 4,
+                outline: 'none'
+              }}>
+                <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px solid #1976d2', pb: 2 }}>
+                  <Typography variant="h4" color="primary" gutterBottom>
+                    דוח ימים נותרים
+                  </Typography>
+                  <Typography variant="h6" color="textSecondary">
+                    חודש: {dayjs(selectedMonth).format('MM/YYYY')}
+                  </Typography>
+                </Box>
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="h6" gutterBottom sx={{ pb: 1 }}>
+                    טבלת יתרת ימי זכאות לחודש
+                  </Typography>
+                  <Box sx={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl', tableLayout: 'fixed' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ border: '1px solid #ccc', padding: 16, backgroundColor: '#f5f5f5' }}>שם</th>
+                          <th style={{ border: '1px solid #ccc', padding: 16, backgroundColor: '#f5f5f5' }}>יתרת ימי זכאות החודש</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {people.map(person => (
+                          <tr key={person.id} style={{ minHeight: 48, }}>
+                            <td style={{ border: '1px solid #ccc', padding: 16, textAlign: 'center', }}>{person.name}</td>
+                            <td style={{ border: '1px solid #ccc', padding: 16, textAlign: 'center', }}>{person.remaining}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Box>
+                </Box>
+              </Paper>
+            </div>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setExtraOpen(false)} color="primary">סגור</Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+          <Dialog open={extraOpen} onClose={() => setExtraOpen(false)}>
+            <DialogTitle>רשימת אנשים עם ימי אקסטרה</DialogTitle>
+            <DialogContent>
+              {extraPeople.length === 0 ? (
+                <div>אין אנשים עם ימי אקסטרה החודש.</div>
+              ) : (
+                <ul style={{ direction: 'rtl', paddingRight: 0 }}>
+                  {extraPeople.map(p => (
+                    <li key={p.id}>{p.name}</li>
+                  ))}
+                </ul>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setExtraOpen(false)} color="primary">סגור</Button>
+            </DialogActions>
+          </Dialog>
+        </Container>
+      </Box>
+    </>
   );
 };
 
-export default DaysLeft;
+      export default DaysLeft;
