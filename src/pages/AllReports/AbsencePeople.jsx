@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { fetchAttendanceByDate, fetchAllProfiles } from '../../firebase';
 import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { heIL } from '@mui/x-date-pickers/locales';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ExportPDFButton from '../../components/ExportPDFButton';
@@ -16,7 +19,6 @@ const AbsencePeople = () => {
   const [openNoData, setOpenNoData] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
-  const [inputDate, setInputDate] = useState(dayjs().format('YYYY-MM-DD'));
   const todayFormatted = dayjs(selectedDate).format('DD/MM/YYYY');
   const todayWeekday = dayjs(selectedDate).format('dddd');
   const location = useLocation();
@@ -224,23 +226,93 @@ const AbsencePeople = () => {
 
       {/* שורת כפתורים - מחוץ ל-Container של הדוח */}
       <Box className="no-print" sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={handleBack}
-          sx={{ ml: 2 }}
-        >
+        <Button variant="outlined" onClick={handleBack} sx={{ ml: 2 }}>
           חזור
         </Button>
-        <TextField
-          label="תאריך"
-          type="date"
-          size="small"
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-          sx={{ ml: 2, minWidth: 140 }}
-          InputLabelProps={{ shrink: true }}
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="he"
+          localeText={{
+            ...heIL.components.MuiLocalizationProvider.defaultProps.localeText,
+            okButtonLabel: 'אישור',
+          }}>
+          <Box sx={{ position: 'relative', display: 'inline-block' }}>
+            {/* שכבת חסימה שמכסה רק את שדה הטקסט, לא את כפתור הלוח שנה */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: '40px', // משאיר את האייקון פתוח
+                bottom: 0,
+                zIndex: 10,
+                pointerEvents: 'all',
+                borderRadius: 1,
+              }}
+            />
+            <DatePicker
+              label="תאריך"
+              value={dayjs(selectedDate)}
+              onChange={(newValue) => {
+                if (newValue) {
+                  setSelectedDate(newValue.format('YYYY-MM-DD'));
+                }
+              }}
+              format="DD/MM/YYYY"
+              slotProps={{
+                actionBar: {
+                  actions: ['accept'],
+                  sx: {
+                    padding: '0px 8px',
+                    margin: '-70px 0 0 0',
+                    minHeight: '22px',
+                    '& .MuiButton-root': {
+                      minWidth: 40,
+                      padding: '0px 8px',
+                      margin: '0 2px',
+                      mb: 1,
+                      ml: 2,
+                      fontSize: '0.875rem',
+                      backgroundColor: '#1976d2',
+                      color: 'white',
+                      height: '28px',
+                      borderRadius: '3px',
+                      '&:hover': {
+                        backgroundColor: '#1565c0',
+                      },
+                    }
+                  }
+                },
+                textField: {
+                  size: 'small',
+                  sx: {
+                    ml: 2,
+                    minWidth: 130,
+                    maxWidth: 160,
+                    direction: 'rtl',
+                    '& .MuiOutlinedInput-notchedOutline legend': {
+                      display: 'none',
+                    },
+                    '& .MuiIconButton-root': {
+                      outline: 'none',
+                      '&:focus': {
+                        outline: 'none',
+                        boxShadow: 'none',
+                      },
+                    },
+                  },
+                  InputProps: {
+                    notched: false,
+                    sx: {
+                      flexDirection: 'row-reverse',
+                      input: {
+                        textAlign: 'right',
+                      },
+                    },
+                  },
+                },
+              }}
+            />
+          </Box>
+        </LocalizationProvider>
       </Box>
 
       <Box className="no-print" sx={{

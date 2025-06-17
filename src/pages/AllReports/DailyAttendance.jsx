@@ -1,12 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { fetchAttendanceByDate } from '../../firebase';
-import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Divider } from '@mui/material';
+import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Divider, InputAdornment } from '@mui/material';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
 import ExportPDFButton from '../../components/ExportPDFButton'; // הגירסה הראשונה - עם תמונות
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { heIL } from '@mui/x-date-pickers/locales';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import OutlinedInput from '@mui/material/OutlinedInput';
+
+
+
 
 const DailyAttendance = () => {
   const [attendanceData, setAttendanceData] = useState(null);
@@ -21,6 +28,7 @@ const DailyAttendance = () => {
 
   const [openNoData, setOpenNoData] = useState(false);
   const [lastValidAttendance, setLastValidAttendance] = useState(null);
+  const [pendingDate, setPendingDate] = useState(dayjs(selectedDate));
 
   const handleBack = () => {
     if (from === 'home') {
@@ -29,6 +37,10 @@ const DailyAttendance = () => {
       navigate('/Reports'); // לעמוד הדוחות הראשי
     }
   };
+
+  useEffect(() => {
+    setAttendanceData(null);
+  }, [selectedDate]);
 
   useEffect(() => {
     // Only fetch if selectedDate is a valid YYYY-MM-DD string
@@ -57,14 +69,11 @@ const DailyAttendance = () => {
   if (loading) return <CircularProgress sx={{ m: 4 }} />;
   // Always show the last valid attendance data if exists
   const dataToShow = attendanceData && attendanceData.attendanceList ? attendanceData : lastValidAttendance;
-  if (!dataToShow || !dataToShow.attendanceList) {
+  if (!attendanceData || !attendanceData.attendanceList || attendanceData.attendanceList.length === 0) {
     return (
       <Dialog
         open={openNoData}
-        onClose={() => {
-          setOpenNoData(false);
-          navigate('/Reports');
-        }}
+        onClose={() => setOpenNoData(false)}
         PaperProps={{
           sx: {
             minWidth: 340,
@@ -93,13 +102,10 @@ const DailyAttendance = () => {
             color="primary"
             onClick={() => {
               setOpenNoData(false);
-              navigate('/Reports');
-            }}
-            autoFocus
-            disableRipple
-            sx={{
-              '&:focus': { outline: 'none' },
-              '&:active': { outline: 'none' }
+              if (lastValidAttendance) {
+                setSelectedDate(lastValidAttendance.date); // חזרה לתאריך הקודם עם נתונים
+                setPendingDate(dayjs(lastValidAttendance.date));
+              }
             }}
           >
             סגור
@@ -123,7 +129,7 @@ const DailyAttendance = () => {
     <>
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         {/* צד ימין */}
-        <Box sx={{ display: 'flex', alignItems: 'center',  }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', }}>
           <Button
             variant="outlined"
             color="primary"
@@ -132,15 +138,92 @@ const DailyAttendance = () => {
           >
             חזור
           </Button>
-          <TextField
-            label="תאריך"
-            type="date"
-            size="small"
-            value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
-            sx={{ ml: 2, minWidth: 140 }}
-            InputLabelProps={{ shrink: true }}
-          />
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="he"
+            localeText={{
+              ...heIL.components.MuiLocalizationProvider.defaultProps.localeText,
+              okButtonLabel: 'אישור',
+            }}>
+            <Box sx={{ position: 'relative', display: 'inline-block' }}>
+              {/* שכבת חסימה שמכסה רק את שדה הטקסט, לא את כפתור הלוח שנה */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: '40px', // משאיר את האייקון פתוח
+                  bottom: 0,
+                  zIndex: 10,
+                  pointerEvents: 'all',
+                  borderRadius: 1,
+                }}
+              />
+              <DatePicker
+                label="תאריך"
+                value={pendingDate}
+                onChange={(newValue) => setPendingDate(newValue)}
+                format="DD/MM/YYYY"
+                onAccept={(newValue) => {
+                  if (newValue && newValue.isValid()) {
+                    setSelectedDate(newValue.format('YYYY-MM-DD'));
+                  }
+                }}
+                slotProps={{
+                  actionBar: {
+                    actions: ['accept'],
+                    sx: {
+                      padding: '0px 8px',
+                      margin: '-70px 0 0 0',
+                      minHeight: '22px',
+                      '& .MuiButton-root': {
+                        minWidth: 40,
+                        padding: '0px 8px',
+                        margin: '0 2px',
+                        mb: 1,
+                        ml: 2,
+                        fontSize: '0.875rem',
+                        backgroundColor: '#1976d2',
+                        color: 'white',
+                        height: '28px',
+                        borderRadius: '3px',
+                        '&:hover': {
+                          backgroundColor: '#1565c0',
+                        },
+                      }
+                    }
+                  },
+                  textField: {
+                    size: 'small',
+                    sx: {
+                      ml: 2,
+                      minWidth: 130,
+                      maxWidth: 160,
+                      direction: 'rtl',
+                      '& .MuiOutlinedInput-notchedOutline legend': {
+                        display: 'none',
+                      },
+                      '& .MuiIconButton-root': {
+                        outline: 'none',
+                        '&:focus': {
+                          outline: 'none',
+                          boxShadow: 'none',
+                        },
+                      },
+                    },
+                    
+                    InputProps: {
+                      notched: false,
+                      sx: {
+                        flexDirection: 'row-reverse',
+                        input: {
+                          textAlign: 'right',
+                        },
+                      },
+                    },
+                  },
+                }}
+              />
+            </Box>
+          </LocalizationProvider>
         </Box>
         {/* צד שמאל */}
         <Box sx={{
@@ -156,9 +239,9 @@ const DailyAttendance = () => {
         </Box>
       </Box>
 
-      <Box sx={{display: 'flex',justifyContent: 'center',alignItems: 'start',width: '100%',px: { xs: 2, md: 8 },}}>
-        <Container maxWidth={false} 
-          sx={{mt: 2,maxWidth: '900px', width: '100%', }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'start', width: '100%', px: { xs: 2, md: 8 }, }}>
+        <Container maxWidth={false}
+          sx={{ mt: 2, maxWidth: '900px', width: '100%', }}>
           <div id="reportContent" style={{ width: '210mm', margin: '0 auto' }}>
             <Paper sx={{ width: '100%', p: 4, outline: 'none', '@media print': { width: '100%', margin: 0, boxShadow: 'none', border: 'none' } }}>
 

@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ExportPDFButton from '../../components/ExportPDFButton';
 import CakeIcon from '@mui/icons-material/Cake';
 import * as XLSX from 'xlsx';
+import OutlinedInput from '@mui/material/OutlinedInput';
 
 // הגדרת השפה העברית
 dayjs.locale('he');
@@ -18,7 +19,8 @@ const Birthday = () => {
   const navigate = useNavigate();
   const from = location.state?.from;
   const todayFormatted = dayjs().format('DD/MM/YYYY');
-  const [selectedMonth, setSelectedMonth] = useState('all');
+  const currentMonth = (dayjs().month() + 1).toString(); // חודשים ב-dayjs מ-0
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedDate, setSelectedDate] = useState(todayFormatted);
 
   const handleBack = () => {
@@ -85,24 +87,17 @@ const Birthday = () => {
         >
           חזור
         </Button>
-        <TextField
-          label="תאריך"
-          type="date"
-          size="small"
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-          sx={{ ml: 2, minWidth: 140 }}
-          InputLabelProps={{ shrink: true }}
-        />
-        <FormControl size="small" sx={{ minWidth: 120, ml: 2 }}>
-          <InputLabel id="month-select-label">חודש</InputLabel>
+        <FormControl size="small" sx={{ minWidth: 100, ml: 2 }}>
+          <InputLabel id="month-select-label" sx={{ textAlign: 'right', right: 25, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: '#ebf1f5', px: 0.5 }}>
+            חודש
+          </InputLabel>
           <Select
             labelId="month-select-label"
             value={selectedMonth}
             label="חודש"
             onChange={e => setSelectedMonth(e.target.value)}
+            input={<OutlinedInput notched={false} label="חודש" />}
           >
-            <MenuItem value="all">הכל</MenuItem>
             {hebrewMonths.map((month, idx) => (
               <MenuItem key={idx + 1} value={(idx + 1).toString()}>{month}</MenuItem>
             ))}
@@ -110,7 +105,7 @@ const Birthday = () => {
         </FormControl>
       </Box>
       <Box sx={{
-        position: 'absolute', left: 32, top: 90, zIndex: 10,
+        position: 'absolute', left: 32, top: 90, zIndex: 10, gap: 2, display: 'flex',
         '@media (max-width:600px)': {
           left: 8, top: 80 // מסכים קטנים
         }
@@ -160,9 +155,10 @@ const Birthday = () => {
               {/* כותרת */}
               <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px solid #1976d2', pb: 2 }}>
                 <Typography variant="h4" color="primary" gutterBottom>
-                  דוח ימי הולדת שנתי
+                  דוח ימי הולדת חודשי
                 </Typography>
                 <Typography variant="h6" color="textSecondary">
+                  {`חודש: ${hebrewMonths[Number(selectedMonth) - 1]}`}<br />
                   נוצר בתאריך: {todayFormatted}
                 </Typography>
               </Box>
@@ -178,43 +174,45 @@ const Birthday = () => {
               }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h5" color="primary">
-                    {profiles.filter(p => p.birthDate).length}
+                    {(profilesByMonth[selectedMonth] || []).length}
                   </Typography>
-                  <Typography variant="body2">סה"כ ימי הולדת</Typography>
+                  <Typography variant="body2">סה"כ ימי הולדת החודש</Typography>
                 </Box>
               </Box>
 
-              {/* רשימת ימי הולדת לפי חודשים */}
-              {Object.entries(filteredProfilesByMonth)
-                .sort(([a], [b]) => Number(a) - Number(b))
-                .map(([monthNum, monthProfiles]) => (
-                  <Box
-                    key={monthNum}
+              {/* רשימת ימי הולדת לחודש הנבחר בלבד */}
+              {(profilesByMonth[selectedMonth] || []).length === 0 ? (
+                <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', mt: 4 }}>
+                  אין ימי הולדת החודש.
+                </Typography>
+              ) : (
+                <Box
+                  sx={{
+                    mb: 4,
+                    '@media print': {
+                      pageBreakInside: 'avoid'
+                    }
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    color="primary"
+                    gutterBottom
                     sx={{
-                      mb: 4,
-                      '@media print': {
-                        pageBreakInside: 'avoid'
-                      }
+                      borderBottom: '1px solid #1976d2',
+                      pb: 1,
+                      mb: 2
                     }}
                   >
-                    <Typography
-                      variant="h6"
-                      color="primary"
-                      gutterBottom
-                      sx={{
-                        borderBottom: '1px solid #1976d2',
-                        pb: 1,
-                        mb: 2
-                      }}
-                    >
-                      {hebrewMonths[Number(monthNum) - 1]} ({monthProfiles.length})
-                    </Typography>
-                    <Box sx={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-                      gap: 2
-                    }}>
-                      {monthProfiles.map((profile) => (
+                    {hebrewMonths[Number(selectedMonth) - 1]} ({(profilesByMonth[selectedMonth] || []).length})
+                  </Typography>
+                  <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                    gap: 2
+                  }}>
+                    {profilesByMonth[selectedMonth]?.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'))
+                      .map((profile) => (
                         <Paper
                           key={profile.id}
                           elevation={1}
@@ -246,9 +244,9 @@ const Birthday = () => {
                           </Box>
                         </Paper>
                       ))}
-                    </Box>
                   </Box>
-                ))}
+                </Box>
+              )}
 
               {/* חתימה */}
               <Box sx={{
