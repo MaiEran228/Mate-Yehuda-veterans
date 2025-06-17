@@ -125,6 +125,49 @@ const DailyAttendance = () => {
   const reportDate = dataToShow?.date || selectedDate;
   const todayFormatted = dayjs(reportDate).format('DD/MM/YYYY');
 
+  const pdfColumns = [
+    { key: 'name', header: 'שם', defaultValue: '' },
+    { key: 'city', header: 'יישוב', defaultValue: 'לא צוין' },
+    { key: 'caregiver', header: 'מטפל', defaultValue: '' },
+    { key: 'serialNumber', header: 'מס\'', defaultValue: '' }
+  ];
+
+  const pdfData = presentMembers.map((person, index) => ({
+    name: person.name || '',
+    city: person.city || 'לא צוין',
+    caregiver: person.caregiver || '',
+    serialNumber: index + 1
+  }));
+
+  const pdfConfig = {
+    title: 'דוח נוכחות יומי',
+    subtitle: 'מעון יום לותיקים',
+    headerInfo: [
+      `תאריך: ${todayFormatted}`,
+      `יום: ${dayjs(reportDate).format('dddd')}`
+    ],
+    summaryData: [
+      `סה"כ נוכחים: ${presentMembers.length}`,
+      `סה"כ חסרים: ${absentMembers.length}`
+    ],
+    footerInfo: [
+      { text: 'מעון יום לותיקים - דוח אוטומטי', align: 'center' },
+      { text: `נוצר בתאריך: ${dayjs().format('DD/MM/YYYY HH:mm')}`, align: 'center' }
+    ],
+    customStyles: {
+      styles: {
+        fontSize: 11,
+        cellPadding: 6,
+        font: 'AlefHebrew'
+      },
+      headStyles: {
+        fillColor: [66, 139, 202], // צבע כחול כמו בדוח המקורי
+        fontSize: 12,
+        font: 'AlefHebrew'
+      }
+    }
+  };
+
   return (
     <>
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -233,8 +276,23 @@ const DailyAttendance = () => {
           }
         }}>
           <ExportPDFButton
-            targetId="reportContent"
+            data={pdfData}
+            columns={pdfColumns}
             fileName={`דוח נוכחות - ${todayFormatted}.pdf`}
+            title={pdfConfig.title}
+            subtitle={pdfConfig.subtitle}
+            headerInfo={pdfConfig.headerInfo}
+            summaryData={pdfConfig.summaryData}
+            footerInfo={pdfConfig.footerInfo}
+            customStyles={pdfConfig.customStyles}
+            buttonText="ייצא ל-PDF"
+            buttonProps={{
+              disableRipple: true,
+              sx: {
+                '&:focus': { outline: 'none' },
+                '&:active': { outline: 'none' }
+              }
+            }}
           />
         </Box>
       </Box>

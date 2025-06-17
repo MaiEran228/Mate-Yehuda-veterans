@@ -22,6 +22,8 @@ const DaysLeft = () => {
   const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'));
   const [summary, setSummary] = useState({ present: 0, absent: 0, total: 0 });
   const [extraOpen, setExtraOpen] = useState(false);
+  const [surplusOpen, setSurplusOpen] = useState(false);
+  const [surplusList, setSurplusList] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,6 +86,50 @@ const DaysLeft = () => {
 
   const extraPeople = people.filter(p => p.missed);
 
+  // Surplus days calculation
+  const handleSurplusOpen = () => {
+    // Show eligible, actual, and difference for each user
+    const [year, month] = selectedMonth.split('-');
+    const firstDay = dayjs(`${year}-${month}-01`);
+    const lastDay = firstDay.endOf('month');
+    const numDays = lastDay.date();
+    const numWeeks = Math.ceil((firstDay.day() + numDays) / 7);
+    const monthDates = getMonthDates(month, year);
+    const hebrewDaysByIndex = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const letterToDay = { 'א': 'ראשון', 'ב': 'שני', 'ג': 'שלישי', 'ד': 'רביעי', 'ה': 'חמישי', 'ו': 'שישי', 'ז': 'שבת' };
+    const normalizeDay = (day) => {
+      if (!day) return '';
+      day = day.replace('יום', '').replace(/\s/g, '');
+      return letterToDay[day] || day;
+    };
+    const surplusList = profiles.map(profile => {
+      if (!Array.isArray(profile.arrivalDays) || profile.arrivalDays.length === 0) {
+        return { id: profile.id, name: profile.name, eligible: 0, actual: 0, diff: 0, missed: 0 };
+      }
+      const eligible = profile.arrivalDays.length * numWeeks;
+      let actual = 0;
+      let missed = 0;
+      profile.arrivalDays.forEach(arrivalDay => {
+        const normalizedDay = normalizeDay(arrivalDay);
+        monthDates.forEach(dateStr => {
+          const d = dayjs(dateStr);
+          const hebDay = hebrewDaysByIndex[d.day()];
+          if (hebDay === normalizedDay) {
+            actual++;
+            // Check if attended
+            const record = attendanceData.find(p => p.id === profile.id && p.date === dateStr);
+            if (!(record && record.attended === true)) {
+              missed++;
+            }
+          }
+        });
+      });
+      return { id: profile.id, name: profile.name, eligible, actual, diff: eligible - actual, missed };
+    });
+    setSurplusList(surplusList);
+    setSurplusOpen(true);
+  };
+
   const handleExportPDF = () => {
     const input = document.getElementById('daysLeftReportContent');
     html2canvas(input).then(canvas => {
@@ -127,6 +173,9 @@ const DaysLeft = () => {
       }}>
         <Button variant="contained" onClick={handleExportPDF} sx={{ ml: 2 }}>
           ייצוא ל־PDF
+        </Button>
+        <Button variant="outlined" color="secondary" onClick={handleSurplusOpen} sx={{ ml: 2 }}>
+          ימי עודף
         </Button>
       </Box>
 
@@ -194,10 +243,40 @@ const DaysLeft = () => {
               <Button onClick={() => setExtraOpen(false)} color="primary">סגור</Button>
             </DialogActions>
           </Dialog>
+          <Dialog open={surplusOpen} onClose={() => setSurplusOpen(false)}>
+            <DialogTitle>חישוב ימי זכאות מול ימי הופעה בפועל</DialogTitle>
+            <DialogContent>
+              <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl', tableLayout: 'fixed' }}>
+                <thead>
+                  <tr>
+                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>שם</th>
+                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>ימי זכאות (תיאורטי)</th>
+                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>ימי הופעה בפועל בחודש</th>
+                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>הפרש</th>
+                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>מספר ימים שהחסיר</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {surplusList.map(person => (
+                    <tr key={person.id}>
+                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.name}</td>
+                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.eligible}</td>
+                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.actual}</td>
+                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.diff}</td>
+                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.missed}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setSurplusOpen(false)} color="primary">סגור</Button>
+            </DialogActions>
+          </Dialog>
         </Container>
       </Box>
     </>
   );
 };
 
-      export default DaysLeft;
+export default DaysLeft;

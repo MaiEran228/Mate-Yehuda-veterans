@@ -6,9 +6,16 @@ import { font, fontBold } from '../fonts/AlefHebrew';
 import dayjs from 'dayjs';
 
 const ExportPDFButton = ({ 
+  // תמיכה בטבלה אחת (השימוש הקיים)
   data, 
-  fileName, 
   columns, 
+  
+  // תמיכה במספר טבלאות (השימוש החדש)
+  tables, // מערך של { data, columns, title?, customStyles? }
+  betweenTablesContent, // מערך של טקסטים להציג בין הטבלאות
+  
+  // פרמטרים כלליים
+  fileName, 
   title, 
   subtitle,
   reportDate,
@@ -111,6 +118,99 @@ const ExportPDFButton = ({
       doc.text(processedText, finalX, y);
     };
 
+    // פונקציה ליצירת טבלה אחת
+    const createTable = (tableData, tableColumns, tableCustomStyles, startY) => {
+      // הכנת נתוני הטבלה עם עיבוד עברית
+      const tableHeaders = tableColumns.map(col => processHebrewText(col.header || col.key));
+      const tableBody = tableData.map(item => 
+        tableColumns.map(col => {
+          let value = '';
+          if (col.formatter) {
+            value = col.formatter(item[col.key], item);
+          } else {
+            value = item[col.key] || col.defaultValue || '';
+          }
+          
+          // עיבוד הערך לעברית
+          return processHebrewText(String(value));
+        })
+      );
+
+      // הגדרות סגנון עם בדיקות בטיחות
+      const safeCustomStyles = tableCustomStyles || customStyles || {};
+      const styles = {
+        font: 'AlefHebrew',
+        fontSize: 10,
+        cellPadding: 5,
+        overflow: 'linebreak',
+        halign: 'center',
+        valign: 'middle',
+        fontStyle: 'normal',
+        textColor: [0, 0, 0],
+        ...(safeCustomStyles.styles || {})
+      };
+
+      const headStyles = {
+        fillColor: [66, 139, 202],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        halign: 'center',
+        font: 'AlefHebrew',
+        fontSize: 11,
+        ...(safeCustomStyles.headStyles || {})
+      };
+
+      // יצירת הטבלה עם תמיכה ב-RTL
+      autoTable(doc, {
+        head: [tableHeaders],
+        body: tableBody,
+        startY: startY,
+        theme: 'grid',
+        styles: styles,
+        headStyles: headStyles,
+        columnStyles: safeCustomStyles.columnStyles || {},
+        tableLineWidth: 0.1,
+        tableLineColor: [0, 0, 0],
+        
+        // callback functions עם תמיכה בעברית
+        didParseCell: function(data) {
+          if (data && data.styles) {
+            try {
+              data.styles.font = 'AlefHebrew';
+              if (data.section === 'head') {
+                data.styles.fontStyle = 'bold';
+              } else {
+                data.styles.fontStyle = 'normal';
+              }
+              
+              // וידוא שהטקסט מעובד נכון
+              if (data.cell && data.cell.text && Array.isArray(data.cell.text)) {
+                data.cell.text = data.cell.text.map(text => processHebrewText(String(text)));
+              }
+            } catch (error) {
+              console.warn('Font setting error in didParseCell:', error);
+            }
+          }
+        },
+        
+        willDrawCell: function(data) {
+          try {
+            if (data && data.section === 'head') {
+              doc.setFont('AlefHebrew', 'bold');
+            } else {
+              doc.setFont('AlefHebrew', 'normal');
+            }
+          } catch (error) {
+            doc.setFont('helvetica', 'normal');
+          }
+        },
+        
+        ...(safeCustomStyles.tableOptions || {})
+      });
+
+      return doc.lastAutoTable?.finalY || startY + 50;
+    };
+
     let yPosition = 20;
 
     // כותרת ראשית
@@ -143,93 +243,39 @@ const ExportPDFButton = ({
       yPosition += 15;
     }
 
-    // הכנת נתוני הטבלה עם עיבוד עברית
-    const tableHeaders = columns.map(col => processHebrewText(col.header || col.key));
-    const tableBody = data.map(item => 
-      columns.map(col => {
-        let value = '';
-        if (col.formatter) {
-          value = col.formatter(item[col.key], item);
-        } else {
-          value = item[col.key] || col.defaultValue || '';
+    // יצירת הטבלאות
+    if (tables && Array.isArray(tables)) {
+      // מצב חדש - מספר טבלאות
+      tables.forEach((table, index) => {
+        // כותרת לטבלה (אם קיימת)
+        if (table.title) {
+          writeHebrewText(table.title, 0, yPosition, { fontSize: 14, fontStyle: 'bold', align: 'center' });
+          yPosition += 10;
         }
-        
-        // עיבוד הערך לעברית
-        return processHebrewText(String(value));
-      })
-    );
 
-    // הגדרות סגנון עם בדיקות בטיחות
-    const safeCustomStyles = customStyles || {};
-    const styles = {
-      font: 'AlefHebrew',
-      fontSize: 10,
-      cellPadding: 5,
-      overflow: 'linebreak',
-      halign: 'center',
-      valign: 'middle',
-      fontStyle: 'normal',
-      textColor: [0, 0, 0],
-      ...(safeCustomStyles.styles || {})
-    };
+        // יצירת הטבלה
+        yPosition = createTable(table.data, table.columns, table.customStyles, yPosition);
 
-    const headStyles = {
-      fillColor: [66, 139, 202],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      halign: 'center',
-      font: 'AlefHebrew',
-      fontSize: 11,
-      ...(safeCustomStyles.headStyles || {})
-    };
+        // הוספת תוכן בין הטבלאות (אם זה לא הטבלה האחרונה)
+        if (index < tables.length - 1) {
+          yPosition += 15; // רווח לפני התוכן
 
-    // יצירת הטבלה עם תמיכה ב-RTL
-    autoTable(doc, {
-      head: [tableHeaders],
-      body: tableBody,
-      startY: yPosition,
-      theme: 'grid',
-      styles: styles,
-      headStyles: headStyles,
-      columnStyles: safeCustomStyles.columnStyles || {},
-      tableLineWidth: 0.1,
-      tableLineColor: [0, 0, 0],
-      
-      // callback functions עם תמיכה בעברית
-      didParseCell: function(data) {
-        if (data && data.styles) {
-          try {
-            data.styles.font = 'AlefHebrew';
-            if (data.section === 'head') {
-              data.styles.fontStyle = 'bold';
-            } else {
-              data.styles.fontStyle = 'normal';
-            }
-            
-            // וידוא שהטקסט מעובד נכון
-            if (data.cell && data.cell.text && Array.isArray(data.cell.text)) {
-              data.cell.text = data.cell.text.map(text => processHebrewText(String(text)));
-            }
-          } catch (error) {
-            console.warn('Font setting error in didParseCell:', error);
+          if (betweenTablesContent && Array.isArray(betweenTablesContent)) {
+            betweenTablesContent.forEach(content => {
+              if (content) {
+                writeHebrewText(content, 0, yPosition, { fontSize: 12, align: 'center' });
+                yPosition += 8;
+              }
+            });
           }
+
+          yPosition += 15; // רווח לאחר התוכן
         }
-      },
-      
-      willDrawCell: function(data) {
-        try {
-          if (data && data.section === 'head') {
-            doc.setFont('AlefHebrew', 'bold');
-          } else {
-            doc.setFont('AlefHebrew', 'normal');
-          }
-        } catch (error) {
-          doc.setFont('helvetica', 'normal');
-        }
-      },
-      
-      ...(safeCustomStyles.tableOptions || {})
-    });
+      });
+    } else if (data && columns) {
+      // מצב קיים - טבלה אחת
+      yPosition = createTable(data, columns, customStyles, yPosition);
+    }
 
     // מידע בתחתית הדף
     if (footerInfo && Array.isArray(footerInfo)) {

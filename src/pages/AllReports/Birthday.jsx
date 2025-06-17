@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAllProfiles } from '../../firebase';
-import { Typography, CircularProgress, Box, Paper, Button, Container, Select, MenuItem, FormControl, InputLabel, TextField } from '@mui/material';
+import { Typography, CircularProgress, Box, Paper, Button, Container, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import dayjs from 'dayjs';
 import 'dayjs/locale/he';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -21,7 +21,6 @@ const Birthday = () => {
   const todayFormatted = dayjs().format('DD/MM/YYYY');
   const currentMonth = (dayjs().month() + 1).toString(); // חודשים ב-dayjs מ-0
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [selectedDate, setSelectedDate] = useState(todayFormatted);
 
   const handleBack = () => {
     if (from === 'home') {
@@ -65,15 +64,44 @@ const Birthday = () => {
     return acc;
   }, {});
 
-  // סינון לפי חודש נבחר
-  const filteredProfilesByMonth = selectedMonth === 'all'
-    ? profilesByMonth
-    : { [selectedMonth]: profilesByMonth[selectedMonth] || [] };
-
   const hebrewMonths = [
     'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
     'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
   ];
+
+  const currentMonthName = hebrewMonths[Number(selectedMonth) - 1];
+
+  // הכנת נתונים חגיגיים לייצוא PDF - מותאם לטיפול ב-ExportPDFButton
+  const prepareFestivePDFData = () => {
+    const monthProfiles = profilesByMonth[selectedMonth] || [];
+    const sortedMonthProfiles = monthProfiles.sort((a, b) => 
+      (a.name || '').localeCompare(b.name || '', 'he')
+    );
+
+    return sortedMonthProfiles.map((profile, index) => {
+      const birthDate = dayjs(profile.birthDate);
+      const age = dayjs().diff(birthDate, 'year');
+      const dayInMonth = birthDate.date();
+      
+      // הודעה חגיגית פשוטה - בלי אימוג'ים
+      const name = profile.name || 'לא צוין';
+      const celebration = `${name} חוגג ${age} שנים ב-${dayInMonth} ל${currentMonthName}`;
+      
+      return {
+        celebration: celebration
+      };
+    });
+  };
+
+  const pdfColumns = [
+    { 
+      key: 'celebration', 
+      header: `חגיגות יום הולדת - ${currentMonthName}`,
+      formatter: (value) => value
+    }
+  ];
+
+  const currentMonthCount = (profilesByMonth[selectedMonth] || []).length;
 
   return (
     <>
@@ -104,6 +132,7 @@ const Birthday = () => {
           </Select>
         </FormControl>
       </Box>
+
       <Box sx={{
         position: 'absolute', left: 32, top: 90, zIndex: 10, gap: 2, display: 'flex',
         '@media (max-width:600px)': {
@@ -111,16 +140,58 @@ const Birthday = () => {
         }
       }}>
         <ExportPDFButton
-          targetId="reportContent"
-          fileName={`ימי הולדת - ${todayFormatted}.pdf`}
+          data={prepareFestivePDFData()}
+          columns={pdfColumns}
+          fileName={`ימי_הולדת_חודש_${currentMonthName}.pdf`}
+          title="ימי הולדת החודש"
+          subtitle={`חודש ${currentMonthName} `}
+          headerInfo={[
+            `מספר חוגגים החודש: ${currentMonthCount}`,
+          ]}
+          
+          footerInfo={[
+            { text: `דוח נוצר ב-${dayjs().format('DD/MM/YYYY HH:mm')} במעון יום לותיקים`, align: 'center' },
+          ]}
+          buttonText="ייצוא ל-PDF"
+          customStyles={{
+            styles: {
+              fontSize: 12,
+              cellPadding: 8,
+              halign: 'center',
+              fillColor: [255, 248, 220], // רקע קרם חם
+              textColor: [139, 69, 19]    // חום כהה
+            },
+            headStyles: {
+              fillColor: [255, 182, 193], // ורוד בהיר חגיגי
+              textColor: [139, 0, 0],     // אדום כהה
+              fontStyle: 'bold',
+              fontSize: 14,
+              cellPadding: 10
+            },
+            columnStyles: {
+              0: { 
+                cellWidth: 'auto', 
+                halign: 'center',
+                fillColor: [255, 240, 245], // ורוד עדין מאוד
+                minCellHeight: 15
+              }
+            },
+            tableOptions: {
+              theme: 'plain',
+              tableLineWidth: 2,
+              tableLineColor: [255, 105, 180] // ורוד חגיגי
+            }
+          }}
         />
+        
         <Button
           variant="contained"
           color="primary"
           onClick={() => {
             const columns = ['שם', 'תאריך לידה', 'גיל'];
-            const excelData = sortedProfiles
-              .filter(profile => profile.birthDate)
+            const monthProfiles = profilesByMonth[selectedMonth] || [];
+            const excelData = monthProfiles
+              .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'))
               .map(profile => {
                 const birthDate = dayjs(profile.birthDate);
                 const age = dayjs().diff(birthDate, 'year');
@@ -133,7 +204,7 @@ const Birthday = () => {
             const ws = XLSX.utils.json_to_sheet(excelData, { header: columns });
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'ימי הולדת');
-            XLSX.writeFile(wb, `דוח ימי הולדת - ${todayFormatted}.xlsx`);
+            XLSX.writeFile(wb, `דוח_ימי_הולדת_${currentMonthName}_${todayFormatted}.xlsx`);
           }}
           sx={{ ml: 2 }}
         >
@@ -158,7 +229,7 @@ const Birthday = () => {
                   דוח ימי הולדת חודשי
                 </Typography>
                 <Typography variant="h6" color="textSecondary">
-                  {`חודש: ${hebrewMonths[Number(selectedMonth) - 1]}`}<br />
+                  {`חודש: ${currentMonthName}`}<br />
                   נוצר בתאריך: {todayFormatted}
                 </Typography>
               </Box>
@@ -174,14 +245,14 @@ const Birthday = () => {
               }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h5" color="primary">
-                    {(profilesByMonth[selectedMonth] || []).length}
+                    {currentMonthCount}
                   </Typography>
                   <Typography variant="body2">סה"כ ימי הולדת החודש</Typography>
                 </Box>
               </Box>
 
               {/* רשימת ימי הולדת לחודש הנבחר בלבד */}
-              {(profilesByMonth[selectedMonth] || []).length === 0 ? (
+              {currentMonthCount === 0 ? (
                 <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', mt: 4 }}>
                   אין ימי הולדת החודש.
                 </Typography>
@@ -204,7 +275,7 @@ const Birthday = () => {
                       mb: 2
                     }}
                   >
-                    {hebrewMonths[Number(selectedMonth) - 1]} ({(profilesByMonth[selectedMonth] || []).length})
+                    {currentMonthName} ({currentMonthCount})
                   </Typography>
                   <Box sx={{
                     display: 'grid',
@@ -225,7 +296,9 @@ const Birthday = () => {
                             gap: 2
                           }}
                         >
-                          <CakeIcon sx={{ color: '#1976d2', fontSize: 32 }} />
+                          <Box sx={{ color: '#1976d2', fontSize: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40 }}>
+                            🎂
+                          </Box>
                           <Box>
                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
                               {profile.name}
