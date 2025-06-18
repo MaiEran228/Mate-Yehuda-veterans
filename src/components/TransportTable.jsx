@@ -30,6 +30,16 @@ const dayMap = {
 };
 const dayOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 
+const dayShortMap = {
+  'ראשון': 'א',
+  'שני': 'ב',
+  'שלישי': 'ג',
+  'רביעי': 'ד',
+  'חמישי': 'ה',
+  'שישי': 'ו',
+  'שבת': 'ש'
+};
+
 function TransportTable({
   data,
   searchTerm,
@@ -188,16 +198,17 @@ function TransportTable({
       boxShadow: 1,
       overflow: 'hidden'
     }}>
-      <Table sx={{ minWidth: '800px', tableLayout: 'fixed' }}>
+      <Table sx={{ minWidth: '800px', tableLayout: 'fixed', fontSize: '1.1rem' }}>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold', width: '60px' }}>מס׳</TableCell>
-            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>ימים</TableCell>
-            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>יישובים</TableCell>
-            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>מקומות פנויים</TableCell>
-            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>סוג הסעה</TableCell>
-            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>רשימת נוסעים</TableCell>
-            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>פעולה</TableCell>
+            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', width: '60px', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>מס׳</TableCell>
+            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>ימים</TableCell>
+            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>יישובים</TableCell>
+            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>מקומות פנויים</TableCell>
+            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>שיריון זמני</TableCell>
+            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>סוג הסעה</TableCell>
+            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>רשימת נוסעים</TableCell>
+            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem' , borderRight: '1px solid #e0e0e0' }}>פעולה</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -208,80 +219,74 @@ function TransportTable({
             const sortedDays = (row.days || []).slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
 
             return (
-              <TableRow key={index}>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                  {index + 1}
-                </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
-                    {sortedDays
-                      .slice()
-                      .sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b))
-                      .map((day, i) => (
-                        <Chip key={i} label={dayMap[day] || day} size="small" />
-                      ))}
-                  </Stack>
-                </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
-                    {(row.cities || []).map((city, i) => (
-                      <Chip key={i} label={city} size="small" />
-                    ))}
-                  </Stack>
-                </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                  <Stack direction="row" spacing={4} justifyContent="center">
-                    <Tooltip title="לחץ לפירוט מקומות פנויים">
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={(e) => handleSeatsClick(e, row)}
+              <TableRow key={row.id || index} sx={{ fontSize: '1.1rem', borderBottom: 'none', borderTop: 'none' }}>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>{index + 1}</TableCell>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'nowrap' }}>
+                    {sortedDays.map(day => (
+                      <Box
+                        key={day}
                         sx={{
-                          borderColor: hasAvailableSeats ? 'success.main' : 'error.main',
-                          color: hasAvailableSeats ? 'success.main' : 'error.main',
-                          '&:hover': {
-                            borderColor: hasAvailableSeats ? 'success.dark' : 'error.dark',
-                            backgroundColor: hasAvailableSeats ? 'success.light' : 'error.light',
-                          }
-                        }}
-                      >
-                        <EventSeatIcon sx={{ fontSize: 20 }} />
-                      </Button>
-                    </Tooltip>
-                    <Tooltip title="שיריון זמני">
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => handleTempReservationClick(row)}
-                        sx={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: '50%',
+                          backgroundColor: '#f1f1f1',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 8px',
-                          borderColor: 'gray',
-                          minHeight: '32px',
-                          textTransform: 'none',
-                          fontSize: '0.85rem',
-                          height: '50px',
-                          width: '100px'
+                          justifyContent: 'center',
+                          fontWeight: 500,
+                          fontSize: '0.95rem',
+                          color: '#222',
                         }}
                       >
-                        <AccessTimeIcon sx={{ fontSize: 18 }} />
-                        <span>שיריון זמני</span>
-                      </Button>
-                    </Tooltip>
-
-                  </Stack>
+                        {dayShortMap[day] || day}
+                      </Box>
+                    ))}
+                  </Box>
                 </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>{row.type}</TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {(row.cities || []).map((city, i) => (
+                      <Chip
+                        key={i}
+                        label={city}
+                        size="small"
+                        sx={{
+                          minWidth: 70,
+                          minHeight: 26,
+                          borderRadius: '13px',
+                          fontSize: '0.95rem',
+                          fontWeight: 500,
+                          backgroundColor: '#f1f1f1',
+                          mx: 0.5
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </TableCell>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
+                  <Tooltip title="לחץ לפירוט מקומות פנויים">
+                    <IconButton onClick={(e) => handleSeatsClick(e, row)} sx={{ p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
+                      <EventSeatIcon sx={{ fontSize: 25, color: hasAvailableSeats ? 'success.main' : 'error.main' }} />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
+                  <Tooltip title="שיריון זמני">
+                    <IconButton onClick={() => handleTempReservationClick(row)} sx={{ p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
+                      <AccessTimeIcon sx={{ fontSize: 25, color: 'primary.main' }} />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0', fontSize: '1.08rem', fontWeight: 500 }}>{row.type}</TableCell>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
                   <Tooltip title="צפייה באנשים">
                     <IconButton onClick={() => onViewPassengers(row.passengers || [], row.days || [])}>
                       <VisibilityIcon />
                     </IconButton>
                   </Tooltip>
                 </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' , borderRight: '1px solid #e0e0e0' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                     <Tooltip title="עריכה">
                       <IconButton onClick={() => onEditClick(index)}>
@@ -351,7 +356,6 @@ function TransportTable({
                 onChange={(newDate) => {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
-
                   if (newDate >= today) {
                     setReservationDate(newDate);
                   } else {
@@ -369,7 +373,6 @@ function TransportTable({
                 }}
               />
             </LocalizationProvider>
-
             <ToggleButtonGroup
               value={tempReservationDialog.reservationType}
               exclusive
@@ -391,7 +394,6 @@ function TransportTable({
                 הורדת נוסע
               </ToggleButton>
             </ToggleButtonGroup>
-
             {tempReservationDialog.reservationType === 'add' ? (
               <Autocomplete
                 options={profiles}
