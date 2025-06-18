@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, InputAdornment, IconButton, Autocomplete } from '@mui/material';
+import { Box, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, InputAdornment, IconButton, Autocomplete, FormControl, InputLabel, Select, MenuItem, Stack, Chip } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import TransportTable from '../components/TransportTable';
@@ -15,14 +15,19 @@ import TableBody from '@mui/material/TableBody';
 import { calculateAvailableSeatsByDay } from '../utils/transportUtils';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { he } from 'date-fns/locale';
+import AddIcon from '@mui/icons-material/Add';
 
 function Transport() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState('');
   const [availableCities, setAvailableCities] = useState([]);
-  
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
   // Dialog states
   const [addDialog, setAddDialog] = useState(false);
   const [editDialog, setEditDialog] = useState({ open: false, index: null, data: null });
@@ -30,15 +35,11 @@ function Transport() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, index: null });
   const [seatsDialogOpen, setSeatsDialogOpen] = useState(false);
 
-  // Subscribe to transports
   useEffect(() => {
     const unsubscribe = transportService.subscribeToTransports(
-      (transportList) => {
-        setData(transportList);
-        // מחלץ את כל היישובים הייחודיים מהנתונים
-        const cities = [...new Set(transportList.flatMap(transport => transport.cities || []))];
-        setAvailableCities(cities);
-        if (loading) setLoading(false);
+      (transports) => {
+        setData(transports);
+        setLoading(false);
       },
       (error) => {
         console.error("Error fetching transports:", error);
@@ -70,6 +71,18 @@ function Transport() {
   };
   const handleEditSave = async (updatedTransport) => {
     try {
+      if (updatedTransport.tempReservations) {
+        // אם יש שיריון זמני חדש, מוסיף אותו
+        const lastReservation = updatedTransport.tempReservations[updatedTransport.tempReservations.length - 1];
+        if (lastReservation && !lastReservation.id) {
+          await transportService.addTemporaryReservation(updatedTransport.id, {
+            ...lastReservation,
+            id: Date.now().toString() // מזהה זמני
+          });
+        }
+      }
+
+      // מעדכן את ההסעה
       await transportService.updateTransport(updatedTransport.id, updatedTransport);
       handleEditClose();
     } catch (error) {
@@ -114,137 +127,79 @@ function Transport() {
 
   return (
     <>
-      {/* שורת חיפוש */}
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 2, 
-        p: 3,
-        position: 'sticky',
-        top: 0,
-        zIndex: 1,
-        mb: 6
-      }}>
-        <Box sx={{ width: 300 }}>
-          <TextField
-            fullWidth
-            placeholder="חיפוש לפי שם או אזור מגורים..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            variant="outlined"
-            size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
-                </InputAdornment>
-              ),
-              endAdornment: searchTerm && (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => setSearchTerm('')}
-                    edge="end"
-                    sx={{ mr: -0.5 }}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-              sx: {
-                backgroundColor: '#fff',
-                '&:hover': {
-                  backgroundColor: '#fff',
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(118, 126, 136, 0.2)',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(118, 126, 136, 0.4)',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'rgba(118, 126, 136, 0.6)',
-                },
-              },
-            }}
-            sx={{
-              maxWidth: '400px',
-              '& .MuiInputBase-root': {
-                height: '40px',
-              },
-            }}
-          />
+      <Box sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+          {/* ימין: תאריך, חיפוש, דוח */}
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
+              <DatePicker
+                label="בחר תאריך"
+                value={selectedDate ? new Date(selectedDate) : null}
+                onChange={(newDate) => setSelectedDate(newDate ? newDate.toISOString().split('T')[0] : null)}
+                minDate={new Date()}
+                slotProps={{
+                  textField: {
+                    sx: {
+                      width: 200,
+                      '& input': {
+                        textAlign: 'right',
+                        direction: 'rtl',
+                        paddingRight: '14px'
+                      }
+                    },
+                    InputLabelProps: {
+                      shrink: true,
+                    }
+                  }
+                }}
+              />
+            </LocalizationProvider>
+
+            <TextField
+              label="חיפוש"
+              variant="outlined"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              sx={{ width: 300 }}
+            />
+
+
+          </Box>
+
+          {/* שמאל: כפתורים בטור */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{ height: 40, fontSize: '1rem', minWidth: '150px' }}
+              onClick={() => setAddDialog(true)}
+            >
+              הוספת הסעה
+            </Button>
+
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{ height: 40, fontSize: '1rem', minWidth: '150px' }}
+              onClick={() => setSeatsDialogOpen(true)}
+            >
+              דוח מקומות פנויים בהסעה
+            </Button>
+          </Box>
         </Box>
 
-        <TextField
-          label="מיון לפי"
-          select
-          SelectProps={{ native: true }}
-          value={sortField}
-          onChange={(e) => setSortField(e.target.value)}
-          size="small"
-          InputProps={{ notched: false }}
-          InputLabelProps={{
-            shrink: true,
-            sx: {
-              right: 24,
-              left: 'unset',
-              textAlign: 'right',
-              transformOrigin: 'top right',
-              direction: 'rtl',
-              backgroundColor: '#f5f5f5',
-              px: 1,
-              color: 'rgb(82, 103, 125)'
-            }
-          }}
-          sx={{
-            width: 200,
-            '& .MuiOutlinedInput-root': {
-              height: 36,
-              fontSize: '0.9rem',
-              color: 'rgb(85, 105, 125)',
-              '& fieldset': { borderColor: 'rgb(85, 105, 125)' },
-              '&:hover fieldset, &.Mui-focused fieldset': { borderColor: '#7b8f99' }
-            },
-            '& .MuiInputLabel-root': {
-              fontSize: '0.85rem',
-            }
-          }}
-        />
 
-        <Button
-          variant="contained"
-          onClick={handleAddOpen}
-          sx={{ height: 40, fontSize: '1rem', minWidth: '120px' }}
-        >
-          הוספת הסעה
-        </Button>
-        <Button
-          variant="outlined"
-          color="primary"
-          sx={{ height: 40, fontSize: '1rem', minWidth: '150px' }}
-          onClick={() => setSeatsDialogOpen(true)}
-        >
-          מקומות פנויים בהסעה
-        </Button>
-      </Box>
-
-      {/* אזור הטבלה */}
-      <Box sx={{ 
-        px: 3,
-        pb: 3,
-        flex: 1,
-        overflow: 'auto',
-        height: 'calc(100vh - 120px)'  // גובה מסך פחות גובה שורת החיפוש ומרווחים
-      }}>
-        <TransportTable
-          data={data}
-          searchTerm={searchTerm}
-          sortField={sortField}
-          onViewPassengers={handleViewOpen}
-          onEditClick={handleEditOpen}
-          onDeleteClick={handleDeleteOpen}
-        />
-      </Box>
+        <Box sx={{ px: 3, pb: 3, flex: 1, overflow: 'auto', height: 'calc(100vh - 120px)' }}>
+          <TransportTable
+            data={data}
+            searchTerm={searchTerm}
+            onViewPassengers={handleViewOpen}
+            onEditClick={handleEditOpen}
+            onDeleteClick={handleDeleteOpen}
+            selectedDate={selectedDate}
+          />
+        </Box>
+      </Box >
 
       <AddTransportDialog
         open={addDialog}
@@ -273,7 +228,6 @@ function Transport() {
         transportDays={viewDialog.days}
       />
 
-      {/* דיאלוג אישור מחיקה */}
       <Dialog
         open={deleteDialog.open}
         onClose={handleDeleteClose}
@@ -291,7 +245,6 @@ function Transport() {
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג מקומות פנויים */}
       <Dialog open={seatsDialogOpen} onClose={() => setSeatsDialogOpen(false)} maxWidth="md" fullWidth dir="rtl">
         <DialogTitle sx={{ fontWeight: 'bold' }}>רשימת מקומות פנויים בכל ההסעות</DialogTitle>
         <DialogContent>
@@ -316,12 +269,26 @@ function Transport() {
                       <TableCell>{(row.cities || []).join(', ')}</TableCell>
                       <TableCell>{(row.days || []).join(', ')}</TableCell>
                       <TableCell>
-                        {row.days && row.days.length > 0 ? row.days.map(day => (
-                          <Box key={day} component="span" sx={{ mr: 1 }}>
-                            <b>{day}:</b> {availableSeatsByDay[day]}
-                          </Box>
-                        )) : '—'}
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {row.days && row.days.length > 0 ? row.days.map(day => (
+                            <Box
+                              key={day}
+                              sx={{
+                                border: '2px solid #ccc',
+                                borderRadius: '16px',
+                                padding: '6px 12px',
+                                minWidth: '120px',
+                                textAlign: 'center',
+                                fontWeight: 'bold',
+                                backgroundColor: '#f5f5f5'
+                              }}
+                            >
+                              {day}: {availableSeatsByDay[day]}
+                            </Box>
+                          )) : '—'}
+                        </Box>
                       </TableCell>
+
                     </TableRow>
                   );
                 })}
