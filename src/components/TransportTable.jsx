@@ -4,7 +4,8 @@ import {
   TextField, Select, MenuItem, InputLabel, FormControl,
   Button, IconButton, Tooltip, Chip, Stack,
   Popover, Typography, Dialog, DialogTitle, DialogContent,
-  DialogActions, Autocomplete, Paper, ToggleButton, ToggleButtonGroup
+  DialogActions, Autocomplete, Paper, ToggleButton, ToggleButtonGroup,
+  TableSortLabel
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -61,6 +62,16 @@ function TransportTable({
   const [reservationDate, setReservationDate] = useState(new Date());
   const [searchText, setSearchText] = useState('');
 
+  // מיון
+  const [order, setOrder] = useState('asc');
+  const [orderBy, setOrderBy] = useState('');
+
+  const handleSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
   // Fetch profiles when dialog opens
   React.useEffect(() => {
     if (tempReservationDialog.open) {
@@ -96,18 +107,21 @@ function TransportTable({
       )
     )
     .sort((a, b) => {
-      if (!sortField) return 0;
-      if (sortField === 'days') {
-        // Sort by first day in order
+      if (!orderBy) return 0;
+      if (orderBy === 'days') {
         const aIdx = dayOrder.indexOf((a.days || [])[0]);
         const bIdx = dayOrder.indexOf((b.days || [])[0]);
-        return aIdx - bIdx;
+        return order === 'asc' ? aIdx - bIdx : bIdx - aIdx;
       }
-      if (sortField === 'cities') {
-        return (a.cities?.[0] || '') < (b.cities?.[0] || '') ? -1 : (a.cities?.[0] || '') > (b.cities?.[0] || '') ? 1 : 0;
+      if (orderBy === 'cities') {
+        const aCity = (a.cities?.[0] || '').toLowerCase();
+        const bCity = (b.cities?.[0] || '').toLowerCase();
+        if (aCity < bCity) return order === 'asc' ? -1 : 1;
+        if (aCity > bCity) return order === 'asc' ? 1 : -1;
+        return 0;
       }
-      if ((a[sortField] || '') < (b[sortField] || '')) return -1;
-      if ((a[sortField] || '') > (b[sortField] || '')) return 1;
+      if ((a[orderBy] || '') < (b[orderBy] || '')) return order === 'asc' ? -1 : 1;
+      if ((a[orderBy] || '') > (b[orderBy] || '')) return order === 'asc' ? 1 : -1;
       return 0;
     });
 
@@ -192,250 +206,281 @@ function TransportTable({
   };
 
   return (
-    <Box sx={{
-      backgroundColor: '#fff',
-      borderRadius: 2,
-      boxShadow: 1,
-      overflow: 'hidden'
-    }}>
-      <Table sx={{ minWidth: '800px', tableLayout: 'fixed', fontSize: '1.1rem' }}>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', width: '60px', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>מס׳</TableCell>
-            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>ימים</TableCell>
-            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>יישובים</TableCell>
-            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>מקומות פנויים</TableCell>
-            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>שיריון זמני</TableCell>
-            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>סוג הסעה</TableCell>
-            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0' }}>רשימת נוסעים</TableCell>
-            <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem' , borderRight: '1px solid #e0e0e0' }}>פעולה</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filteredData.map((row, index) => {
-            const availableSeatsByDay = calculateAvailableSeatsByDay(row.type, row.passengers, row.days);
-            const hasAvailableSeats = Object.values(availableSeatsByDay).some(seats => seats > 0);
-            // Sort days by order
-            const sortedDays = (row.days || []).slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
-
-            return (
-              <TableRow key={row.id || index} sx={{ fontSize: '1.1rem', borderBottom: 'none', borderTop: 'none' }}>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>{index + 1}</TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'nowrap' }}>
-                    {sortedDays.map(day => (
-                      <Box
-                        key={day}
-                        sx={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: '50%',
-                          backgroundColor: '#f1f1f1',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 500,
-                          fontSize: '0.95rem',
-                          color: '#222',
-                        }}
-                      >
-                        {dayShortMap[day] || day}
-                      </Box>
-                    ))}
-                  </Box>
-                </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
-                    {(row.cities || []).map((city, i) => (
-                      <Chip
-                        key={i}
-                        label={city}
-                        size="small"
-                        sx={{
-                          minWidth: 70,
-                          minHeight: 26,
-                          borderRadius: '13px',
-                          fontSize: '0.95rem',
-                          fontWeight: 500,
-                          backgroundColor: '#f1f1f1',
-                          mx: 0.5
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                  <Tooltip title="לחץ לפירוט מקומות פנויים">
-                    <IconButton onClick={(e) => handleSeatsClick(e, row)} sx={{ p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
-                      <EventSeatIcon sx={{ fontSize: 25, color: hasAvailableSeats ? 'success.main' : 'error.main' }} />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                  <Tooltip title="שיריון זמני">
-                    <IconButton onClick={() => handleTempReservationClick(row)} sx={{ p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
-                      <AccessTimeIcon sx={{ fontSize: 25, color: 'primary.main' }} />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0', fontSize: '1.08rem', fontWeight: 500 }}>{row.type}</TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                  <Tooltip title="צפייה באנשים">
-                    <IconButton onClick={() => onViewPassengers(row.passengers || [], row.days || [])}>
-                      <VisibilityIcon />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' , borderRight: '1px solid #e0e0e0' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                    <Tooltip title="עריכה">
-                      <IconButton onClick={() => onEditClick(index)}>
-                        <EditIcon color="primary" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="מחק">
-                      <IconButton onClick={() => onDeleteClick(index)}>
-                        <DeleteIcon color="error" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-
-      <Popover
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'center',
+    <Box sx={{ width: '100%' }}>
+      <Paper
+        sx={{
+          width: '100%',
+          borderRadius: '12px 12px 8px 8px',
+          boxShadow: '0px 0px 4px rgba(0, 0, 0, 0.27)',
+          overflow: 'hidden',
+          border: '1px solid rgb(118, 126, 136)',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <Box sx={{ p: 2, minWidth: 200 }}>
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-            מקומות פנויים לפי יום:
-          </Typography>
-          {selectedTransport && selectedTransport.days?.slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b)).map((day) => {
-            const seats = calculateAvailableSeatsByDay(
-              selectedTransport.type,
-              selectedTransport.passengers,
-              [day]
-            )[day];
-            return (
-              <Typography key={day} sx={{ mb: 0.5 }}>
-                {(dayMap[day] || day)}: {seats} מקומות פנויים
-              </Typography>
-            );
-          })}
-        </Box>
-      </Popover>
+        <Table
+          size="small"
+          sx={{
+            direction: 'rtl',
+            borderCollapse: 'collapse',
+            width: '100%',
+            tableLayout: 'fixed',
+            fontSize: '1.1rem',
+            '& th, & td': {
+              py: 0.5,
+              px: 1,
+              fontSize: '1rem',
+            },
+          }}
+        >
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', width: '60px', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>מס׳</TableCell>
+              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>ימים</TableCell>
+              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>
+                <TableSortLabel
+                  active={orderBy === 'cities'}
+                  direction={orderBy === 'cities' ? order : 'asc'}
+                  onClick={() => handleSort('cities')}
+                  showSortIcon
+                  sx={{ '& .MuiTableSortLabel-icon': { opacity: 1 }, flexDirection: 'row-reverse' }}
+                >
+                  יישובים
+                </TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>מקומות פנויים</TableCell>
+              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>שיריון זמני</TableCell>
+              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>סוג הסעה</TableCell>
+              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>רשימת נוסעים</TableCell>
+              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem' , borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>פעולה</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredData.map((row, index) => {
+              const availableSeatsByDay = calculateAvailableSeatsByDay(row.type, row.passengers, row.days);
+              const hasAvailableSeats = Object.values(availableSeatsByDay).some(seats => seats > 0);
+              // Sort days by order
+              const sortedDays = (row.days || []).slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
 
-      {/* דיאלוג שיריון זמני */}
-      <Dialog
-        open={tempReservationDialog.open}
-        onClose={handleTempReservationClose}
-        maxWidth="sm"
-        fullWidth
-        dir="rtl"
-      >
-        <DialogTitle>שיריון מקום זמני</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
-              <DatePicker
-                label="בחר תאריך"
-                value={reservationDate}
-                onChange={(newDate) => {
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  if (newDate >= today) {
-                    setReservationDate(newDate);
-                  } else {
-                    alert('לא ניתן לבחור תאריך בעבר');
-                  }
-                }}
-                minDate={new Date()}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    InputLabelProps: {
-                      shrink: true,
-                    }
-                  }
-                }}
-              />
-            </LocalizationProvider>
-            <ToggleButtonGroup
-              value={tempReservationDialog.reservationType}
-              exclusive
-              onChange={(e, newValue) => {
-                if (newValue !== null) {
-                  setTempReservationDialog(prev => ({
-                    ...prev,
-                    reservationType: newValue
-                  }));
-                  setSelectedProfile(null);
-                }
-              }}
-              fullWidth
-            >
-              <ToggleButton value="add">
-                הוספת נוסע
-              </ToggleButton>
-              <ToggleButton value="remove">
-                הורדת נוסע
-              </ToggleButton>
-            </ToggleButtonGroup>
-            {tempReservationDialog.reservationType === 'add' ? (
-              <Autocomplete
-                options={profiles}
-                getOptionLabel={(option) => option.name}
-                value={selectedProfile}
-                onChange={(event, newValue) => setSelectedProfile(newValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="בחר נוסע"
-                    placeholder="הקלד שם לחיפוש"
-                  />
-                )}
-              />
-            ) : (
-              <Autocomplete
-                options={tempReservationDialog.transport?.passengers || []}
-                getOptionLabel={(option) => option.name}
-                value={selectedProfile}
-                onChange={(event, newValue) => setSelectedProfile(newValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="בחר נוסע להורדה"
-                    placeholder="הקלד שם לחיפוש"
-                  />
-                )}
-              />
-            )}
+              return (
+                <TableRow key={row.id || index} sx={{ fontSize: '1.1rem', borderBottom: 'none', borderTop: 'none' }}>
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>{index + 1}</TableCell>
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'nowrap' }}>
+                      {sortedDays.map(day => (
+                        <Box
+                          key={day}
+                          sx={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: '50%',
+                            backgroundColor: '#f1f1f1',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 500,
+                            fontSize: '0.95rem',
+                            color: '#222',
+                          }}
+                        >
+                          {dayShortMap[day] || day}
+                        </Box>
+                      ))}
+                    </Box>
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {(row.cities || []).map((city, i) => (
+                        <Chip
+                          key={i}
+                          label={city}
+                          size="small"
+                          sx={{
+                            minWidth: 70,
+                            minHeight: 26,
+                            borderRadius: '13px',
+                            fontSize: '0.95rem',
+                            fontWeight: 500,
+                            backgroundColor: '#f1f1f1',
+                            mx: 0.5
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
+                    <Tooltip title="לחץ לפירוט מקומות פנויים">
+                      <IconButton onClick={(e) => handleSeatsClick(e, row)} sx={{ p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
+                        <EventSeatIcon sx={{ fontSize: 25, color: hasAvailableSeats ? 'success.main' : 'error.main' }} />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
+                    <Tooltip title="שיריון זמני">
+                      <IconButton onClick={() => handleTempReservationClick(row)} sx={{ p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
+                        <AccessTimeIcon sx={{ fontSize: 25, color: 'primary.main' }} />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0', fontSize: '1.08rem', fontWeight: 500 }}>{row.type}</TableCell>
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
+                    <Tooltip title="צפייה באנשים">
+                      <IconButton onClick={() => onViewPassengers(row.passengers || [], row.days || [])}>
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle' , borderRight: '1px solid #e0e0e0' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                      <Tooltip title="עריכה">
+                        <IconButton onClick={() => onEditClick(index)}>
+                          <EditIcon color="primary" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="מחק">
+                        <IconButton onClick={() => onDeleteClick(index)}>
+                          <DeleteIcon color="error" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+
+        <Popover
+          open={open}
+          anchorEl={anchorEl}
+          onClose={handleClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'center',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'center',
+          }}
+        >
+          <Box sx={{ p: 2, minWidth: 200 }}>
+            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+              מקומות פנויים לפי יום:
+            </Typography>
+            {selectedTransport && selectedTransport.days?.slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b)).map((day) => {
+              const seats = calculateAvailableSeatsByDay(
+                selectedTransport.type,
+                selectedTransport.passengers,
+                [day]
+              )[day];
+              return (
+                <Typography key={day} sx={{ mb: 0.5 }}>
+                  {(dayMap[day] || day)}: {seats} מקומות פנויים
+                </Typography>
+              );
+            })}
           </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleTempReservationClose}>ביטול</Button>
-          <Button
-            onClick={handleTempReservationSave}
-            variant="contained"
-            disabled={!selectedProfile || !reservationDate}
-          >
-            שמור
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Popover>
+
+        {/* דיאלוג שיריון זמני */}
+        <Dialog
+          open={tempReservationDialog.open}
+          onClose={handleTempReservationClose}
+          maxWidth="sm"
+          fullWidth
+          dir="rtl"
+        >
+          <DialogTitle>שיריון מקום זמני</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
+                <DatePicker
+                  label="בחר תאריך"
+                  value={reservationDate}
+                  onChange={(newDate) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (newDate >= today) {
+                      setReservationDate(newDate);
+                    } else {
+                      alert('לא ניתן לבחור תאריך בעבר');
+                    }
+                  }}
+                  minDate={new Date()}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      InputLabelProps: {
+                        shrink: true,
+                      }
+                    }
+                  }}
+                />
+              </LocalizationProvider>
+              <ToggleButtonGroup
+                value={tempReservationDialog.reservationType}
+                exclusive
+                onChange={(e, newValue) => {
+                  if (newValue !== null) {
+                    setTempReservationDialog(prev => ({
+                      ...prev,
+                      reservationType: newValue
+                    }));
+                    setSelectedProfile(null);
+                  }
+                }}
+                fullWidth
+              >
+                <ToggleButton value="add">
+                  הוספת נוסע
+                </ToggleButton>
+                <ToggleButton value="remove">
+                  הורדת נוסע
+                </ToggleButton>
+              </ToggleButtonGroup>
+              {tempReservationDialog.reservationType === 'add' ? (
+                <Autocomplete
+                  options={profiles}
+                  getOptionLabel={(option) => option.name}
+                  value={selectedProfile}
+                  onChange={(event, newValue) => setSelectedProfile(newValue)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="בחר נוסע"
+                      placeholder="הקלד שם לחיפוש"
+                    />
+                  )}
+                />
+              ) : (
+                <Autocomplete
+                  options={tempReservationDialog.transport?.passengers || []}
+                  getOptionLabel={(option) => option.name}
+                  value={selectedProfile}
+                  onChange={(event, newValue) => setSelectedProfile(newValue)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="בחר נוסע להורדה"
+                      placeholder="הקלד שם לחיפוש"
+                    />
+                  )}
+                />
+              )}
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleTempReservationClose}>ביטול</Button>
+            <Button
+              onClick={handleTempReservationSave}
+              variant="contained"
+              disabled={!selectedProfile || !reservationDate}
+            >
+              שמור
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Paper>
     </Box>
   );
 }

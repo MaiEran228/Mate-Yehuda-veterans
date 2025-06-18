@@ -4,6 +4,7 @@ import { Typography, CircularProgress, Box, Paper, Button, Container, TextField,
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import 'jspdf-font';
 import { useNavigate } from 'react-router-dom';
 
 const getMonthDates = (month, year) => {
@@ -102,21 +103,28 @@ const DaysLeft = () => {
       day = day.replace('יום', '').replace(/\s/g, '');
       return letterToDay[day] || day;
     };
+    const today = dayjs().format('YYYY-MM-DD');
     const surplusList = profiles.map(profile => {
       if (!Array.isArray(profile.arrivalDays) || profile.arrivalDays.length === 0) {
-        return { id: profile.id, name: profile.name, eligible: 0, actual: 0, diff: 0, missed: 0 };
+        return { id: profile.id, name: profile.name, eligible: 0, actual: 0, diff: 0, missed: 0, total: 0 };
       }
       const eligible = profile.arrivalDays.length * numWeeks;
       let actual = 0;
       let missed = 0;
       profile.arrivalDays.forEach(arrivalDay => {
         const normalizedDay = normalizeDay(arrivalDay);
+        // actual: count all relevant days in the month
+        actual += monthDates.filter(dateStr => {
+          const d = dayjs(dateStr);
+          const hebDay = hebrewDaysByIndex[d.day()];
+          return hebDay === normalizedDay;
+        }).length;
+        // missed: only up to today
         monthDates.forEach(dateStr => {
+          if (dateStr > today) return; // Skip future days
           const d = dayjs(dateStr);
           const hebDay = hebrewDaysByIndex[d.day()];
           if (hebDay === normalizedDay) {
-            actual++;
-            // Check if attended
             const record = attendanceData.find(p => p.id === profile.id && p.date === dateStr);
             if (!(record && record.attended === true)) {
               missed++;
@@ -124,7 +132,7 @@ const DaysLeft = () => {
           }
         });
       });
-      return { id: profile.id, name: profile.name, eligible, actual, diff: eligible - actual, missed };
+      return { id: profile.id, name: profile.name, eligible, actual, diff: eligible - actual, missed, total: (eligible - actual) + missed };
     });
     setSurplusList(surplusList);
     setSurplusOpen(true);
@@ -246,30 +254,51 @@ const DaysLeft = () => {
           <Dialog open={surplusOpen} onClose={() => setSurplusOpen(false)}>
             <DialogTitle>חישוב ימי זכאות מול ימי הופעה בפועל</DialogTitle>
             <DialogContent>
-              <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl', tableLayout: 'fixed' }}>
-                <thead>
-                  <tr>
-                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>שם</th>
-                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>ימי זכאות (תיאורטי)</th>
-                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>ימי הופעה בפועל בחודש</th>
-                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>הפרש</th>
-                    <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>מספר ימים שהחסיר</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {surplusList.map(person => (
-                    <tr key={person.id}>
-                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.name}</td>
-                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.eligible}</td>
-                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.actual}</td>
-                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.diff}</td>
-                      <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.missed}</td>
+              <div id="surplusTableContent">
+                <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl', tableLayout: 'fixed' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>שם</th>
+                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>ימי זכאות (תיאורטי)</th>
+                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>ימי הופעה בפועל בחודש</th>
+                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>הפרש</th>
+                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>מספר ימים שהחסיר</th>
+                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>הפרש + ימים שהחסיר</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {surplusList.map(person => (
+                      <tr key={person.id}>
+                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.name}</td>
+                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.eligible}</td>
+                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.actual}</td>
+                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.diff}</td>
+                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.missed}</td>
+                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </DialogContent>
             <DialogActions>
+              <Button
+                onClick={async () => {
+                  const input = document.getElementById('surplusTableContent');
+                  if (!input) return;
+                  const canvas = await html2canvas(input);
+                  const imgData = canvas.toDataURL('image/png');
+                  const pdf = new jsPDF('p', 'mm', 'a4');
+                  const pdfWidth = pdf.internal.pageSize.getWidth();
+                  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                  pdf.save('דו"ח ימי עודף.pdf');
+                }}
+                color="primary"
+                variant="outlined"
+              >
+                הנפקת דו"ח ל-PDF
+              </Button>
               <Button onClick={() => setSurplusOpen(false)} color="primary">סגור</Button>
             </DialogActions>
           </Dialog>

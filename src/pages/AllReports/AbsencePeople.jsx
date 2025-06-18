@@ -349,7 +349,7 @@ const AbsencePeople = () => {
         />
         <Button
           variant="contained"
-          color="secondary"
+          color="primary"
           disableRipple
           onClick={() => {
             const excelData = absentMembers.map((person, index) => ({

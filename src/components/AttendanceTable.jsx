@@ -16,6 +16,9 @@ const dayMap = {
   'חמישי': 'ה',
 };
 
+// סדר השבוע עבור מיון ימי הגעה
+const weekOrder = ['א', 'ב', 'ג', 'ד', 'ה'];
+
 // קומפוננטה לשורה עם Skeleton loading
 const SkeletonRow = () => (
     <TableRow>
@@ -453,7 +456,13 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                                             <TableCell align="right" sx={{ width: '30%' }}>{profile.city}</TableCell>
                                             <TableCell align="right" sx={{ width: '30%' }}>{profile.name}</TableCell>
                                             <TableCell align="right" sx={{ width: '12%' }}>
-                                                {profile.arrivalDays && profile.arrivalDays.length > 0 ? profile.arrivalDays.map(day => dayMap[day] || day).join(', ') : ''}
+                                                {profile.arrivalDays && profile.arrivalDays.length > 0
+                                                  ? profile.arrivalDays
+                                                      .map(day => dayMap[day] || day)
+                                                      .slice()
+                                                      .sort((a, b) => weekOrder.indexOf(a) - weekOrder.indexOf(b))
+                                                      .join(', ')
+                                                  : ''}
                                             </TableCell>
                                             <TableCell align="right" sx={{ width: '10%' }}>
                                                 <Checkbox
