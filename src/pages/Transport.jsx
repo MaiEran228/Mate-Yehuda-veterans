@@ -15,18 +15,19 @@ import TableBody from '@mui/material/TableBody';
 import { calculateAvailableSeatsByDay } from '../utils/transportUtils';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { he } from 'date-fns/locale';
 import AddIcon from '@mui/icons-material/Add';
+import dayjs from 'dayjs';
 
 function Transport() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [availableCities, setAvailableCities] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(dayjs());
 
   // Dialog states
   const [addDialog, setAddDialog] = useState(false);
@@ -131,38 +132,112 @@ function Transport() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           {/* ימין: תאריך, חיפוש, דוח */}
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="he">
               <DatePicker
-                label="בחר תאריך"
-                value={selectedDate ? new Date(selectedDate) : null}
-                onChange={(newDate) => setSelectedDate(newDate ? newDate.toISOString().split('T')[0] : null)}
-                minDate={new Date()}
-                slotProps={{
-                  textField: {
-                    sx: {
-                      width: 200,
-                      '& input': {
-                        textAlign: 'right',
-                        direction: 'rtl',
-                        paddingRight: '14px'
-                      }
-                    },
-                    InputLabelProps: {
-                      shrink: true,
-                    }
+                label="תאריך"
+                value={selectedDate}
+                onChange={(newValue) => {
+                  if (newValue) {
+                    setSelectedDate(newValue);
                   }
+                }}
+                inputFormat="DD/MM/YYYY"
+                slotProps={{
+                  actionBar: {
+                    actions: ['accept'],
+                    sx: {
+                      padding: '0px 8px',
+                      margin: '-70px 0 0 0',
+                      minHeight: '22px',
+                      '& .MuiButton-root': {
+                        minWidth: 40,
+                        padding: '0px 8px',
+                        margin: '0 2px',
+                        mb: 1,
+                        ml: 2,
+                        fontSize: '0.875rem',
+                        backgroundColor: '#1976d2',
+                        color: 'white',
+                        height: '28px',
+                        borderRadius: '3px',
+                        '&:hover': {
+                          backgroundColor: '#1565c0',
+                        },
+                      }
+                    }
+                  },
+                  textField: {
+                    size: 'small',
+                    sx: {
+                      ml: 2,
+                      minWidth: 130,
+                      maxWidth: 160,
+                      direction: 'rtl',
+                      '& .MuiOutlinedInput-notchedOutline legend': {
+                        display: 'none',
+                      },
+                      '& .MuiIconButton-root': {
+                        outline: 'none',
+                        '&:focus': {
+                          outline: 'none',
+                          boxShadow: 'none',
+                        },
+                      },
+                    },
+                    InputProps: {
+                      notched: false,
+                      sx: {
+                        flexDirection: 'row-reverse',
+                        input: {
+                          textAlign: 'right',
+                        },
+                      },
+                    },
+                  },
                 }}
               />
             </LocalizationProvider>
 
             <TextField
-              label="חיפוש"
-              variant="outlined"
+              fullWidth
+              placeholder="חיפוש לפי שם או אזור מגורים..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              sx={{ width: 300 }}
+              variant="outlined"
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchTerm && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => setSearchTerm('')}
+                      edge="end"
+                      sx={{ mr: -0.5 }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+                sx: {
+                  backgroundColor: '#fff',
+                  borderRadius: 2,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(118, 126, 136, 0.2)',
+                  },
+                },
+              }}
+              sx={{
+                maxWidth: '400px',
+                '& .MuiInputBase-root': {
+                  height: '40px',
+                },
+              }}
             />
-
 
           </Box>
 
@@ -322,3 +397,4 @@ function Transport() {
 }
 
 export default Transport;
+

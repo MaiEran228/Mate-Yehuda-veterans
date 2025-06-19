@@ -4,7 +4,7 @@ import { Typography, CircularProgress, Box, Paper, Button, Container, TextField,
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import 'jspdf-font';
+//import 'jspdf-font';
 import { useNavigate } from 'react-router-dom';
 
 const getMonthDates = (month, year) => {

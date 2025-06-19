@@ -414,10 +414,11 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 label="סוג הסעה"
                 value={initialProfile.transport || ''}
                 onChange={handleFieldChange("transport")}
-                sx={{ maxWidth: "170px" }}
                 name="transport"
                 error={!!errors.transport}
                 helperText={errors.transport}
+                sx={{ maxWidth: "170px" }}
+
               >
                 <MenuItem value="מונית">מונית</MenuItem>
                 <MenuItem value="מיניבוס">מיניבוס</MenuItem>
@@ -543,7 +544,6 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 label="מטפל"
               />
             </Box>
-
             <Box sx={{ 
                 display: 'flex', 
                 justifyContent: 'space-between',  // מפריד בין הכפתורים לשני הצדדים
@@ -551,7 +551,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
             }}>
                 {/* כפתור עדכון הסעה בצד ימין */}
                 <Box>
-                    <Button
+          <Button
                         onClick={handleAssignTransport}
                         variant="outlined"
                         color="primary"

@@ -1,15 +1,12 @@
 import {
-    Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, FormControlLabel, Checkbox, MenuItem,
-    Select, InputLabel, FormControl, Typography, Box, Alert, IconButton, Avatar
+    Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, Alert
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { findMatchingTransports, addPassengerToTransport } from '../utils/transportUtils';
 import { doc, getDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase';
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
+import { db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
+import ProfileFormFields from './ProfileFormFields';
 
 function AddProfileWindow({ open, onClose, onSave }) {
     const initialFormData = {
@@ -25,7 +22,6 @@ function AddProfileWindow({ open, onClose, onSave }) {
     const [showTransportDialog, setShowTransportDialog] = useState(false);
     const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
     const [existingProfileDialog, setExistingProfileDialog] = useState(false);
-    const [imagePreview, setImagePreview] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [noTransportDialogOpen, setNoTransportDialogOpen] = useState(false);
     const navigate = useNavigate();
@@ -38,7 +34,6 @@ function AddProfileWindow({ open, onClose, onSave }) {
             setMatchingTransports([]);
             setShowTransportDialog(false);
             setExistingProfileDialog(false);
-            setImagePreview(null);
         }
     }, [open]);
 
@@ -135,6 +130,14 @@ function AddProfileWindow({ open, onClose, onSave }) {
     };
 
     const handleSubmit = async () => {
+        if (isUploading) {
+            setErrors(prev => ({ ...prev, profileImage: "המתן לסיום העלאת התמונה" }));
+            return;
+        }
+        if (!formData.profileImage) {
+            setErrors(prev => ({ ...prev, profileImage: "יש להעלות תמונה" }));
+            return;
+        }
         const requiredFields = ["name", "id", "city", "birthDate", "phone", "transport", "arrivalDays"];
         const newErrors = {};
         
@@ -187,7 +190,6 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 await onSave(profileToSave);
                 setFormData(initialFormData);
                 setErrors({});
-                setImagePreview(null);
                 onClose();
                 return;
             }
@@ -218,7 +220,6 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 await onSave(profileToSave);
                 setFormData(initialFormData);
                 setErrors({});
-                setImagePreview(null);
                 onClose();
             } else {
                 setMatchingTransports(transports);
@@ -267,75 +268,6 @@ function AddProfileWindow({ open, onClose, onSave }) {
         onClose();
     };
 
-    const handleImageUpload = async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        // Preview the image
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setImagePreview(reader.result);
-        };
-        reader.readAsDataURL(file);
-
-        try {
-            setIsUploading(true);
-            // Create a reference to the storage location with a unique filename
-            const uniqueFileName = `${Date.now()}-${file.name}`;
-            const storageRef = ref(storage, `profile-images/${uniqueFileName}`);
-            
-            // Upload the file
-            const snapshot = await uploadBytes(storageRef, file);
-            
-            // Get the download URL
-            const downloadURL = await getDownloadURL(snapshot.ref);
-            console.log('File uploaded, URL:', downloadURL); // For debugging
-            
-            // Update form data with the image URL
-            setFormData(prev => ({
-                ...prev,
-                profileImage: downloadURL
-            }));
-            
-            setIsUploading(false);
-        } catch (error) {
-            console.error("Error uploading image:", error);
-            setIsUploading(false);
-        }
-    };
-
-    const validateAndSave = async (profileData) => {
-        let hasErrors = false;
-        const newErrors = {};
-
-        // בדיקת שדות חובה
-        if (!profileData.name) {
-            newErrors.name = 'שם הוא שדה חובה';
-            hasErrors = true;
-        }
-        if (!profileData.phone) {
-            newErrors.phone = 'טלפון הוא שדה חובה';
-            hasErrors = true;
-        }
-        if (!profileData.city) {
-            newErrors.city = 'עיר היא שדה חובה';
-            hasErrors = true;
-        }
-        if (!profileData.transport) {
-            newErrors.transport = 'סוג הסעה הוא שדה חובה';
-            hasErrors = true;
-        }
-        if (!profileData.arrivalDays || profileData.arrivalDays.length === 0) {
-            newErrors.arrivalDays = 'ימי הגעה הם שדה חובה';
-            hasErrors = true;
-        }
-
-        setErrors(newErrors);
-
-        if (!hasErrors) {
-            await handleSubmit();
-        }
-    };
 
     return (
         <>
@@ -367,378 +299,16 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 {transportMessage.text}
                             </Alert>
                         )}
-                        
-                        {/* Image Upload Section */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            flexDirection: 'column',
-                            alignItems: 'center', 
-                            gap: 1,
-                            position: 'relative',
-                            mb: 2
-                        }}>
-                            <input
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                id="profile-image-upload"
-                                type="file"
-                                onChange={handleImageUpload}
-                            />
-                            <label htmlFor="profile-image-upload">
-                                <Avatar
-                                    src={imagePreview}
-                                    sx={{
-                                        width: 120,
-                                        height: 120,
-                                        bgcolor: 'grey.200',
-                                        cursor: 'pointer',
-                                        '&:hover': {
-                                            opacity: 0.8
-                                        }
-                                    }}
-                                >
-                                    {!imagePreview && <AddPhotoAlternateIcon sx={{ fontSize: 40 }} />}
-                                </Avatar>
-                            </label>
-                            {isUploading && (
-                                <Typography variant="body2" color="text.secondary">
-                                    מעלה תמונה...
-                                </Typography>
-                            )}
-                            {!imagePreview && !isUploading && (
-                                <Typography variant="body2" color="text.secondary">
-                                    העלאת תמונת פרופיל
-                                </Typography>
-                            )}
-                        </Box>
-
+                    
                         {/* שדות טקסט */}
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                            <TextField
-                                fullWidth
-                                placeholder="שם"
-                                name="name"
-                                value={formData.name}
+                            <ProfileFormFields
+                                values={formData}
+                                errors={errors}
                                 onChange={handleChange}
-                                required
-                                error={errors.name}
-                                helperText={errors.name && "שדה חובה"}
-                                sx={{ maxWidth: "170px" }}
-                                inputProps={{ style: { textAlign: 'right' } }}
-                                InputProps={{ notched: false }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                placeholder="תעודת זהות"
-                                name="id"
-                                value={formData.id}
-                                onChange={handleChange}
-                                required
-                                error={!!errors.id}
-                                helperText={errors.id}
-                                sx={{ maxWidth: "170px" }}
-                                inputProps={{ style: { textAlign: 'right' } }}
-                                InputProps={{ notched: false }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="תאריך לידה"
-                                name="birthDate"
-                                type="date"
-                                value={formData.birthDate}
-                                onChange={handleChange}
-                                required
-                                error={!!errors?.birthDate}
-                                helperText={errors?.birthDate && "שדה חובה"}
-                                InputLabelProps={{
-                                    shrink: true,
-                                    sx: {
-                                        right: 24,
-                                        left: 'unset',
-                                        textAlign: 'right',
-                                        transformOrigin: 'top right',
-                                        direction: 'rtl',
-                                        backgroundColor: 'white',
-                                        px: 0.5
-                                    }
-                                }}
-                                sx={{ maxWidth: "170px" }}
-                                inputProps={{ style: { textAlign: 'right' } }}
-                                InputProps={{ notched: false }}
-                            />
-
-                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                                <Select
-                                    name="gender"
-                                    value={formData.gender}
-                                    onChange={handleChange}
-                                    displayEmpty
-                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'מין' }}
-                                    MenuProps={{
-                                        PaperProps: {
-                                            sx: { textAlign: 'right', direction: 'rtl' }
-                                        }
-                                    }}
-                                >
-                                    <MenuItem value="" disabled hidden>
-                                        מין
-                                    </MenuItem>
-                                    <MenuItem value="זכר">זכר</MenuItem>
-                                    <MenuItem value="נקבה">נקבה</MenuItem>
-                                    <MenuItem value="אחר">אחר</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <TextField
-                                fullWidth
-                                placeholder="טלפון"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={handleChange}
-                                required
-                                error={!!errors.phone}
-                                helperText={errors.phone === true ? "שדה חובה" : errors.phone}
-                                sx={{ maxWidth: "170px" }}
-                                inputProps={{ style: { textAlign: 'right' } }}
-                                InputProps={{ notched: false }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                placeholder="טלפון נוסף"
-                                name="phone2"
-                                value={formData.phone2}
-                                onChange={handleChange}
-                                error={!!errors.phone2}
-                                helperText={errors.phone2}
-                                sx={{ maxWidth: "170px" }}
-                                inputProps={{ style: { textAlign: 'right' } }}
-                                InputProps={{ notched: false }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                placeholder="מייל"
-                                name="email"
-                                value={formData.email || ''}
-                                onChange={handleChange}
-                                sx={{ maxWidth: "170px" }}
-                                inputProps={{ style: { textAlign: 'right' } }}
-                                InputProps={{ notched: false }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                placeholder="כתובת"
-                                name="address"
-                                value={formData.address}
-                                onChange={handleChange}
-                                sx={{ maxWidth: "170px" }}
-                                inputProps={{ style: { textAlign: 'right' } }}
-                                InputProps={{ notched: false }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                placeholder="יישוב"
-                                name="city"
-                                value={formData.city}
-                                onChange={handleChange}
-                                required
-                                error={errors.city}
-                                helperText={errors.city && "שדה חובה"}
-                                sx={{ maxWidth: "170px" }}
-                                inputProps={{ style: { textAlign: 'right' } }}
-                                InputProps={{ notched: false }}
-                            />
-
-                            <FormControl fullWidth sx={{ maxWidth: "170px" }} error={!!errors.transport}>
-                                <Select
-                                    name="transport"
-                                    value={formData.transport}
-                                    onChange={handleChange}
-                                    displayEmpty
-                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'הסעה' }}
-                                    MenuProps={{
-                                        PaperProps: {
-                                            sx: { textAlign: 'right', direction: 'rtl' }
-                                        }
-                                    }}
-                                >
-                                    <MenuItem value="" disabled hidden>
-                                        הסעה
-                                    </MenuItem>
-                                    <MenuItem value="מונית">מונית</MenuItem>
-                                    <MenuItem value="מיניבוס">מיניבוס</MenuItem>
-                                    <MenuItem value="פרטי">פרטי</MenuItem>
-                                    <MenuItem value="אחר">אחר</MenuItem>
-                                </Select>
-                                {errors.transport && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
-                            </FormControl>
-                        </Box>
-
-                        {/* ימי הגעה בשורה נפרדת */}
-                        <Box sx={{ mt: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', color: errors.arrivalDays ? 'error.main' : undefined }}>ימי הגעה:</Typography>
-                                {[
-                                    { label: 'א', value: 'ראשון' },
-                                    { label: 'ב', value: 'שני' },
-                                    { label: 'ג', value: 'שלישי' },
-                                    { label: 'ד', value: 'רביעי' },
-                                    { label: 'ה', value: 'חמישי' }
-                                ].map(({ label, value }) => (
-                                    <FormControlLabel
-                                        key={value}
-                                        control={
-                                            <Checkbox
-                                                checked={formData.arrivalDays.includes(value)}
-                                                onChange={() => {
-                                                    setFormData((prev) => {
-                                                        const isSelected = prev.arrivalDays.includes(value);
-                                                        const newDays = isSelected
-                                                            ? prev.arrivalDays.filter((d) => d !== value)
-                                                            : [...prev.arrivalDays, value];
-                                                        return { ...prev, arrivalDays: newDays };
-                                                    });
-                                                }}
-                                                sx={errors.arrivalDays ? { color: 'error.main' } : {}}
-                                            />
-                                        }
-                                        label={label}
-                                    />
-                                ))}
-                            </Box>
-                            {errors.arrivalDays && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
-                        </Box>
-
-                        {/* שדות נוספים */}
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                                <Select
-                                    name="functionLevel"
-                                    value={formData.functionLevel}
-                                    onChange={handleChange}
-                                    displayEmpty
-                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'רמת תפקוד' }}
-                                    MenuProps={{
-                                        PaperProps: {
-                                            sx: { textAlign: 'right', direction: 'rtl' }
-                                        }
-                                    }}
-                                >
-                                    <MenuItem value="" disabled hidden>
-                                        רמת תפקוד
-                                    </MenuItem>
-                                    {[1, 2, 3, 4, 5, 6].map((n) => (
-                                        <MenuItem key={n} value={n}>{n}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                                <Select
-                                    name="eligibility"
-                                    value={formData.eligibility}
-                                    onChange={handleChange}
-                                    displayEmpty
-                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'זכאות' }}
-                                    MenuProps={{
-                                        PaperProps: {
-                                            sx: { textAlign: 'right', direction: 'rtl' }
-                                        }
-                                    }}
-                                >
-                                    <MenuItem value="" disabled hidden>
-                                        זכאות
-                                    </MenuItem>
-                                    <MenuItem value="רווחה">רווחה</MenuItem>
-                                    <MenuItem value="סיעוד">סיעוד</MenuItem>
-                                    <MenuItem value="אחר">אחר</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <FormControl
-                                fullWidth
-                                sx={{ maxWidth: "170px" }}
-                                disabled={formData.eligibility !== "סיעוד"}
-                            >
-                                <Select
-                                    name="nursingCompany"
-                                    value={formData.nursingCompany}
-                                    onChange={handleChange}
-                                    displayEmpty
-                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חברת סיעוד' }}
-                                    MenuProps={{
-                                        PaperProps: {
-                                            sx: { textAlign: 'right', direction: 'rtl' }
-                                        }
-                                    }}
-                                >
-                                    <MenuItem value="" disabled hidden>
-                                        חברת סיעוד
-                                    </MenuItem>
-                                    <MenuItem value="מטב">מט"ב</MenuItem>
-                                    <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
-                                    <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
-                                    <MenuItem value="א.ש ירושלים">א.ש ירושלים</MenuItem>
-                                    <MenuItem value="ראנד">ראנד</MenuItem>
-                                    <MenuItem value="תגבור">תגבור</MenuItem>
-                                    <MenuItem value="נתן">נתן</MenuItem>
-                                    <MenuItem value="עמל- בית שמש">עמל- בית שמש</MenuItem>
-                                    <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
-                                    <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
-                                    <MenuItem value="אחר">אחר</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth sx={{ maxWidth: "170px" }}>
-                                <Select
-                                    name="membership"
-                                    value={formData.membership}
-                                    onChange={handleChange}
-                                    displayEmpty
-                                    inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חבר ב־' }}
-                                    MenuProps={{
-                                        PaperProps: {
-                                            sx: { textAlign: 'right', direction: 'rtl' }
-                                        }
-                                    }}
-                                >
-                                    <MenuItem value="" disabled hidden>
-                                        חבר ב־
-                                    </MenuItem>
-                                    <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
-                                    <MenuItem value="מרכז יום">מרכז יום</MenuItem>
-                                    <MenuItem value="אחר">אחר</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
-
-                        {/* צ'קבוקסים */}
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={formData.isHolocaustSurvivor}
-                                        onChange={handleChange}
-                                        name="isHolocaustSurvivor"
-                                    />
-                                }
-                                label="ניצול שואה"
-                            />
-
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={formData.hasCaregiver}
-                                        onChange={handleChange}
-                                        name="hasCaregiver"
-                                    />
-                                }
-                                label="מטפל"
+                                onImageChange={url => setFormData(prev => ({ ...prev, profileImage: url }))}
+                                isUploading={isUploading}
+                                setIsUploading={setIsUploading}
                             />
                         </Box>
                     </Box>

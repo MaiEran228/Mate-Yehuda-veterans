@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Avatar } from '@mui/material';
+import { Card, CardContent, Typography, Box } from '@mui/material';
 
 function ProfileCard({ profile, onClick }) {
   return (
@@ -10,31 +10,47 @@ function ProfileCard({ profile, onClick }) {
         mb: 4,
     }}>
       {/* עיגול של הפרופיל - צף מעל הכרטיס */}
-      <Avatar
-        src={profile.profileImage || ''}
-        alt={profile.name}
-        sx={{
+      <div
+        style={{
           position: 'absolute',
           top: -45,
           left: '50%',
           transform: 'translateX(-50%)',
           width: 100,
           height: 100,
-          bgcolor: profile.profileImage ? 'transparent' : '#dbeafe',
+          borderRadius: '50%',
+          backgroundColor: profile.profileImage ? 'transparent' : '#dbeafe',
           fontSize: '1.3rem',
           fontWeight: 'bold',
           zIndex: 1,
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           border: '2px solid #fff',
-          '& img': {
-            objectFit: 'cover',
-            width: '100%',
-            height: '100%'
-          }
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
       >
-        {!profile.profileImage && (profile.initials || profile.name.charAt(0))}
-      </Avatar>
+        {profile.profileImage ? (
+          <img 
+            src={profile.profileImage} 
+            alt={profile.name}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover'
+            }}
+          />
+        ) : (
+          <span style={{ 
+            color: '#1976d2', 
+            fontSize: '1.3rem',
+            fontWeight: 'bold'
+          }}>
+            {profile.initials || profile.name.charAt(0)}
+          </span>
+        )}
+      </div>
 
       {/* כרטיס פרופיל */}
       <Card

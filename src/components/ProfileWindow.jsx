@@ -179,14 +179,14 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                 </Typography>
                 <Avatar
                     alt={profile.name}
-                    src={profile.imageUrl || ""}
+                    src={profile.profileImage || ""}
                     sx={{ 
-                        width: 130, 
-                        height: 130,
+                        width: 170, 
+                        height: 170,
                         mt: 4
                     }}
                 >
-                    {(!profile.imageUrl && profile.name) ? profile.name[0] : ""}
+                    {(!profile.profileImage && profile.name) ? profile.name[0] : ""}
                 </Avatar>
                 <IconButton
                     aria-label="סגור"
