@@ -6,7 +6,7 @@ import TransportTable from '../components/TransportTable';
 import AddTransportDialog from '../components/AddTransportDialog';
 import EditTransportDialog from '../components/EditTransportDialog';
 import ViewPassengersDialog from '../components/ViewPassengersDialog';
-import { transportService } from '../firebase';
+import { transportService, fetchTransportsByDate } from '../firebase';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
@@ -36,20 +36,41 @@ function Transport() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, index: null });
   const [seatsDialogOpen, setSeatsDialogOpen] = useState(false);
 
+  // New: fetch transports by date
   useEffect(() => {
-    const unsubscribe = transportService.subscribeToTransports(
-      (transports) => {
-        setData(transports);
+    let unsubscribe = null;
+    let didCancel = false;
+    async function fetchData() {
+      setLoading(true);
+      const dateStr = selectedDate.format('YYYY-MM-DD');
+      const dateData = await fetchTransportsByDate(dateStr);
+      if (!didCancel && dateData && Array.isArray(dateData.transports)) {
+        setData(dateData.transports);
         setLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching transports:", error);
-        setLoading(false);
+      } else {
+        // fallback to all transports
+        unsubscribe = transportService.subscribeToTransports(
+          (transports) => {
+            if (!didCancel) {
+              setData(transports);
+              setLoading(false);
+            }
+          },
+          (error) => {
+            if (!didCancel) {
+              console.error("Error fetching transports:", error);
+              setLoading(false);
+            }
+          }
+        );
       }
-    );
-
-    return () => unsubscribe();
-  }, []);
+    }
+    fetchData();
+    return () => {
+      didCancel = true;
+      if (unsubscribe) unsubscribe();
+    };
+  }, [selectedDate]);
 
   // Add handlers
   const handleAddOpen = () => setAddDialog(true);

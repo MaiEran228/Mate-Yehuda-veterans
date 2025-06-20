@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Table, TableHead, TableRow, TableCell, TableBody,
   TextField, Select, MenuItem, InputLabel, FormControl,
@@ -19,7 +19,7 @@ import ErrorIcon from '@mui/icons-material/Error';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { calculateAvailableSeatsByDay } from '../utils/transportUtils';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, saveTransportDate, fetchTransportsByDate } from '../firebase';
 
 // Mapping from Hebrew days to א-ב-ג
 const dayMap = {
@@ -47,7 +47,8 @@ function TransportTable({
   sortField,
   onViewPassengers,
   onEditClick,
-  onDeleteClick
+  onDeleteClick,
+  selectedDate
 }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedTransport, setSelectedTransport] = useState(null);
@@ -61,6 +62,7 @@ function TransportTable({
   const [selectedDay, setSelectedDay] = useState('');
   const [reservationDate, setReservationDate] = useState(new Date());
   const [searchText, setSearchText] = useState('');
+  const [tempReservationsByTransport, setTempReservationsByTransport] = useState({});
 
   // מיון
   const [order, setOrder] = useState('asc');
@@ -88,6 +90,29 @@ function TransportTable({
     }
   }, [tempReservationDialog.open]);
 
+  // Fetch temp reservations for selected date
+  const fetchTempReservations = async () => {
+    if (!selectedDate) {
+      setTempReservationsByTransport({});
+      return;
+    }
+    const dateStr = selectedDate.format ? selectedDate.format('YYYY-MM-DD') : selectedDate.toISOString().slice(0, 10);
+    const dateDoc = await fetchTransportsByDate(dateStr);
+    const transportsList = dateDoc?.transports || [];
+    // Map: transportId -> tempReservations[]
+    const map = {};
+    for (const t of transportsList) {
+      if (t.tempReservations && t.tempReservations.length > 0) {
+        map[t.id] = t.tempReservations;
+      }
+    }
+    setTempReservationsByTransport(map);
+  };
+
+  useEffect(() => {
+    fetchTempReservations();
+  }, [selectedDate]);
+
   const handleSeatsClick = (event, transport) => {
     setAnchorEl(event.currentTarget);
     setSelectedTransport(transport);
@@ -99,6 +124,15 @@ function TransportTable({
   };
 
   const open = Boolean(anchorEl);
+
+  // Helper: get selected day in Hebrew and date string
+  let selectedHebDay = null;
+  let selectedDateStr = null;
+  if (selectedDate) {
+    const daysMap = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    selectedHebDay = daysMap[selectedDate.day ? selectedDate.day() : new Date(selectedDate).getDay()];
+    selectedDateStr = selectedDate.format ? selectedDate.format('YYYY-MM-DD') : selectedDate.toISOString().slice(0, 10);
+  }
 
   const filteredData = [...data]
     .filter((row) =>
@@ -141,67 +175,100 @@ function TransportTable({
     setSearchText('');
   };
 
+  // Helper: get merged passengers for selected day (regular + temp)
+  function getPassengersForDay(row, selectedHebDay, dateStr) {
+    let regular = (row.passengers || []).filter(p => (p.arrivalDays || []).includes(selectedHebDay));
+    let temp = tempReservationsByTransport[row.id] || [];
+    // Only for this date
+    temp = temp.filter(r => r.date === dateStr);
+    // Avoid duplicates (by id)
+    const ids = new Set(regular.map(p => p.id));
+    const merged = [...regular, ...temp.filter(t => !ids.has(t.id))];
+    return merged;
+  }
+
+  // Helper: get available seats for selected day (regular + temp)
+  function getAvailableSeats(row, selectedHebDay, dateStr) {
+    // Count regular + temp for this date
+    const regular = (row.passengers || []).filter(p => (p.arrivalDays || []).includes(selectedHebDay));
+    const temp = (tempReservationsByTransport[row.id] || []).filter(r => r.date === dateStr);
+    const all = [...regular, ...temp];
+    const totalSeats = row.type === 'מונית' ? 4 : 14;
+    // ודא שכל נוסע זמני עם hasCaregiver=true תופס 2 מקומות
+    const seatsNeeded = all.reduce((total, p) => total + (p.hasCaregiver ? 2 : 1), 0);
+    return totalSeats - seatsNeeded;
+  }
+
   const handleTempReservationSave = async () => {
-    if (!selectedProfile || !selectedDay || !reservationDate) {
+    if (!selectedProfile || !reservationDate) {
       alert('יש למלא את כל השדות');
       return;
     }
 
     try {
       const updatedTransport = { ...selectedTransport };
-
-      // אם זו הוספת נוסע
-      if (tempReservationDialog.reservationType === 'add') {
-        // בדיקה אם יש מקום פנוי
-        const availableSeats = calculateAvailableSeatsByDay(
-          updatedTransport.type,
-          updatedTransport.passengers || [],
-          updatedTransport.days,
-          updatedTransport.tempReservations
-        );
-
-        if (availableSeats[selectedDay] <= 0) {
-          alert('אין מקומות פנויים ביום זה');
-          return;
-        }
-
-        // הוספת הנוסע לרשימת הנוסעים
-        const newPassenger = {
-          id: selectedProfile.id,
-          name: selectedProfile.name,
-          hasCaregiver: selectedProfile.hasCaregiver || false,
-          arrivalDays: [selectedDay]
-        };
-
-        updatedTransport.passengers = [...(updatedTransport.passengers || []), newPassenger];
-      }
-      // אם זו הסרת נוסע
-      else if (tempReservationDialog.reservationType === 'remove') {
-        // מציאת הנוסע ברשימה
-        const passengerIndex = (updatedTransport.passengers || []).findIndex(p => p.id === selectedProfile.id);
-        if (passengerIndex === -1) {
-          alert('הנוסע לא נמצא ברשימה');
-          return;
-        }
-
-        // הסרת הנוסע מהרשימה
-        updatedTransport.passengers = updatedTransport.passengers.filter(p => p.id !== selectedProfile.id);
-      }
-
-      // עדכון המקומות הפנויים
-      updatedTransport.availableSeatsByDay = calculateAvailableSeatsByDay(
-        updatedTransport.type,
-        updatedTransport.passengers || [],
-        updatedTransport.days,
-        updatedTransport.tempReservations
-      );
-
-      // שמירת השינויים
-      onEditClick(updatedTransport);
+      const dateStr = reservationDate.toISOString().slice(0, 10);
+      // יצירת שיריון זמני
+      const tempReservation = {
+        id: selectedProfile.id,
+        name: selectedProfile.name,
+        hasCaregiver: selectedProfile.hasCaregiver || false,
+        date: dateStr,
+      };
+      // שמירה ל-transport_dates
+      await addTempReservationForDate(updatedTransport, tempReservation, dateStr);
+      await fetchTempReservations(); // רענון מיידי אחרי שמירה
       handleTempReservationClose();
+      alert('שיריון זמני נשמר בהצלחה');
     } catch (error) {
-      console.error('Error saving temporary reservation:', error);
+      console.error('Error saving temporary reservation:', error && error.message, error);
       alert('אירעה שגיאה בשמירת השינויים');
+    }
+  };
+
+  const addTempReservationForDate = async (transport, reservation, dateStr) => {
+    // Debug prints
+    console.log('--- addTempReservationForDate ---');
+    console.log('selectedTransport:', transport);
+    console.log('reservation:', reservation);
+    console.log('dateStr:', dateStr);
+    let dateDoc = await fetchTransportsByDate(dateStr);
+    let transportsList = dateDoc?.transports || [];
+    console.log('transportsList before:', transportsList);
+    let idx = transportsList.findIndex(t => t.id === transport.id);
+    console.log('idx:', idx);
+    if (idx === -1) {
+      // שמור רק שדות תקניים
+      let newTransport = {
+        id: transport.id,
+        tempReservations: [reservation],
+      };
+      if (typeof transport.type === 'string') newTransport.type = transport.type;
+      if (Array.isArray(transport.days)) newTransport.days = transport.days;
+      if (Array.isArray(transport.cities)) newTransport.cities = transport.cities;
+      // הדפסה
+      console.log('newTransport:', JSON.stringify(newTransport));
+      transportsList.push(newTransport);
+    } else {
+      let t = transportsList[idx];
+      if (!t.tempReservations) t.tempReservations = [];
+      t.tempReservations = t.tempReservations.filter(r => r.id !== reservation.id);
+      t.tempReservations.push(reservation);
+      transportsList[idx] = t;
+    }
+    // הדפסה
+    console.log('transportsList:', JSON.stringify(transportsList));
+    // בדוק שאין undefined ב-reservation
+    Object.entries(reservation).forEach(([k, v]) => {
+      if (v === undefined) {
+        console.error('reservation has undefined field:', k);
+      }
+    });
+    try {
+      await saveTransportDate(dateStr, transportsList);
+    } catch (error) {
+      console.error('Error saving temporary reservation:', error && error.message, error);
+      throw error;
     }
   };
 
@@ -257,17 +324,26 @@ function TransportTable({
           </TableHead>
           <TableBody>
             {filteredData.map((row, index) => {
-              const availableSeatsByDay = calculateAvailableSeatsByDay(row.type, row.passengers, row.days);
-              const hasAvailableSeats = Object.values(availableSeatsByDay).some(seats => seats > 0);
-              // Sort days by order
-              const sortedDays = (row.days || []).slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+              // Calculate available seats for selected day only (merged)
+              let availableSeats = '-';
+              if (selectedHebDay && (row.days || []).includes(selectedHebDay)) {
+                availableSeats = getAvailableSeats(row, selectedHebDay, selectedDateStr);
+              } else if (selectedHebDay) {
+                availableSeats = 0;
+              }
+
+              // Passengers for selected day only (merged)
+              let passengersForDay = row.passengers || [];
+              if (selectedHebDay) {
+                passengersForDay = getPassengersForDay(row, selectedHebDay, selectedDateStr);
+              }
 
               return (
                 <TableRow key={row.id || index} sx={{ fontSize: '1.1rem', borderBottom: 'none', borderTop: 'none' }}>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>{index + 1}</TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'nowrap' }}>
-                      {sortedDays.map(day => (
+                      {row.days?.slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b)).map(day => (
                         <Box
                           key={day}
                           sx={{
@@ -311,9 +387,10 @@ function TransportTable({
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
                     <Tooltip title="לחץ לפירוט מקומות פנויים">
                       <IconButton onClick={(e) => handleSeatsClick(e, row)} sx={{ p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
-                        <EventSeatIcon sx={{ fontSize: 25, color: hasAvailableSeats ? 'success.main' : 'error.main' }} />
+                        <EventSeatIcon sx={{ fontSize: 25, color: availableSeats > 0 ? 'success.main' : 'error.main' }} />
                       </IconButton>
                     </Tooltip>
+                    <Typography variant="body2" sx={{ mt: 0.5 }}>{availableSeats}</Typography>
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
                     <Tooltip title="שיריון זמני">
@@ -325,7 +402,7 @@ function TransportTable({
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0', fontSize: '1.08rem', fontWeight: 500 }}>{row.type}</TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
                     <Tooltip title="צפייה באנשים">
-                      <IconButton onClick={() => onViewPassengers(row.passengers || [], row.days || [])}>
+                      <IconButton onClick={() => onViewPassengers(passengersForDay, [selectedHebDay])}>
                         <VisibilityIcon />
                       </IconButton>
                     </Tooltip>
@@ -368,11 +445,12 @@ function TransportTable({
               מקומות פנויים לפי יום:
             </Typography>
             {selectedTransport && selectedTransport.days?.slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b)).map((day) => {
-              const seats = calculateAvailableSeatsByDay(
-                selectedTransport.type,
-                selectedTransport.passengers,
-                [day]
-              )[day];
+              // חישוב עם tempReservationsByTransport
+              let seats = '-';
+              if (selectedTransport) {
+                // נשתמש בפונקציה שמחשבת גם זמניים
+                seats = getAvailableSeats(selectedTransport, day, selectedDateStr);
+              }
               return (
                 <Typography key={day} sx={{ mb: 0.5 }}>
                   {(dayMap[day] || day)}: {seats} מקומות פנויים

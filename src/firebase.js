@@ -248,3 +248,46 @@ export const transportService = {
     }
   }
 };
+
+// פונקציות עבור transport_dates (הסעות לפי תאריך)
+export const fetchTransportDates = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'transport_dates'));
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error('שגיאה בשליפת transport_dates:', error);
+    return [];
+  }
+};
+
+export const fetchTransportsByDate = async (dateStr) => {
+  try {
+    const docRef = doc(db, 'transport_dates', dateStr);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data(); // מחזיר את האובייקט עם transports ו־date
+    } else {
+      console.log('אין הסעות לתאריך הזה');
+      return null;
+    }
+  } catch (error) {
+    console.error('שגיאה בשליפת הסעות לפי תאריך:', error);
+    return null;
+  }
+};
+
+export const saveTransportDate = async (dateStr, transportsList) => {
+  try {
+    await setDoc(doc(db, 'transport_dates', dateStr), {
+      date: dateStr,
+      transports: transportsList,
+      timestamp: new Date()
+    });
+    console.log('הסעות נשמרו לתאריך:', dateStr);
+  } catch (error) {
+    console.error('שגיאה בשמירת הסעות לתאריך:', error);
+  }
+};
