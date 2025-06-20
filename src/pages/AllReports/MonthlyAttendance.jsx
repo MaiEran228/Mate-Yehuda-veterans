@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, MenuItem, Select, FormControl, InputLabel, Button, Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, TextField } from '@mui/material';
 import { fetchAllProfiles } from '../../firebase';
 import { db } from '../../firebase';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, onSnapshot, query, where } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
@@ -32,101 +32,35 @@ const MonthlyAttendance = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [isEditLoading, setIsEditLoading] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editData, setEditData] = useState({});
-  const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל', 'שיפוי', 'טיפול בית'];
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        // Fetch profiles
-        const profs = await fetchAllProfiles();
-        setProfiles(profs);
-        // Fetch all attendance docs for the month
-        const attendanceCol = collection(db, 'attendance');
-        const snapshot = await getDocs(attendanceCol);
-        const attByDate = {};
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          if (!data.date || !data.attendanceList) return;
-          const docDate = dayjs(data.date);
-          if (docDate.year() === year && docDate.month() + 1 === month) {
-            attByDate[data.date] = data.attendanceList;
-          }
-        });
-        setAttendanceByDate(attByDate);
-      } catch (e) {
-        setError('שגיאה בטעינת נתונים');
-      }
-      setLoading(false);
-    };
-    loadData();
-  }, [month, year]);
-
-  const days = getMonthDays(year, month);
-
-  const handleEditModeToggle = () => {
-    setIsEditLoading(true);
-    setTimeout(() => {
-      setIsEditMode((prev) => !prev);
-      setIsEditLoading(false);
-    }, 100);
-  };
-
-  const handleEditClick = () => {
-    setEditDialogOpen(true);
-  };
-
-  const handleEditClose = () => {
-    setEditDialogOpen(false);
-  };
-
-  const handleEditSave = async () => {
-    try {
-      const attendanceCol = collection(db, 'attendance');
-      const snapshot = await getDocs(attendanceCol);
-      const updates = [];
-
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+    let unsub = null;
+    setLoading(true);
+    setError('');
+    // Fetch profiles once
+    fetchAllProfiles().then(profs => setProfiles(profs));
+    // Listen to all attendance docs
+    const attendanceCol = collection(db, 'attendance');
+    unsub = onSnapshot(attendanceCol, (snapshot) => {
+      const attByDate = {};
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
         if (!data.date || !data.attendanceList) return;
         const docDate = dayjs(data.date);
         if (docDate.year() === year && docDate.month() + 1 === month) {
-          const updatedList = data.attendanceList.map((person) => {
-            const profileId = person.id;
-            const dateStr = data.date;
-            const editDataForProfile = editData[profileId]?.[dateStr];
-            return {
-              ...person,
-              ...(editDataForProfile || {})
-            };
-          });
-          updates.push(updateDoc(doc.ref, { attendanceList: updatedList }));
+          attByDate[data.date] = data.attendanceList;
         }
       });
+      setAttendanceByDate(attByDate);
+      setLoading(false);
+    }, (e) => {
+      setError('שגיאה בטעינת נתונים');
+      setLoading(false);
+    });
+    return () => { if (unsub) unsub(); };
+  }, [month, year]);
 
-      await Promise.all(updates);
-      setEditData({});
-      setIsEditMode(false);
-      window.location.reload();
-    } catch (error) {
-      console.error('Error saving attendance data:', error);
-    }
-  };
-
-  const handleEditChange = (profileId, date, data) => {
-    setEditData((prev) => ({
-      ...prev,
-      [profileId]: {
-        ...prev[profileId],
-        [date]: { ...prev[profileId]?.[date], ...data },
-      },
-    }));
-  };
+  const days = getMonthDays(year, month);
 
   return (
     <Box sx={{ direction: 'rtl', bgcolor: '#ebf1f5' ,width: '100%', height: '100%'  }}>
@@ -254,24 +188,6 @@ const MonthlyAttendance = () => {
         >
           ייצוא ל־Excel
         </Button>
-        <Button
-          variant={isEditMode ? "contained" : "outlined"}
-          color={isEditMode ? "secondary" : "info"}
-          onClick={handleEditModeToggle}
-          disabled={isEditLoading}
-        >
-          {isEditMode ? "סיים עריכה" : "עריכה"}
-          {isEditLoading && <CircularProgress size={16} sx={{ ml: 1 }} />}
-        </Button>
-        {isEditMode && (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleEditSave}
-          >
-            שמור
-          </Button>
-        )}
       </Box>
       {showSearch && (
         <Box sx={{ mb: 2, maxWidth: 300 }}>
@@ -297,8 +213,6 @@ const MonthlyAttendance = () => {
             days={days}
             searchTerm={searchTerm}
             setShowSearch={setShowSearch}
-            isEditMode={isEditMode}
-            onEditChange={handleEditChange}
           />
         </div>
       )}
