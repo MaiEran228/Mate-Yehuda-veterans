@@ -22,7 +22,9 @@ import { he } from 'date-fns/locale';
 import AddIcon from '@mui/icons-material/Add';
 import dayjs from 'dayjs';
 
+
 function Transport() {
+  const [tempReservationsByTransport, setTempReservationsByTransport] = useState({});
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,39 +40,49 @@ function Transport() {
 
   // New: fetch transports by date
   useEffect(() => {
-    let unsubscribe = null;
-    let didCancel = false;
-    async function fetchData() {
-      setLoading(true);
-      const dateStr = selectedDate.format('YYYY-MM-DD');
-      const dateData = await fetchTransportsByDate(dateStr);
-      if (!didCancel && dateData && Array.isArray(dateData.transports)) {
-        setData(dateData.transports);
+    setLoading(true);
+    const unsubscribe = transportService.subscribeToTransports(
+      (transports) => {
+        setData(transports);
         setLoading(false);
-      } else {
-        // fallback to all transports
-        unsubscribe = transportService.subscribeToTransports(
-          (transports) => {
-            if (!didCancel) {
-              setData(transports);
-              setLoading(false);
-            }
-          },
-          (error) => {
-            if (!didCancel) {
-              console.error("Error fetching transports:", error);
-              setLoading(false);
-            }
-          }
-        );
+      },
+      (error) => {
+        console.error("Error fetching transports:", error);
+        setLoading(false);
       }
+    );
+    return () => unsubscribe();
+  }, []);
+  
+
+  useEffect(() => {
+    async function fetchTempReservations() {
+      if (!selectedDate) {
+        setTempReservationsByTransport({});
+        return;
+      }
+      const dateStr = selectedDate.format ? selectedDate.format('YYYY-MM-DD') : selectedDate.toISOString().slice(0, 10);
+      console.log('🔍 בודק שיריונות זמניים לתאריך:', dateStr);
+  
+      const dateDoc = await fetchTransportsByDate(dateStr);
+      console.log('📦 תוצאה מ-fetchTransportsByDate:', dateDoc);
+  
+      const transportsList = dateDoc?.transports || [];
+  
+      const map = {};
+      for (const t of transportsList) {
+        if (t.tempReservations && t.tempReservations.length > 0) {
+          map[t.id.toString()] = t.tempReservations;
+        }
+      }
+  
+      console.log('✅ מפה של שיריונות זמניים לפי הסעה:', map);
+      setTempReservationsByTransport(map);
     }
-    fetchData();
-    return () => {
-      didCancel = true;
-      if (unsubscribe) unsubscribe();
-    };
+  
+    fetchTempReservations();
   }, [selectedDate]);
+  
 
   // Add handlers
   const handleAddOpen = () => setAddDialog(true);
@@ -93,24 +105,40 @@ function Transport() {
   };
   const handleEditSave = async (updatedTransport) => {
     try {
-      if (updatedTransport.tempReservations) {
-        // אם יש שיריון זמני חדש, מוסיף אותו
-        const lastReservation = updatedTransport.tempReservations[updatedTransport.tempReservations.length - 1];
+      if (updatedTransport.tempReservations && updatedTransport.tempReservations.length > 0) {
+        const lastIndex = updatedTransport.tempReservations.length - 1;
+        const lastReservation = updatedTransport.tempReservations[lastIndex];
+  
+        // בודק אם השריון האחרון עדיין לא קיבל מזהה
         if (lastReservation && !lastReservation.id) {
+          // שולף את כל ה-id הקיימים שהינם מספרים
+          const existingIds = updatedTransport.tempReservations
+            .map(r => Number(r.id))
+            .filter(id => !isNaN(id));
+  
+          // מחשב את ה-id הבא: מקסימום קיים + 1 או מתחיל מ-0
+          const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 0;
+  
+          // מוסיף את השריון החדש עם id תקין במסד הנתונים
           await transportService.addTemporaryReservation(updatedTransport.id, {
             ...lastReservation,
-            id: Date.now().toString() // מזהה זמני
+            id: nextId.toString()
           });
+  
+          // מעדכן גם את האובייקט המקומי כדי לשמור על ה-id החדש
+          updatedTransport.tempReservations[lastIndex].id = nextId.toString();
         }
       }
-
-      // מעדכן את ההסעה
+  
+      // מעדכן את ההסעה במסד הנתונים עם השריונות המעודכנים
       await transportService.updateTransport(updatedTransport.id, updatedTransport);
       handleEditClose();
+  
     } catch (error) {
-      console.error("Error updating transport:", error);
+      console.error("Error updating transport:", error?.message, error);
     }
   };
+  
 
   // Delete handlers
   const handleDeleteOpen = (index) => {
@@ -293,6 +321,8 @@ function Transport() {
             onEditClick={handleEditOpen}
             onDeleteClick={handleDeleteOpen}
             selectedDate={selectedDate}
+            tempReservationsByTransport={tempReservationsByTransport} // ✅ זה חדש
+
           />
         </Box>
       </Box >
