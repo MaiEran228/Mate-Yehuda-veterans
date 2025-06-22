@@ -116,9 +116,15 @@ const AbsencePeople = () => {
     );
   }
 
-  // מציג את כל מי שמופיע בטבלת הנוכחות כנעדר (attended: false)
+  // מציג את כל מי שמופיע בטבלת הנוכחות כנעדר (attended: false) ושאמור היה להגיע היום
   const absentMembers = attendanceData.attendanceList
-    .filter(person => person.attended === false)
+    .filter(person => {
+      if (person.attended !== false) return false;
+      // חפש את הפרופיל המתאים
+      const profile = profiles.find(p => p.id === person.id || p.name === person.name);
+      // בדוק אם יש לו arrivalDays והאם היום נמצא שם
+      return profile && Array.isArray(profile.arrivalDays) && profile.arrivalDays.includes(todayWeekday);
+    })
     .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
 
   // הגדרת עמודות עבור ה-PDF - בסדר RTL (מימין לשמאל)
@@ -225,7 +231,7 @@ const AbsencePeople = () => {
       `}</style>
 
       {/* שורת כפתורים - מחוץ ל-Container של הדוח */}
-      <Box className="no-print" sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2 }}>
+      <Box className="no-print" sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2, mt:5 }}>
         <Button variant="outlined" onClick={handleBack} sx={{ ml: 2 }}>
           חזור
         </Button>
@@ -321,7 +327,8 @@ const AbsencePeople = () => {
         top: 90, 
         zIndex: 10,
         display: 'flex',
-        gap: 2,
+        gap: 2, 
+        mt:5,
         '@media (max-width:600px)': {
           left: 8, 
           top: 80,

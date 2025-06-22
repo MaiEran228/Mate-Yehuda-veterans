@@ -97,7 +97,7 @@ function Profiles() {
     });
 
   return (
-    <Box sx={{ p: 1.5 }}>
+    <Box sx={{ p: 1.5, mt:2}}>
       <AppBar 
         position="fixed" 
         color="transparent" 

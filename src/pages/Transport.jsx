@@ -177,7 +177,7 @@ function Transport() {
 
   return (
     <>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 3, mt:1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           {/* ימין: תאריך, חיפוש, דוח */}
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>

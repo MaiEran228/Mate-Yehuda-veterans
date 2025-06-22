@@ -85,7 +85,7 @@ const SchedulePage = () => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            mb: 2,
+            mb: 2, mt:5
           }}
         >
           <Typography variant="h4" fontWeight="bold" color="Black">

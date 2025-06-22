@@ -113,7 +113,7 @@ function Home({ onLogout }) {
         <Box sx={{
             height: '100vh',
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'column', mt:1,
             overflow: 'hidden' // מונע גלילה בכלל
         }}>
             <Header onLogout={onLogout} />

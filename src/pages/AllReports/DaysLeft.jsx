@@ -154,7 +154,7 @@ const DaysLeft = () => {
   return (
     <>
       {/* שורת כפתורים - מחוץ ל-Container של הדוח */}
-      <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2, mt: 5 }}>
         <Button
           variant="outlined"
           color="primary"
@@ -174,7 +174,7 @@ const DaysLeft = () => {
         />
       </Box>
       <Box sx={{
-        position: 'absolute', left: 32, top: 90, zIndex: 10,
+        position: 'absolute', left: 32, top: 90, zIndex: 10, mt:5,
         '@media (max-width:600px)': {
           left: 8, top: 80 // מסכים קטנים
         }

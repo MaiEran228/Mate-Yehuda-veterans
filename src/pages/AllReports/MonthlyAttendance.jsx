@@ -63,7 +63,7 @@ const MonthlyAttendance = () => {
   const days = getMonthDays(year, month);
 
   return (
-    <Box sx={{ direction: 'rtl', bgcolor: '#ebf1f5' ,width: '100%', height: '100%'  }}>
+    <Box sx={{ direction: 'rtl', bgcolor: '#ebf1f5' ,width: '100%', height: '100%', mt:5  }}>
       <Box sx={{ display: 'flex', alignItems: 'center',  mb: 4, gap: 1 }}>
         <Button
           variant="outlined"

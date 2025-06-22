@@ -106,7 +106,7 @@ const Birthday = () => {
   return (
     <>
       {/* שורת כפתורים - מחוץ ל-Container של הדוח */}
-      <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2, mt:5 }}>
         <Button
           variant="outlined"
           color="primary"
@@ -134,7 +134,7 @@ const Birthday = () => {
       </Box>
 
       <Box sx={{
-        position: 'absolute', left: 32, top: 90, zIndex: 10, gap: 2, display: 'flex',
+        position: 'absolute', left: 32, top: 90, zIndex: 10, gap: 2, display: 'flex',mt:5,
         '@media (max-width:600px)': {
           left: 8, top: 80 // מסכים קטנים
         }
@@ -142,7 +142,7 @@ const Birthday = () => {
         <ExportPDFButton
           data={prepareFestivePDFData()}
           columns={pdfColumns}
-          fileName={`ימי_הולדת_חודש_${currentMonthName}.pdf`}
+          fileName={`ימי_הולדת_חודש${currentMonthName}.pdf`}
           title="ימי הולדת החודש"
           subtitle={`חודש ${currentMonthName} `}
           headerInfo={[

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { fetchAttendanceByDate } from '../../firebase';
+import { fetchAttendanceByDate, fetchAllProfiles } from '../../firebase';
 import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Divider, InputAdornment } from '@mui/material';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -17,6 +17,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 
 const DailyAttendance = () => {
   const [attendanceData, setAttendanceData] = useState(null);
+  const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const reportRef = useRef();
 
@@ -41,6 +42,15 @@ const DailyAttendance = () => {
   useEffect(() => {
     setAttendanceData(null);
   }, [selectedDate]);
+
+  useEffect(() => {
+    // טען את כל הפרופילים
+    const loadProfiles = async () => {
+      const allProfiles = await fetchAllProfiles();
+      setProfiles(allProfiles);
+    };
+    loadProfiles();
+  }, []);
 
   useEffect(() => {
     // Only fetch if selectedDate is a valid YYYY-MM-DD string
@@ -115,12 +125,35 @@ const DailyAttendance = () => {
     );
   }
 
-  const presentMembers = dataToShow.attendanceList
-    .filter(p => p.attended)
-    .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
-  const absentMembers = dataToShow.attendanceList
-    .filter(p => !p.attended)
-    .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+  // קביעת היום בשבוע בעברית
+  const todayWeekday = dayjs(dataToShow.date || selectedDate).format('dddd');
+
+  // פונקציה עוזרת למציאת arrivalDays של משתתף
+  const getProfileArrivalDays = (person) => {
+    const profile = profiles.find(p => p.id === person.id || p.name === person.name);
+    return profile && Array.isArray(profile.arrivalDays) ? profile.arrivalDays : [];
+  };
+
+  // נוכחים שהיו אמורים להגיע היום (ירוק)
+  const presentExpected = dataToShow.attendanceList.filter(p => {
+    if (!p.attended) return false;
+    const arrivalDays = getProfileArrivalDays(p);
+    return arrivalDays.includes(todayWeekday);
+  });
+
+  // נוכחים שהגיעו ביום שלא אמורים (כחול)
+  const presentNotExpected = dataToShow.attendanceList.filter(p => {
+    if (!p.attended) return false;
+    const arrivalDays = getProfileArrivalDays(p);
+    return !arrivalDays.includes(todayWeekday);
+  });
+
+  // נעדרים שהיו אמורים להגיע היום
+  const absentMembers = dataToShow.attendanceList.filter(p => {
+    if (p.attended !== false) return false;
+    const arrivalDays = getProfileArrivalDays(p);
+    return arrivalDays.includes(todayWeekday);
+  });
 
   const reportDate = dataToShow?.date || selectedDate;
   const todayFormatted = dayjs(reportDate).format('DD/MM/YYYY');
@@ -132,7 +165,7 @@ const DailyAttendance = () => {
     { key: 'serialNumber', header: 'מס\'', defaultValue: '' }
   ];
 
-  const pdfData = presentMembers.map((person, index) => ({
+  const pdfData = presentExpected.map((person, index) => ({
     name: person.name || '',
     city: person.city || 'לא צוין',
     caregiver: person.caregiver || '',
@@ -147,7 +180,7 @@ const DailyAttendance = () => {
       `יום: ${dayjs(reportDate).format('dddd')}`
     ],
     summaryData: [
-      `סה"כ נוכחים: ${presentMembers.length}`,
+      `סה"כ נוכחים: ${presentExpected.length}`,
       `סה"כ חסרים: ${absentMembers.length}`
     ],
     footerInfo: [
@@ -170,7 +203,7 @@ const DailyAttendance = () => {
 
   return (
     <>
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 5}}>
         {/* צד ימין */}
         <Box sx={{ display: 'flex', alignItems: 'center', }}>
           <Button
@@ -290,7 +323,7 @@ const DailyAttendance = () => {
               disableRipple: true,
               sx: {
                 '&:focus': { outline: 'none' },
-                '&:active': { outline: 'none' }
+                '&:active': { outline: 'none' }, mt:5
               }
             }}
           />
@@ -336,7 +369,7 @@ const DailyAttendance = () => {
               }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h5" color="success.main">
-                    {presentMembers.length}
+                    {presentExpected.length}
                   </Typography>
                   <Typography variant="body2">נוכחים</Typography>
                 </Box>
@@ -363,9 +396,9 @@ const DailyAttendance = () => {
                     pageBreakAfter: 'avoid'
                   }
                 }}>
-                  רשימת נוכחים ({presentMembers.length})
+                   רשימת נוכחים ({presentExpected.length})
                 </Typography>
-                {presentMembers.length > 0 ? (
+                {presentExpected.length > 0 ? (
                   <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
@@ -375,15 +408,18 @@ const DailyAttendance = () => {
                       pageBreakInside: 'avoid'
                     }
                   }}>
-                    {presentMembers.map((person, index) => (
-                      <Box key={person.id} sx={{
+                    {presentExpected.map((person, index) => (
+                      <Box key={person.id || person.name || index} sx={{
                         p: 1.5,
                         backgroundColor: '#e8f5e8',
                         borderRadius: 1,
                         fontSize: '0.9rem',
+                        color: 'black',
+                        fontWeight: 500,
                         '@media print': {
-                          pageBreakInside: 'avoid',
-                          backgroundColor: '#f0f8f0'
+                          backgroundColor: '#fff',
+                          border: '1px solid #333',
+                          color: '#000'
                         }
                       }}>
                         <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: 'inherit' }}>
@@ -392,16 +428,69 @@ const DailyAttendance = () => {
                         <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
                           יישוב: {person.city}
                         </Typography>
-                        <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
-                          מטפל: {person.caregiver}
-                        </Typography>
+                        {person.caregiver || person.hasCaregiver ? (
+                          <Typography variant="caption" color="black" sx={{ display: 'block', fontSize: '0.8rem', fontWeight: 700 }}>
+                            הגיע עם מטפל
+                          </Typography>
+                        ) : null}
                       </Box>
                     ))}
                   </Box>
                 ) : (
-                  <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
-                    אין נוכחים היום
-                  </Typography>
+                  <Typography color="textSecondary">אין נוכחים שהיו אמורים להגיע היום.</Typography>
+                )}
+
+                {/* נוכחים שהגיעו ביום לא צפוי */}
+                <Typography variant="h6" color="primary" gutterBottom sx={{
+                  borderBottom: '1px solid #1976d2',
+                  pb: 1,
+                  mt: 4,
+                  '@media print': {
+                    pageBreakAfter: 'avoid'
+                  }
+                }}>
+                  נוכחים שהגיעו ביום לא צפוי ({presentNotExpected.length})
+                </Typography>
+                {presentNotExpected.length > 0 ? (
+                  <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                    gap: 1.5,
+                    mt: 2,
+                    '@media print': {
+                      pageBreakInside: 'avoid'
+                    }
+                  }}>
+                    {presentNotExpected.map((person, index) => (
+                      <Box key={person.id || person.name || index} sx={{
+                        p: 1.5,
+                        backgroundColor: '#e3f2fd',
+                        borderRadius: 1,
+                        fontSize: '0.9rem',
+                        color: 'black',
+                        fontWeight: 500,
+                        '@media print': {
+                          backgroundColor: '#fff',
+                          border: '1px solid #333',
+                          color: '#000'
+                        }
+                      }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: 'inherit' }}>
+                          {index + 1}. {person.name}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
+                          יישוב: {person.city}
+                        </Typography>
+                        {person.caregiver || person.hasCaregiver ? (
+                          <Typography variant="caption" color="black" sx={{ display: 'block', fontSize: '0.8rem', fontWeight: 700 }}>
+                            הגיע עם מטפל
+                          </Typography>
+                        ) : null}
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography color="textSecondary">אין נוכחים חריגים.</Typography>
                 )}
               </Box>
 
@@ -443,7 +532,12 @@ const DailyAttendance = () => {
                         <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
                           יישוב: {person.city}
                         </Typography>
-                        <Typography variant="caption" color="textSecondary" sx={{ display: 'block', fontSize: '0.8rem' }}>
+                        {person.caregiver || person.hasCaregiver ? (
+                          <Typography variant="caption" color="success.main" sx={{ display: 'block', fontSize: '0.8rem', fontWeight: 700 }}>
+                            הגיע עם מטפל
+                          </Typography>
+                        ) : null}
+                        <Typography variant="caption" color="black" sx={{ display: 'block', fontSize: '0.8rem' }}>
                           סיבת היעדרות: {person.reason || ''}
                         </Typography>
                       </Box>
