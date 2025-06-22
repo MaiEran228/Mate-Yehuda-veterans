@@ -7,6 +7,7 @@ import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { BarChart } from '@mui/x-charts/BarChart';
 import DailyDiagrams from '../../components/DailyDiagrams';
+import Tooltip from '@mui/material/Tooltip';
 
 const reports = [
   { name: 'דו"ח נוכחות יומי', path: '/AllReports/DailyAttendance', row: 1 },
@@ -183,18 +184,19 @@ const Reports = () => {
           width: '100%',
         }}
       >
-        <Typography
-          variant="h4"
-          sx={{
-            color: 'rgba(64, 99, 112, 0.85)',
-            fontWeight: 'bold',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-            fontSize: { xs: '1.5rem', sm: '2rem' },
-            mb: 4,
-          }}
-        >
-          התפלגויות ונתונים
-        </Typography>
+          <Typography
+            variant="h4"
+            sx={{
+              color: 'rgba(64, 99, 112, 0.85)',
+              fontWeight: 'bold',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
+              fontSize: { xs: '5rem', sm: '2.5rem' },
+              mb: 2 ,
+              mt: 1,
+            }}
+          >
+            התפלגויות ונתונים
+          </Typography>
         <DailyDiagrams />
         {loadingProfiles ? (
           <Typography>טוען נתונים...</Typography>
@@ -203,310 +205,313 @@ const Reports = () => {
         ) : (
           <>
             <Box sx={{
-              border: '2px solid #b7c9d6',
-              borderRadius: 4,
-              p: 4,
-              mt: 4,
-              bgcolor: '#ebf1f5',
-              maxWidth: 1100, 
-              mx: 'auto',     
-              overflow: 'hidden',
+                border: '2px solid #b7c9d6',
+                borderRadius: 4,
+                p: 0,
+                mt: 4,
+                bgcolor: '#ebf1f5',
+                maxWidth: 1100,
+                mx: 'auto',
+                overflow: 'hidden',
             }}>
-              <Typography variant="h6" sx={{ mb: 4, textAlign: 'center', color: '#406370', fontWeight: 700 }}>
-                התפלגויות כלליות
-              </Typography>
-
-              {/*שורה ראשונה של דיאגרמות*/}
-              <Box sx={{
-                mt: 6,
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 4,
-
-              }}>
-                <Box sx={{ display: 'flex', gap: 4 }}>
-                  {/* קופסה עם הדיאגרמת מטפל והמקרא מימין */}
-                  <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    border: '1.5px solid #b7c9d6',
-                    boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
-                    borderRadius: 3,
-                    padding: 2,
-                    width: 410,
-                    bgcolor: '#f0f4f8',
-                  }}>
-                    <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
-                      מטפל / ללא מטפל  
+                <Box sx={{
+                    bgcolor: 'rgb(220, 228, 232)',
+                    width: '100%',
+                    borderTopRightRadius: 4,
+                    borderTopLeftRadius: 4,
+                    py: 1.5,
+                    px: 2,
+                    mb: 0,
+                }}>
+                    <Typography variant="h6" sx={{ textAlign: 'center', color: '#406370', fontWeight: 700 }}>
+                        התפלגויות כלליות
                     </Typography>
+                </Box>
+                <Box sx={{ p: 4 }}>
+                    {/*שורה ראשונה של דיאגרמות*/}
                     <Box sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 3,
-                      flexWrap: 'nowrap',
-                      width: '100%',
-                    }}>
-                      {/* מקרא */}
-                      <Box sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        justifyContent: 'center',
-                        minWidth: 130,
-                      }}>
-                        {caregiverPieData.map((item) => (
-                          <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <Box sx={{
-                              width: 18,
-                              height: 18,
-                              borderRadius: '50%',
-                              bgcolor: item.color,
-                              mr: 1,
-                              border: '1px solid #ccc',
-                            }} />
-                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                              {item.displayLabel}: {item.value}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Box>
-
-                      {/* עוגת התפלגות */}
-                      <PieChart
-                        series={[{
-                          data: caregiverPieData.map(item => ({ ...item, label: '' })),
-                          arcLabel: (item) => {
-                            const total = withCaregiver + withoutCaregiver;
-                            return total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
-                          },
-                          arcLabelMinAngle: 10,
-                          arcLabelRadius: '80%',
-                        }]}
-                        width={280}
-                        height={220}
-                        legend={{ hidden: true }}
-                        slots={{ legend: null }}
-                        sx={{
-                          [`& .MuiPieArcLabel-root`]: {
-                            fontSize: 14,
-                            fontWeight: 600,
-                          },
-                          '& .MuiChartsLegend-root': { display: 'none !important' },
-                        }}
-                      />
-                    </Box>
-                  </Box>
-
-                  {/* דיאגרמת סוגי הסעות */}
-                  <Box sx={{  }}>
-                    <Box sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      border: '1.5px solid #b7c9d6',
-                      borderRadius: 3,
-                      boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
-                      p: 2,
-                      minWidth: 320,
-                      maxWidth: 410,
-                      bgcolor: '#f0f4f8',
-                      mx: 0,
-                    }}>
-                      <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
-                        סוגי הסעה
-                      </Typography>
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 3,
-                        flexWrap: 'nowrap',
+                        mt: 1,
                         width: '100%',
-                      }}>
-                        {/* מקרא מימין */}
-                        <Box sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'flex-start',
-                          justifyContent: 'center',
-                          minWidth: 130,
-                        }}>
-                          {transportPieData.map((item) => (
-                            <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                              <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
-                              <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                {item.label}: {item.value}
-                              </Typography>
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: 4,
+                    }}>
+                        <Box sx={{ display: 'flex', gap: 4 }}>
+                            {/* קופסה עם הדיאגרמת מטפל והמקרא מימין */}
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                border: '1.5px solid #b7c9d6',
+                                boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
+                                borderRadius: 3,
+                                padding: 2,
+                                width: 410,
+                                bgcolor: '#f0f4f8',
+                            }}>
+                                <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
+                                    מטפל / ללא מטפל  
+                                </Typography>
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 3,
+                                    flexWrap: 'nowrap',
+                                    width: '100%',
+                                }}>
+                                    {/* מקרא */}
+                                    <Box sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-start',
+                                        justifyContent: 'center',
+                                        minWidth: 130,
+                                    }}>
+                                        {caregiverPieData.map((item) => (
+                                            <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                                <Box sx={{
+                                                    width: 18,
+                                                    height: 18,
+                                                    borderRadius: '50%',
+                                                    bgcolor: item.color,
+                                                    mr: 1,
+                                                    border: '1px solid #ccc',
+                                                }} />
+                                                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                                    {item.displayLabel}: {item.value}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                    {/* עוגת התפלגות */}
+                                    <PieChart
+                                        series={[{
+                                            data: caregiverPieData.map(item => ({ ...item, label: '' })),
+                                            arcLabel: (item) => {
+                                                const total = withCaregiver + withoutCaregiver;
+                                                return total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
+                                            },
+                                            arcLabelMinAngle: 10,
+                                            arcLabelRadius: '80%',
+                                        }]}
+                                        width={280}
+                                        height={220}
+                                        legend={{ hidden: true }}
+                                        slots={{ legend: null }}
+                                        sx={{
+                                            [`& .MuiPieArcLabel-root`]: {
+                                                fontSize: 14,
+                                                fontWeight: 600,
+                                            },
+                                            '& .MuiChartsLegend-root': { display: 'none !important' },
+                                        }}
+                                    />
+                                </Box>
                             </Box>
-                          ))}
+                            {/* דיאגרמת סוגי הסעות */}
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                border: '1.5px solid #b7c9d6',
+                                boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
+                                borderRadius: 3,
+                                padding: 2,
+                                width: 410,
+                                bgcolor: '#f0f4f8',
+                            }}>
+                                <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
+                                    סוגי הסעות
+                                </Typography>
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 3,
+                                    flexWrap: 'nowrap',
+                                    width: '100%',
+                                }}>
+                                    {/* מקרא */}
+                                    <Box sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-start',
+                                        justifyContent: 'center',
+                                        minWidth: 130,
+                                    }}>
+                                        {transportPieData.map((item) => (
+                                            <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                                <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
+                                                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                                    {item.label}: {item.value}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                    <PieChart
+                                        series={[{
+                                            data: transportPieData.map(item => ({ ...item, label: '' })),
+                                            arcLabel: (item) => {
+                                                const total = transportPieData.reduce((sum, t) => sum + t.value, 0);
+                                                return total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
+                                            },
+                                            arcLabelMinAngle: 10,
+                                            arcLabelRadius: '80%',
+                                        }]}
+                                        width={280}
+                                        height={220}
+                                        legend={{ hidden: true }}
+                                        sx={{
+                                            [`& .MuiPieArcLabel-root`]: {
+                                                fontSize: 14,
+                                                fontWeight: 600,
+                                            },
+                                            '& .MuiChartsLegend-root': { display: 'none !important' },
+                                        }}
+                                    />
+                                </Box>
+                            </Box>
                         </Box>
-                        <PieChart
-                          series={[{
-                            data: transportPieData.map(item => ({ ...item, label: '' })),
-                            arcLabel: (item) => {
-                              const total = transportPieData.reduce((sum, t) => sum + t.value, 0);
-                              return total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
-                            },
-                            arcLabelMinAngle: 10,
-                            arcLabelRadius: '80%',
-                          }]}
-                          width={280}
-                          height={220}
-                          legend={{ hidden: true }}
-                          sx={{
-                            [`& .MuiPieArcLabel-root`]: {
-                              fontSize: 14,
-                              fontWeight: 600,
-                            },
-                            '& .MuiChartsLegend-root': { display: 'none !important' },
-                          }}
-                        />
-                      </Box>
                     </Box>
-                  </Box>
-
-                </Box>
-              </Box>
-              {/* דיאגרמת עוגה ימי הגעה + דיאגרמת עוגה ניצולי שואה */}
-              <Box sx={{
-                mt: 6,
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 4,
-              }}>
-                {/* דיאגרמת עוגה ימי הגעה */}
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  border: '1.5px solid #b7c9d6',
-                  borderRadius: 3,
-                  boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
-                  p: 2,
-                  width: 420,
-                  mx: 0,
-                  bgcolor: '#f0f4f8',
-                }}>
-                  <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
-                    ימי הגעה
-                  </Typography>
-                  <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 3,
-                    flexWrap: 'nowrap',
-                    width: '100%',
-                  }}>
-                    {/* מקרא מימין */}
+                    {/* דיאגרמת עוגה ימי הגעה + דיאגרמת עוגה ניצולי שואה */}
                     <Box sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      justifyContent: 'center',
-                      minWidth: 130,
+                        mt: 6,
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: 4,
                     }}>
-                      {arrivalPieData.map((item) => (
-                        <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {item.label}: {item.value}
-                          </Typography>
+                        {/* דיאגרמת עוגה ימי הגעה */}
+                        <Box sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            border: '1.5px solid #b7c9d6',
+                            borderRadius: 3,
+                            boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
+                            p: 2,
+                            width: 420,
+                            mx: 0,
+                            bgcolor: '#f0f4f8',
+                        }}>
+                            <Typography variant="h6" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
+                                ימי הגעה
+                            </Typography>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 3,
+                                flexWrap: 'nowrap',
+                                width: '100%',
+                            }}>
+                                {/* מקרא מימין */}
+                                <Box sx={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start',
+                                    justifyContent: 'center',
+                                    minWidth: 130,
+                                }}>
+                                    {arrivalPieData.map((item) => (
+                                        <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                            <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
+                                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                                {item.label}: {item.value}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                                <PieChart
+                                    series={[{
+                                        data: arrivalPieData.map(item => ({ ...item, label: '' })),
+                                        arcLabel: (item) => {
+                                            const total = arrivalPieData.reduce((sum, t) => sum + t.value, 0);
+                                            return total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
+                                        },
+                                        arcLabelMinAngle: 10,
+                                        arcLabelRadius: '80%',
+                                    }]}
+                                    width={280}
+                                    height={220}
+                                    legend={{ hidden: true }}
+                                    sx={{
+                                        [`& .MuiPieArcLabel-root`]: {
+                                            fontSize: 14,
+                                            fontWeight: 600,
+                                        },
+                                        '& .MuiChartsLegend-root': { display: 'none !important' },
+                                    }}
+                                />
+                            </Box>
                         </Box>
-                      ))}
-                    </Box>
-                    <PieChart
-                      series={[{
-                        data: arrivalPieData.map(item => ({ ...item, label: '' })),
-                        arcLabel: (item) => {
-                          const total = arrivalPieData.reduce((sum, t) => sum + t.value, 0);
-                          return total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
-                        },
-                        arcLabelMinAngle: 10,
-                        arcLabelRadius: '80%',
-                      }]}
-                      width={280}
-                      height={220}
-                      legend={{ hidden: true }}
-                      sx={{
-                        [`& .MuiPieArcLabel-root`]: {
-                          fontSize: 14,
-                          fontWeight: 600,
-                        },
-                        '& .MuiChartsLegend-root': { display: 'none !important' },
-                      }}
-                    />
-                  </Box>
-                </Box>
-                {/* דיאגרמת עוגה ניצולי שואה */}
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  border: '1.5px solid #b7c9d6',
-                  borderRadius: 3,
-                  boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
-                  p: 2,
-                  width: 410,
-                  mx: 0,
-                  bgcolor: '#f0f4f8',
-                }}>
-                  <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
-                    ניצולי שואה
-                  </Typography>
-                  <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 3,
-                    flexWrap: 'nowrap',
-                    width: '100%',
-                  }}>
-                    {/* מקרא מימין */}
-                    <Box sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      justifyContent: 'center',
-                      minWidth: 130,
-                    }}>
-                      {holocaustPieData.map((item) => (
-                        <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {item.label}: {item.value}
-                          </Typography>
+                        {/* דיאגרמת עוגה ניצולי שואה */}
+                        <Box sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            border: '1.5px solid #b7c9d6',
+                            borderRadius: 3,
+                            boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
+                            p: 2,
+                            width: 410,
+                            mx: 0,
+                            bgcolor: '#f0f4f8',
+                        }}>
+                            <Typography variant="h6" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
+                                ניצולי שואה
+                            </Typography>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 3,
+                                flexWrap: 'nowrap',
+                                width: '100%',
+                            }}>
+                                {/* מקרא מימין */}
+                                <Box sx={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start',
+                                    justifyContent: 'center',
+                                    minWidth: 130,
+                                }}>
+                                    {holocaustPieData.map((item) => (
+                                        <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                            <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
+                                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                                {item.label}: {item.value}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                                <PieChart
+                                    series={[{
+                                        data: holocaustPieData.map(item => ({ ...item, label: '' })),
+                                        arcLabel: (item) => {
+                                            const total = holocaustSurvivors + notHolocaustSurvivors;
+                                            return total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
+                                        },
+                                        arcLabelMinAngle: 10,
+                                        arcLabelRadius: '80%',
+                                    }]}
+                                    width={280}
+                                    height={220}
+                                    legend={{ hidden: true }}
+                                    sx={{
+                                        [`& .MuiPieArcLabel-root`]: {
+                                            fontSize: 14,
+                                            fontWeight: 600,
+                                        },
+                                        '& .MuiChartsLegend-root': { display: 'none !important' },
+                                    }}
+                                />
+                            </Box>
                         </Box>
-                      ))}
                     </Box>
-                    <PieChart
-                      series={[{
-                        data: holocaustPieData.map(item => ({ ...item, label: '' })),
-                        arcLabel: (item) => {
-                          const total = holocaustSurvivors + notHolocaustSurvivors;
-                          return total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
-                        },
-                        arcLabelMinAngle: 10,
-                        arcLabelRadius: '80%',
-                      }]}
-                      width={280}
-                      height={220}
-                      legend={{ hidden: true }}
-                      sx={{
-                        [`& .MuiPieArcLabel-root`]: {
-                          fontSize: 14,
-                          fontWeight: 600,
-                        },
-                        '& .MuiChartsLegend-root': { display: 'none !important' },
-                      }}
-                    />
-                  </Box>
                 </Box>
-              </Box>
             </Box>
           </>
         )}
@@ -520,41 +525,42 @@ const Reports = () => {
             zIndex: 1000,
           }}
         >
-          <Button
-            variant="contained"
-            onClick={() => {
-              const el = document.getElementById('distributions-section');
-              if (el) {
-                el.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-            sx={{
-              minWidth: 0,
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              fontSize: { xs: '0.875rem', sm: '1rem' },
-              backgroundColor: 'rgba(142, 172, 183, 0.72)',
-              color: 'black',
-              fontWeight: 'bold',
-              '&:hover': {
-                backgroundColor: 'rgba(142, 172, 183, 0.85)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-              },
-              '&:focus': {
-                outline: 'none',
-              },
-              '&:active': {
-                outline: 'none',
-                boxShadow: 'none',
-                transform: 'translateY(0px)',
-              },
-            }}
-          >
-            <BarChartIcon sx={{ fontSize: 38, }} />
-          </Button>
-
+          <Tooltip title="התפלגויות" placement="top">
+            <Button
+              variant="contained"
+              onClick={() => {
+                const el = document.getElementById('distributions-section');
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              sx={{
+                minWidth: 0,
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                color: 'black',
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: 'rgba(142, 172, 183, 0.85)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                },
+                '&:focus': {
+                  outline: 'none',
+                },
+                '&:active': {
+                  outline: 'none',
+                  boxShadow: 'none',
+                  transform: 'translateY(0px)',
+                },
+              }}
+            >
+              <BarChartIcon sx={{ fontSize: 38, }} />
+            </Button>
+          </Tooltip>
         </Box>
       </Box>
       );

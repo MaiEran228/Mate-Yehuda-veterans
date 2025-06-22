@@ -118,129 +118,147 @@ const DailyDiagrams = () => {
         },
     ];
 
+    // לוגיקה להצגת עיגול ריק אם אין נתונים
+    const hasAttendanceData = attended + absent > 0;
+    const emptyAttendancePieData = [
+        { id: 0, value: 1, label: '', displayLabel: '', color: '#e5f1f8' },
+    ];
+
     return (
         <Box
             sx={{
                 border: '2px solid #b7c9d6',
                 borderRadius: 4,
-                p: 4,
                 mt: 4,
                 bgcolor: '#ebf1f5',
                 maxWidth: 1100,
                 mx: 'auto',
                 overflow: 'hidden',
+                p: 0,
             }}
         >
-            <Typography variant="h6" sx={{ mb: 4, textAlign: 'center', color: '#406370', fontWeight: 700 }}>
-                התפלגויות יומיות
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'flex-start', width: '100%' }}>
-                {/* דיאגרמת נוכחות יומית */}
-                <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    border: '1.5px solid #b7c9d6',
-                    borderRadius: 3,
-                    boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
-                    p: 2,
-                    minWidth: 320,
-                    maxWidth: 410,
-                    bgcolor: '#f0f4f8',
-                }}>
-                    <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
-                        נוכחות יומית
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, flexWrap: 'nowrap', width: '100%' }}>
-                        {/* מקרא */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', minWidth: 130 }}>
-                            {pieData.map((item) => (
-                                <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
-                                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                        {item.displayLabel}: {item.value}
-                                    </Typography>
-                                </Box>
-                            ))}
+            <Box sx={{
+                bgcolor: 'rgb(220, 228, 232)',
+                width: '100%',
+                borderTopRightRadius: 4,
+                borderTopLeftRadius: 4,
+                py: 1.5,
+                px: 2,
+                mb: 0,
+            }}>
+                <Typography variant="h6" sx={{ textAlign: 'center', color: '#406370', fontWeight: 700 }}>
+                    התפלגויות יומיות
+                </Typography>
+            </Box>
+            <Box sx={{ p: 4 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'flex-start', width: '100%' }}>
+                    {/* דיאגרמת נוכחות יומית */}
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        border: '1.5px solid #b7c9d6',
+                        borderRadius: 3,
+                        boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
+                        p: 2,
+                        minWidth: 320,
+                        maxWidth: 410,
+                        bgcolor: '#f0f4f8',
+                    }}>
+                        <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
+                            נוכחות יומית
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, flexWrap: 'nowrap', width: '100%' }}>
+                            {/* מקרא */}
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', minWidth: 130 }}>
+                                {pieData.map((item) => (
+                                    <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
+                                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                            {item.displayLabel}: {item.value}
+                                        </Typography>
+                                    </Box>
+                                ))}
+                            </Box>
+                            {/* עוגת התפלגות */}
+                            <PieChart
+                                series={[{
+                                    data: hasAttendanceData ? pieData.map(item => ({ ...item, label: '' })) : emptyAttendancePieData,
+                                    arcLabel: (item) => {
+                                        const total = attended + absent;
+                                        return hasAttendanceData && total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
+                                    },
+                                    arcLabelMinAngle: 10,
+                                    arcLabelRadius: '80%',
+                                }]}
+                                width={280}
+                                height={220}
+                                legend={{ hidden: true }}
+                                slots={{ legend: null }}
+                                sx={{
+                                    [`& .MuiPieArcLabel-root`]: {
+                                        fontSize: 14,
+                                        fontWeight: 600,
+                                    },
+                                    '& .MuiChartsLegend-root': { display: 'none !important' },
+                                }}
+                            />
                         </Box>
-                        {/* עוגת התפלגות */}
-                        <PieChart
-                            series={[{
-                                data: pieData.map(item => ({ ...item, label: '' })),
-                                arcLabel: (item) => {
-                                    const total = attended + absent;
-                                    return total ? `${((item.value / total) * 100).toFixed(1)}%` : '';
-                                },
-                                arcLabelMinAngle: 10,
-                                arcLabelRadius: '80%',
-                            }]}
-                            width={280}
-                            height={220}
-                            legend={{ hidden: true }}
-                            slots={{ legend: null }}
-                            sx={{
-                                [`& .MuiPieArcLabel-root`]: {
-                                    fontSize: 14,
-                                    fontWeight: 600,
-                                },
-                                '& .MuiChartsLegend-root': { display: 'none !important' },
-                            }}
-                        />
                     </Box>
-                </Box>
-                {/* דיאגרמת סיבות היעדרות */}
-                <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    border: '1.5px solid #b7c9d6',
-                    borderRadius: 3,
-                    boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
-                    p: 2,
-                    minWidth: 320,
-                    maxWidth: 410,
-                    bgcolor: '#f0f4f8',
-                }}>
-                    <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
-                        סיבות היעדרות
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, flexWrap: 'nowrap', width: '100%' }}>
-                        {/* מקרא */}
-                        <Box sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-start',
-                            justifyContent: 'center',
-                            minWidth: 130,
-                        }}>
-                            {reasonLegendData.map((item) => (
-                                <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
-                                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                        {item.displayLabel}: {item.value}
-                                    </Typography>
-                                </Box>
-                            ))}
+                    {/* דיאגרמת סיבות היעדרות */}
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        border: '1.5px solid #b7c9d6',
+                        borderRadius: 3,
+                        boxShadow: '0 2px 8px rgba(64,99,112,0.07)',
+                        p: 2,
+                        minWidth: 320,
+                        maxWidth: 410,
+                        bgcolor: '#f0f4f8',
+                    }}>
+                        <Typography variant="h7" sx={{ mb: 2, color: '#406370', fontWeight: 600 }}>
+                            סיבות היעדרות
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, flexWrap: 'nowrap', width: '100%' }}>
+                            {/* מקרא */}
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-start',
+                                justifyContent: 'center',
+                                minWidth: 130,
+                            }}>
+                                {reasonLegendData.map((item) => (
+                                    <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <Box sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: item.color, mr: 1, border: '1px solid #ccc' }} />
+                                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                            {item.displayLabel}: {item.value}
+                                        </Typography>
+                                    </Box>
+                                ))}
+                            </Box>
+                            <PieChart
+                                series={[{
+                                    data: hasReasonData ? reasonPieData.map(item => ({ ...item, label: '' })) : emptyReasonPieData,
+                                    arcLabel: (item) => hasReasonData && totalWithReason ? `${((item.value / totalWithReason) * 100).toFixed(1)}%` : '',
+                                    arcLabelMinAngle: 10,
+                                    arcLabelRadius: '80%',
+                                }]}
+                                width={280}
+                                height={220}
+                                legend={{ hidden: true }}
+                                slots={{ legend: null }}
+                                sx={{
+                                    [`& .MuiPieArcLabel-root`]: {
+                                        fontSize: 14,
+                                        fontWeight: 600,
+                                    },
+                                    '& .MuiChartsLegend-root': { display: 'none !important' },
+                                }}
+                            />
                         </Box>
-                        <PieChart
-                            series={[{
-                                data: hasReasonData ? reasonPieData.map(item => ({ ...item, label: '' })) : emptyReasonPieData,
-                                arcLabel: (item) => hasReasonData && totalWithReason ? `${((item.value / totalWithReason) * 100).toFixed(1)}%` : '',
-                                arcLabelMinAngle: 10,
-                                arcLabelRadius: '80%',
-                            }]}
-                            width={280}
-                            height={220}
-                            legend={{ hidden: true }}
-                            slots={{ legend: null }}
-                            sx={{
-                                [`& .MuiPieArcLabel-root`]: {
-                                    fontSize: 14,
-                                    fontWeight: 600,
-                                },
-                                '& .MuiChartsLegend-root': { display: 'none !important' },
-                            }}
-                        />
                     </Box>
                 </Box>
             </Box>

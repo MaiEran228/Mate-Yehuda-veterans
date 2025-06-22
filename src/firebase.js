@@ -3,6 +3,8 @@ import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { calculateAvailableSeatsByDay } from './utils/transportUtils';
+import { runTransaction } from "firebase/firestore";
+
 
 // קונפיגורציה ואתחול
 const firebaseConfig = {
@@ -153,21 +155,81 @@ export const transportService = {
     );
   },
 
-  // הוספת הסעה חדשה
-  addTransport: async (transportData) => {
+  addTemporaryReservation: async (transportId, reservation) => {
     try {
-      const transportCollection = collection(db, 'transport');
-      const docRef = await addDoc(transportCollection, {
-        ...transportData,
-        createdAt: serverTimestamp(),
-        passengers: []
+      const transportDocRef = doc(db, 'transport', transportId);
+      
+      // מביא את המסמך כדי לעדכן את המערך
+      const transportSnap = await getDoc(transportDocRef);
+      if (!transportSnap.exists()) {
+        throw new Error("Transport not found");
+      }
+
+      const transportData = transportSnap.data();
+      const currentReservations = transportData.tempReservations || [];
+
+      // מוסיף את השריון החדש למערך
+      const updatedReservations = [...currentReservations, reservation];
+
+      // מעדכן את המסמך עם המערך החדש
+      await updateDoc(transportDocRef, {
+        tempReservations: updatedReservations
       });
-      return { id: docRef.id, ...transportData };
+
+      return true;
     } catch (error) {
-      console.error("Error adding transport:", error);
+      console.error("Error adding temporary reservation:", error);
       throw error;
     }
   },
+
+  // הוספת הסעה חדשה
+  addTransport: async (transportData) => {
+    try {
+      const counterRef = doc(db, 'counters', 'transportIdCounter');
+  
+      const newTransport = await runTransaction(db, async (transaction) => {
+        const counterSnap = await transaction.get(counterRef);
+        let current = 0;
+  
+        if (counterSnap.exists()) {
+          current = counterSnap.data().current || 0;
+          transaction.update(counterRef, { current: current + 1 });
+        } else {
+          // יצירת מונה בפעם הראשונה
+          transaction.set(counterRef, { current: 1 });
+        }
+  
+        const nextId = current + 1;
+        const newDocId = nextId.toString();  // מזהה כ־string
+  
+        const newDocRef = doc(db, 'transport', newDocId);  // ✅ מזהה המסמך = nextId
+  
+        transaction.set(newDocRef, {
+          ...transportData,
+          id: newDocId,             // מזהה בתוך המסמך
+          transportId: nextId,      // שדה נוסף אם תרצי
+          createdAt: serverTimestamp(),
+          passengers: []
+        });
+  
+        return {
+          id: newDocId,
+          transportId: nextId,
+          ...transportData,
+          passengers: []
+        };
+      });
+  
+      return newTransport;
+  
+    } catch (error) {
+      console.error("שגיאה בהוספת הסעה עם מזהה עולה:", error);
+      throw error;
+    }
+  },
+  
+  
 
   // עדכון הסעה קיימת
   updateTransport: async (transportId, updatedTransport) => {
@@ -201,6 +263,8 @@ export const transportService = {
   // מחיקת הסעה
   deleteTransport: async (transportId) => {
     try {
+      console.log("Deleting transport with ID:", transportId);
+
       await deleteDoc(doc(db, 'transport', transportId));
       return transportId;
     } catch (error) {
@@ -246,5 +310,48 @@ export const transportService = {
       console.error("Error updating passenger in transports:", error);
       throw error;
     }
+  }
+};
+
+// פונקציות עבור transport_dates (הסעות לפי תאריך)
+export const fetchTransportDates = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'transport_dates'));
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error('שגיאה בשליפת transport_dates:', error);
+    return [];
+  }
+};
+
+export const fetchTransportsByDate = async (dateStr) => {
+  try {
+    const docRef = doc(db, 'transport_dates', dateStr);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data(); // מחזיר את האובייקט עם transports ו־date
+    } else {
+      console.log('אין הסעות לתאריך הזה');
+      return null;
+    }
+  } catch (error) {
+    console.error('שגיאה בשליפת הסעות לפי תאריך:', error);
+    return null;
+  }
+};
+
+export const saveTransportDate = async (dateStr, transportsList) => {
+  try {
+    await setDoc(doc(db, 'transport_dates', dateStr), {
+      date: dateStr,
+      transports: transportsList,
+      timestamp: new Date()
+    });
+    console.log('הסעות נשמרו לתאריך:', dateStr);
+  } catch (error) {
+    console.error('שגיאה בשמירת הסעות לתאריך:', error);
   }
 };

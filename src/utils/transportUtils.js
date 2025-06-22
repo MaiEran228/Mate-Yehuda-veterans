@@ -29,11 +29,11 @@ export const calculateAvailableSeatsByDay = (transportType, passengers, days) =>
   const availableSeatsByDay = {};
 
   days.forEach(day => {
-    const passengersForDay = passengers.filter(p => p.arrivalDays.includes(day));
+    const passengersForDay = (passengers || []).filter(p => (p.arrivalDays || []).includes(day));
     const seatsNeeded = passengersForDay.reduce((total, p) => total + (p.hasCaregiver ? 2 : 1), 0);
     availableSeatsByDay[day] = totalSeats - seatsNeeded;
   });
-
+  
   return availableSeatsByDay;
 };
 
