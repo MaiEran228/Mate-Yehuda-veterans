@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
+import LockResetIcon from '@mui/icons-material/LockReset';
 
 function ForgotPassword({ onClose }) {
   const [email, setEmail] = useState('');
@@ -17,17 +18,21 @@ function ForgotPassword({ onClose }) {
 
   return (
     <div style={styles.modalContent}>
-      <h3>איפוס סיסמא</h3>
+      <h3 style={{ display: 'flex', alignItems: 'center', color: 'rgb(105, 148, 179)', fontWeight: 700, fontSize: '2rem', marginBottom: 16 }}>
+        <LockResetIcon style={{ fontSize: 32, marginLeft: 8, color: 'rgb(114, 152, 179)' }} />
+        איפוס סיסמא
+      </h3>
       <input
         type="email"
         placeholder="הכנס מייל"
+        borderColor='rgb(82, 106, 109)'
         value={email}
         onChange={e => setEmail(e.target.value)}
         style={styles.input}
       />
       <div style={styles.buttons}>
+        <button onClick={onClose} style={{ ...styles.button, background: 'transparent', color: 'rgb(105, 148, 179)', border: '1px solid rgb(114, 152, 179)' }}>בטל</button>
         <button onClick={handleReset} style={styles.button}>שלח</button>
-        <button onClick={onClose} style={styles.button}>בטל</button>
       </div>
     </div>
   );
@@ -57,28 +62,44 @@ const styles = {
     zIndex: 1000,
   },
   modalWrapper: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 20,
-    minWidth: 300,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+    background: '#fff',
+    borderRadius: 16,
+    padding: 36,
+    minWidth: 380,
+    maxWidth: 480,
+    boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
   },
   modalContent: {
     display: 'flex',
     flexDirection: 'column',
+    gap: 16,
+    alignItems: 'center',
   },
   input: {
     marginBottom: 15,
-    padding: 8,
-    fontSize: 16,
+    padding: 12,
+    fontSize: 18,
+    borderRadius: 8,
+    border: '1px solid rgb(82, 106, 109)',
+    background: '#fff',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   buttons: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 8,
   },
   button: {
-    padding: '8px 16px',
-    fontSize: 16,
+    padding: '10px 28px',
+    fontSize: 17,
     cursor: 'pointer',
+    borderRadius: 6,
+    border: 'none',
+    background: 'rgb(114, 152, 179)',
+    color: '#fff',
+    fontWeight: 600,
+    transition: 'background 0.2s',
   }
 };

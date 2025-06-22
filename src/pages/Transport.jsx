@@ -22,6 +22,16 @@ import { he } from 'date-fns/locale';
 import AddIcon from '@mui/icons-material/Add';
 import dayjs from 'dayjs';
 
+// מיפוי ימים לעברית
+const daysMap = {
+  0: "יום א'",
+  1: "יום ב'",
+  2: "יום ג'",
+  3: "יום ד'",
+  4: "יום ה'",
+  5: "יום ו'",
+  6: "שבת"
+};
 
 function Transport() {
   const [tempReservationsByTransport, setTempReservationsByTransport] = useState({});
@@ -180,114 +190,129 @@ function Transport() {
       <Box sx={{ p: 3, mt:1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           {/* ימין: תאריך, חיפוש, דוח */}
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="he">
-              <DatePicker
-                label="תאריך"
-                value={selectedDate}
-                onChange={(newValue) => {
-                  if (newValue) {
-                    setSelectedDate(newValue);
-                  }
-                }}
-                inputFormat="DD/MM/YYYY"
-                slotProps={{
-                  actionBar: {
-                    actions: ['accept'],
-                    sx: {
-                      padding: '0px 8px',
-                      margin: '-70px 0 0 0',
-                      minHeight: '22px',
-                      '& .MuiButton-root': {
-                        minWidth: 40,
-                        padding: '0px 8px',
-                        margin: '0 2px',
-                        mb: 1,
-                        ml: 2,
-                        fontSize: '0.875rem',
-                        backgroundColor: '#1976d2',
-                        color: 'white',
-                        height: '28px',
-                        borderRadius: '3px',
-                        '&:hover': {
-                          backgroundColor: '#1565c0',
-                        },
-                      }
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexDirection: 'column', alignItems: 'flex-start' }}>
+            {/* שורה עליונה: תאריך + יום */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="he">
+                <DatePicker
+                  label="תאריך"
+                  value={selectedDate}
+                  onChange={(newValue) => {
+                    if (newValue) {
+                      setSelectedDate(newValue);
                     }
-                  },
-                  textField: {
-                    size: 'small',
-                    sx: {
-                      ml: 2,
-                      minWidth: 130,
-                      maxWidth: 160,
-                      direction: 'rtl',
-                      '& .MuiOutlinedInput-notchedOutline legend': {
-                        display: 'none',
-                      },
-                      '& .MuiIconButton-root': {
-                        outline: 'none',
-                        '&:focus': {
-                          outline: 'none',
-                          boxShadow: 'none',
-                        },
-                      },
-                    },
-                    InputProps: {
-                      notched: false,
+                  }}
+                  inputFormat="DD/MM/YYYY"
+                  slotProps={{
+                    actionBar: {
+                      actions: ['accept'],
                       sx: {
-                        flexDirection: 'row-reverse',
-                        input: {
-                          textAlign: 'right',
+                        padding: '0px 8px',
+                        margin: '-70px 0 0 0',
+                        minHeight: '22px',
+                        '& .MuiButton-root': {
+                          minWidth: 40,
+                          padding: '0px 8px',
+                          margin: '0 2px',
+                          mb: 1,
+                          ml: 2,
+                          fontSize: '0.875rem',
+                          backgroundColor: '#1976d2',
+                          color: 'white',
+                          height: '28px',
+                          borderRadius: '3px',
+                          '&:hover': {
+                            backgroundColor: '#1565c0',
+                          },
+                        }
+                      }
+                    },
+                    textField: {
+                      size: 'small',
+                      sx: {
+                        ml: 2,
+                        minWidth: 130,
+                        maxWidth: 160,
+                        direction: 'rtl',
+                        '& .MuiOutlinedInput-notchedOutline legend': {
+                          display: 'none',
+                        },
+                        '& .MuiIconButton-root': {
+                          outline: 'none',
+                          '&:focus': {
+                            outline: 'none',
+                            boxShadow: 'none',
+                          },
+                        },
+                      },
+                      InputProps: {
+                        notched: false,
+                        sx: {
+                          flexDirection: 'row-reverse',
+                          input: {
+                            textAlign: 'right',
+                          },
                         },
                       },
                     },
+                  }}
+                />
+              </LocalizationProvider>
+              <Typography sx={{ ml: 1, minWidth: 60, color: 'rgba(64, 99, 112, 0.72)', fontWeight: 600, fontSize: '1.5rem' }}>
+                {daysMap[selectedDate ? selectedDate.day() : dayjs().day()]}
+              </Typography>
+            </Box>
+            {/* שורה שניה: שדה חיפוש */}
+            <Box sx={{ width: '100%', mt: 1 }}>
+              <TextField
+                fullWidth
+                placeholder="חיפוש לפי שם או אזור מגורים..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                variant="outlined"
+                size="small"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchTerm && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => setSearchTerm('')}
+                        edge="end"
+                        sx={{ mr: -0.5 }}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    backgroundColor: '#fff',
+                    '&:hover': {
+                      backgroundColor: '#fff',
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(118, 126, 136, 0.2)',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(118, 126, 136, 0.4)',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'rgba(118, 126, 136, 0.6)',
+                    },
+                  },
+                }}
+                sx={{
+                  maxWidth: '400px',
+                  '& .MuiInputBase-root': {
+                    height: '40px',
                   },
                 }}
               />
-            </LocalizationProvider>
-
-            <TextField
-              fullWidth
-              placeholder="חיפוש לפי שם או אזור מגורים..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              variant="outlined"
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchTerm && (
-                  <InputAdornment position="end">
-                    <IconButton
-                      size="small"
-                      onClick={() => setSearchTerm('')}
-                      edge="end"
-                      sx={{ mr: -0.5 }}
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-                sx: {
-                  backgroundColor: '#fff',
-                  borderRadius: 2,
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgba(118, 126, 136, 0.2)',
-                  },
-                },
-              }}
-              sx={{
-                maxWidth: '400px',
-                '& .MuiInputBase-root': {
-                  height: '40px',
-                },
-              }}
-            />
-
+            </Box>
           </Box>
 
           {/* שמאל: כפתורים בטור */}

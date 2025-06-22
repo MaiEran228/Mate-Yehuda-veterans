@@ -11,7 +11,7 @@ function ToolbarMUI({ onLogout }) {
   const navItems = [
     { label: 'דו"חות', to: '/Reports' },
     { label: 'הסעות', to: '/Transport' },
-    { label: 'מערכת שעות', to: '/Schedule' },
+    { label: 'לוח פעילויות', to: '/Schedule' },
     { label: 'פרופילים', to: '/Profiles' },
   ];
 

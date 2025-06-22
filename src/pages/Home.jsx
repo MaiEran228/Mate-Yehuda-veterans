@@ -10,6 +10,17 @@ import { useNavigate } from 'react-router-dom';
 
 import { saveAttendanceForDate, fetchAllProfiles, fetchAttendanceByDate } from '../firebase'; // יבוא הפונקציה החדשה
 
+// מיפוי ימים לעברית
+const daysMap = {
+  0: "יום א'",
+  1: "יום ב'",
+  2: "יום ג'",
+  3: "יום ד'",
+  4: "יום ה'",
+  5: "יום ו'",
+  6: "שבת"
+};
+
 function Home({ onLogout }) {
     const [attendanceCount, setAttendanceCount] = useState(0);
     const [showReport, setShowReport] = useState(false);
@@ -150,6 +161,9 @@ function Home({ onLogout }) {
                             }}
                         >
                             {todayFormatted}
+                        </Typography>
+                        <Typography sx={{ ml: 1, minWidth: 60, color: 'rgba(64, 99, 112, 0.72)', fontWeight: 600, fontSize: '1.5rem' }}>
+                          {daysMap[dayjs(today).day()]}
                         </Typography>
                         <Box
                             sx={{

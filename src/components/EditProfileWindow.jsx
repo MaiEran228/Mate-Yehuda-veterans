@@ -121,7 +121,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     try {
       // קודם מסיר את הנוסע מההסעה הקודמת
       await removePassengerFromTransports(initialProfile.id);
-      
+
       await addPassengerToTransport(transport.id, {
         id: initialProfile.id,
         name: initialProfile.name,
@@ -194,7 +194,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   // עדכון הפונקציה המקורית של handleChange כדי להוסיף בדיקת טלפון
   const handleFieldChange = (field) => (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    
+
     // בדיקת תקינות תעודת זהות
     if (field === "id") {
       if (!value) {
@@ -216,7 +216,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         setErrors(prev => ({ ...prev, phone: null }));
       }
     }
-    
+
     // בדיקת תקינות מספר טלפון נוסף
     if (field === "phone2") {
       if (!value) {
@@ -326,6 +326,9 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 required
                 onChange={handleFieldChange("name")}
                 sx={{ maxWidth: "170px" }}
+                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
+                InputProps={{ notched: false }}
+                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
               />
               <TextField
                 fullWidth
@@ -336,33 +339,59 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 error={!!errors.id}
                 helperText={errors.id}
                 sx={{ maxWidth: "170px" }}
+                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
+                InputProps={{ notched: false }}
+                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
               />
 
               <TextField
                 fullWidth
                 label="תאריך לידה"
                 type="date"
+                name="birthDate"
                 required
                 value={initialProfile.birthDate || ''}
                 onChange={handleFieldChange("birthDate")}
-                InputLabelProps={{ shrink: true }}
+                error={!!errors?.birthDate}
+                helperText={errors?.birthDate && "שדה חובה"}
+                InputLabelProps={{
+                  shrink: true,
+                  sx: {
+                    right: 24,
+                    left: 'unset',
+                    textAlign: 'right',
+                    transformOrigin: 'top right',
+                    direction: 'rtl',
+                    backgroundColor: 'white',
+                    px: 0.5
+                  }
+                }}
                 sx={{ maxWidth: "170px" }}
+                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
+                InputProps={{ notched: false }}
               />
 
-              <TextField
-                select
-                fullWidth
-                label="מין"
-                value={initialProfile.gender || ''}
-                onChange={handleFieldChange("gender")}
-                sx={{ maxWidth: "170px" }}
-              >
-                {GENDERS.map((g) => (
-                  <MenuItem key={g} value={g}>
-                    {g}
+              <FormControl fullWidth sx={{ maxWidth: '170px' }}>
+                <Select
+                  name="gender"
+                  value={initialProfile.gender || ''}
+                  onChange={handleFieldChange("gender")}
+                  displayEmpty
+                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'מין' }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { textAlign: 'right', direction: 'rtl' }
+                    }
+                  }}
+                >
+                  <MenuItem value="" disabled hidden>
+                    מין
                   </MenuItem>
-                ))}
-              </TextField>
+                  <MenuItem value="זכר">זכר</MenuItem>
+                  <MenuItem value="נקבה">נקבה</MenuItem>
+                  <MenuItem value="אחר">אחר</MenuItem>
+                </Select>
+              </FormControl>
 
               <TextField
                 fullWidth
@@ -373,6 +402,9 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 error={!!errors.phone}
                 helperText={errors.phone}
                 sx={{ maxWidth: "170px" }}
+                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
+                InputProps={{ notched: false }}
+                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
               />
               <TextField
                 fullWidth
@@ -382,6 +414,9 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 error={!!errors.phone2}
                 helperText={errors.phone2}
                 sx={{ maxWidth: "170px" }}
+                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
+                InputProps={{ notched: false }}
+                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
               />
 
               <TextField
@@ -390,6 +425,9 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 value={initialProfile.email || ''}
                 onChange={handleFieldChange("email")}
                 sx={{ maxWidth: "170px" }}
+                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
+                InputProps={{ notched: false }}
+                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
               />
 
               <TextField
@@ -398,6 +436,9 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 value={initialProfile.address || ''}
                 onChange={handleFieldChange("address")}
                 sx={{ maxWidth: "170px" }}
+                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
+                InputProps={{ notched: false }}
+                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
               />
               <TextField
                 fullWidth
@@ -406,12 +447,15 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 onChange={handleFieldChange("city")}
                 required
                 sx={{ maxWidth: "170px" }}
+                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
+                InputProps={{ notched: false }}
+                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
               />
 
               <TextField
                 select
                 fullWidth
-                label="סוג הסעה"
+                placeholder="סוג הסעה"
                 value={initialProfile.transport || ''}
                 onChange={handleFieldChange("transport")}
                 name="transport"
@@ -460,68 +504,105 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
             </Box>
 
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-              <TextField
-                select
-                fullWidth
-                label="רמת תפקוד"
-                value={initialProfile.functionLevel || ''}
-                onChange={handleFieldChange("functionLevel")}
-                sx={{ maxWidth: "170px" }}
-              >
-                {[1, 2, 3, 4, 5, 6].map((level) => (
-                  <MenuItem key={level} value={level}>
-                    {level}
+              {/* רמת תפקוד */}
+              <FormControl fullWidth sx={{ maxWidth: '170px' }}>
+                <Select
+                  name="functionLevel"
+                  value={initialProfile.functionLevel || ''}
+                  onChange={handleFieldChange("functionLevel")}
+                  displayEmpty
+                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'רמת תפקוד' }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { textAlign: 'right', direction: 'rtl' }
+                    }
+                  }}
+                >
+                  <MenuItem value="" disabled hidden>
+                    רמת תפקוד
                   </MenuItem>
-                ))}
-              </TextField>
+                  {[1, 2, 3, 4, 5, 6].map((level) => (
+                    <MenuItem key={level} value={level}>{level}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-              <TextField
-                select
-                fullWidth
-                label="זכאות"
-                value={initialProfile.eligibility || ''}
-                onChange={handleFieldChange("eligibility")}
-                sx={{ maxWidth: "170px" }}
-              >
-                <MenuItem value="רווחה">רווחה</MenuItem>
-                <MenuItem value="סיעוד">סיעוד</MenuItem>
-                <MenuItem value="אחר">אחר</MenuItem>
-              </TextField>
+              {/* זכאות */}
+              <FormControl fullWidth sx={{ maxWidth: '170px' }}>
+                <Select
+                  name="eligibility"
+                  value={initialProfile.eligibility || ''}
+                  onChange={handleFieldChange("eligibility")}
+                  displayEmpty
+                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'זכאות' }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { textAlign: 'right', direction: 'rtl' }
+                    }
+                  }}
+                >
+                  <MenuItem value="" disabled hidden>
+                    זכאות
+                  </MenuItem>
+                  <MenuItem value="רווחה">רווחה</MenuItem>
+                  <MenuItem value="סיעוד">סיעוד</MenuItem>
+                  <MenuItem value="אחר">אחר</MenuItem>
+                </Select>
+              </FormControl>
 
-              <TextField
-                select
-                fullWidth
-                label="חברת סיעוד"
-                value={initialProfile.nursingCompany || ''}
-                onChange={handleFieldChange("nursingCompany")}
-                disabled={initialProfile.eligibility !== "סיעוד"}
-                sx={{ maxWidth: "170px" }}
-              >
-                <MenuItem value="מטב">מט"ב</MenuItem>
-                <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
-                <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
-                <MenuItem value="א.ש ירושלים">א.ש ירושלים</MenuItem>
-                <MenuItem value="ראנד">ראנד</MenuItem>
-                <MenuItem value="תגבור">תגבור</MenuItem>
-                <MenuItem value="נתן">נתן</MenuItem>
-                <MenuItem value="עמל- בית שמש">עמל- בית שמש</MenuItem>
-                <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
-                <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
-                <MenuItem value="אחר">אחר</MenuItem>
-              </TextField>
+              {/* חברת סיעוד */}
+              <FormControl fullWidth sx={{ maxWidth: '170px' }} disabled={initialProfile.eligibility !== "סיעוד"}>
+                <Select
+                  name="nursingCompany"
+                  value={initialProfile.nursingCompany || ''}
+                  onChange={handleFieldChange("nursingCompany")}
+                  displayEmpty
+                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חברת סיעוד' }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { textAlign: 'right', direction: 'rtl' }
+                    }
+                  }}
+                >
+                  <MenuItem value="" disabled hidden>
+                    חברת סיעוד
+                  </MenuItem>
+                  <MenuItem value="מטב">מט"ב</MenuItem>
+                  <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
+                  <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
+                  <MenuItem value="א.ש ירושלים">א.ש ירושלים</MenuItem>
+                  <MenuItem value="ראנד">ראנד</MenuItem>
+                  <MenuItem value="תגבור">תגבור</MenuItem>
+                  <MenuItem value="נתן">נתן</MenuItem>
+                  <MenuItem value="עמל- בית שמש">עמל- בית שמש</MenuItem>
+                  <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
+                  <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
+                  <MenuItem value="אחר">אחר</MenuItem>
+                </Select>
+              </FormControl>
 
-              <TextField
-                select
-                fullWidth
-                label="חבר ב-"
-                value={initialProfile.membership || ''}
-                onChange={handleFieldChange("membership")}
-                sx={{ maxWidth: "170px" }}
-              >
-                <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
-                <MenuItem value="מרכז יום">מרכז יום</MenuItem>
-                <MenuItem value="אחר">אחר</MenuItem>
-              </TextField>
+              {/* חבר ב- */}
+              <FormControl fullWidth sx={{ maxWidth: '170px' }}>
+                <Select
+                  name="membership"
+                  value={initialProfile.membership || ''}
+                  onChange={handleFieldChange("membership")}
+                  displayEmpty
+                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חבר ב־' }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { textAlign: 'right', direction: 'rtl' }
+                    }
+                  }}
+                >
+                  <MenuItem value="" disabled hidden>
+                    חבר ב־
+                  </MenuItem>
+                  <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
+                  <MenuItem value="מרכז יום">מרכז יום</MenuItem>
+                  <MenuItem value="אחר">אחר</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
 
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -544,47 +625,47 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                 label="מטפל"
               />
             </Box>
-            <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',  // מפריד בין הכפתורים לשני הצדדים
-                mt: 2 
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'space-between',  // מפריד בין הכפתורים לשני הצדדים
+              mt: 2
             }}>
-                {/* כפתור עדכון הסעה בצד ימין */}
-                <Box>
-          <Button
-                        onClick={handleAssignTransport}
-                        variant="outlined"
-                        color="primary"
-                        disabled={
-                            loading || 
-                            !initialProfile.city || 
-                            !initialProfile.transport || 
-                            !initialProfile.arrivalDays?.length || 
-                            !hasTransportFieldsChanged()
-                        }
-                    >
-                        עדכון הסעה
-                    </Button>
-                </Box>
+              {/* כפתור עדכון הסעה בצד ימין */}
+              <Box>
+                <Button
+                  onClick={handleAssignTransport}
+                  variant="outlined"
+                  color="primary"
+                  disabled={
+                    loading ||
+                    !initialProfile.city ||
+                    !initialProfile.transport ||
+                    !initialProfile.arrivalDays?.length ||
+                    !hasTransportFieldsChanged()
+                  }
+                >
+                  עדכון הסעה
+                </Button>
+              </Box>
 
-                {/* כפתורי שמירה וביטול בצד שמאל */}
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button
-                        onClick={handleCancelEdit}
-                        variant="outlined"
-                        color="error"
-                    >
-                        ביטול
-                    </Button>
+              {/* כפתורי שמירה וביטול בצד שמאל */}
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  onClick={handleCancelEdit}
+                  variant="outlined"
+                  color="error"
+                >
+                  ביטול
+                </Button>
 
-                    <Button
-                        onClick={() => validateAndSave(initialProfile)}
-                        variant="contained"
-                        color="primary"
-                    >
-                        שמור
-                    </Button>
-                </Box>
+                <Button
+                  onClick={() => validateAndSave(initialProfile)}
+                  variant="contained"
+                  color="primary"
+                >
+                  שמור
+                </Button>
+              </Box>
             </Box>
           </Box>
         </DialogContent>

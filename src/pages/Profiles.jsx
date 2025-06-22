@@ -215,6 +215,13 @@ function Profiles() {
         </Grid>
       </Box>
 
+      {/* סכום הפרופילים */}
+      <Box sx={{ mt: 3, textAlign: 'center' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgba(64, 99, 112, 0.72)', fontSize: '2rem'}}>
+          סך הכל פרופילים: {filteredProfiles.length}
+        </Typography>
+      </Box>
+
       {/* חלונות דיאלוג */}
       <ProfileWindow
         open={!!selectedProfile}

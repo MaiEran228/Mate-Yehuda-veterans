@@ -134,10 +134,6 @@ function AddProfileWindow({ open, onClose, onSave }) {
             setErrors(prev => ({ ...prev, profileImage: "המתן לסיום העלאת התמונה" }));
             return;
         }
-        if (!formData.profileImage) {
-            setErrors(prev => ({ ...prev, profileImage: "יש להעלות תמונה" }));
-            return;
-        }
         const requiredFields = ["name", "id", "city", "birthDate", "phone", "transport", "arrivalDays"];
         const newErrors = {};
         

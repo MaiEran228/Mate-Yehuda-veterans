@@ -11,6 +11,8 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import MonthlyAttendanceTable from '../../components/MonthlyAttendanceTable';
 import OutlinedInput from '@mui/material/OutlinedInput';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { TableContainer, Table, TableHead, TableBody, TableRow, TableCell, Paper } from '@mui/material';
 
 const getMonthDays = (year, month) => {
@@ -33,17 +35,54 @@ const MonthlyAttendance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
+  // פונקציה לשלב פרופילים קיימים עם פרופילים שיש להם נתוני נוכחות
+  const combineProfilesWithAttendance = (existingProfiles, attendanceData) => {
+    const combinedProfiles = new Map();
+
+    // הוסף את כל הפרופילים הקיימים
+    existingProfiles.forEach(profile => {
+      combinedProfiles.set(profile.id, profile);
+    });
+
+    // הוסף פרופילים שיש להם נתוני נוכחות אבל לא קיימים כרגע
+    // רק אם יש להם נתוני נוכחות בחודש הנוכחי
+    Object.values(attendanceData).forEach(attendanceList => {
+      attendanceList.forEach(person => {
+        if (!combinedProfiles.has(person.id)) {
+          // יצירת פרופיל זמני למי שנמחק אבל יש לו נתוני נוכחות בחודש הנוכחי
+          combinedProfiles.set(person.id, {
+            id: person.id,
+            name: person.name || `פרופיל ללא שם (${person.id})`,
+            city: person.city || 'לא צוין',
+            arrivalDays: person.arrivalDays || []
+          });
+        }
+      });
+    });
+
+    return Array.from(combinedProfiles.values());
+  };
+
   useEffect(() => {
     setLoading(true);
     setError('');
-    // מאזין לשינויים בפרופילים
-    const unsubProfiles = onSnapshot(collection(db, 'profiles'), (snapshot) => {
-      setProfiles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setLoading(false);
-    }, (e) => {
-      setError('שגיאה בטעינת פרופילים');
-      setLoading(false);
-    });
+
+    // טעינת פרופילים באמצעות fetchAllProfiles (כמו בדף Profiles)
+    const loadProfiles = async () => {
+      try {
+        const profilesData = await fetchAllProfiles();
+        console.log('Profiles loaded via fetchAllProfiles:', profilesData.length, profilesData);
+
+        // שלב עם נתוני הנוכחות הקיימים (אם יש)
+        const combinedProfiles = combineProfilesWithAttendance(profilesData, attendanceByDate);
+        setProfiles(combinedProfiles);
+      } catch (error) {
+        console.error('Error loading profiles:', error);
+        setError('שגיאה בטעינת פרופילים');
+      }
+    };
+
+    loadProfiles();
 
     // מאזין לנוכחות (כמו קודם)
     const attendanceCol = collection(db, 'attendance');
@@ -57,38 +96,357 @@ const MonthlyAttendance = () => {
           attByDate[data.date] = data.attendanceList;
         }
       });
+      console.log('Attendance data loaded:', Object.keys(attByDate).length, 'dates');
       setAttendanceByDate(attByDate);
+
+      // שלב את הפרופילים עם נתוני הנוכחות
+      const currentProfiles = profiles.length > 0 ? profiles : [];
+      const combinedProfiles = combineProfilesWithAttendance(currentProfiles, attByDate);
+      console.log('Combined profiles:', combinedProfiles.length, combinedProfiles);
+      setProfiles(combinedProfiles);
+
       setLoading(false);
     }, (e) => {
+      console.error('Error in onSnapshot for attendance:', e);
       setError('שגיאה בטעינת נתוני נוכחות');
       setLoading(false);
     });
 
     return () => {
-      unsubProfiles();
       unsubAttendance();
     };
   }, [month, year]);
 
+  // האזנה לשינויים בפרופילים
+  useEffect(() => {
+    const unsubProfiles = onSnapshot(collection(db, 'profiles'), async (snapshot) => {
+      try {
+        const profilesData = await fetchAllProfiles();
+        console.log('Profiles updated via onSnapshot:', profilesData.length, profilesData);
+
+        // שלב עם נתוני הנוכחות הקיימים
+        const combinedProfiles = combineProfilesWithAttendance(profilesData, attendanceByDate);
+        setProfiles(combinedProfiles);
+      } catch (error) {
+        console.error('Error updating profiles:', error);
+      }
+    }, (e) => {
+      console.error('Error in onSnapshot for profiles:', e);
+    });
+
+    return () => {
+      unsubProfiles();
+    };
+  }, [attendanceByDate]);
+
+  // שלב פרופילים עם נתוני נוכחות כשאחד מהם משתנה
+  useEffect(() => {
+    if (profiles.length > 0 || Object.keys(attendanceByDate).length > 0) {
+      const currentProfiles = profiles; // כל הפרופילים
+      const combinedProfiles = combineProfilesWithAttendance(currentProfiles, attendanceByDate);
+      console.log('Recombining profiles:', combinedProfiles.length, combinedProfiles);
+      setProfiles(combinedProfiles);
+    }
+  }, [attendanceByDate, profiles]);
+
   const days = getMonthDays(year, month);
 
   return (
-    <Box sx={{ direction: 'rtl', bgcolor: '#ebf1f5' ,width: '100%', height: '100%', mt:5  }}>
-      <Box sx={{ display: 'flex', alignItems: 'center',  mb: 4, gap: 1 }}>
+    <Box sx={{ direction: 'rtl', bgcolor: '#ebf1f5', width: '100%', height: '80%', mt: 3 }}>
+      {/* כפתור חזור מעל הכותרת */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1, mt: 0 }}>
         <Button
           variant="outlined"
           color="primary"
           onClick={() => navigate('/Reports')}
           size="small"
-          sx={{ minWidth: 'auto', px: 1., py: 0.5, fontSize: '0.75rem' }}
+          sx={{
+            border: '1.7px solid rgba(64, 99, 112, 0.72)',
+            color: 'rgba(64, 99, 112, 0.72)',
+            fontWeight: 'bold',
+            height: '28px',
+            ':hover': {
+              borderColor: '#7b8f99',
+              color: '#5a676e',
+              outline: 'none'
+            },
+            '&:focus': {
+              outline: 'none'
+            },
+            '&:active': {
+              outline: 'none'
+            },
+            minWidth: 'auto',
+          }}
         >
           חזור
         </Button>
-        <Typography variant="h4" fontWeight="bold" sx={{ flexGrow: 1, textAlign: 'right' }}>
-          דו"ח נוכחות חודשי - {dayjs(`${year}-${month}-01`).format('MMMM YYYY')}
-        </Typography>
       </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+        {/* צד ימין: כותרת */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="h4" fontWeight="bold">
+            דו"ח נוכחות חודשי - {dayjs(`${year}-${month}-01`).format('MMMM YYYY')}
+          </Typography>
+        </Box>
+
+        {/* צד שמאל: כפתורי ייצוא */}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              const input = document.getElementById('monthlyReportContent');
+              html2canvas(input).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`Monthly Attendance Report - ${dayjs(`${year}-${month}-01`).format('MMMM YYYY')}.pdf`);
+              });
+            }}
+            sx={{
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              border: 'none',
+              outline: 'none',
+              ':hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                outline: 'none'
+              },
+              fontWeight: 'bold',
+              color: 'black',
+              '&:focus': {
+                border: 'none',
+                outline: 'none'
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none'
+              },
+              minWidth: '120px'
+            }}
+          >
+            ייצוא ל־PDF
+          </Button>
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={async () => {
+              const workbook = new ExcelJS.Workbook();
+              const worksheet = workbook.addWorksheet('נוכחות חודשית', {
+                views: [{ rightToLeft: true }],
+              });
+            
+              const dayNumbers = days.map(day => day.format('D'));
+              const columns = ['שם', 'סה"כ ותיק', 'סה"כ מטפל', ...dayNumbers];
+            
+              worksheet.columns = columns.map(col => ({
+                header: col,
+                key: col,
+                width: ['שם', 'סה"כ ותיק', 'סה"כ מטפל'].includes(col) ? 15 : 6, // ימים ברוחב צר
+                style: {
+                  alignment: { horizontal: 'right' },
+                  font: { name: 'Arial', size: 12 },
+                }
+              }));
+            
+              // 🟦 עיצוב שורת כותרת
+              const headerRow = worksheet.getRow(1);
+              headerRow.height = 25; // הגדלת גובה השורה הראשונה
+              headerRow.eachCell(cell => {
+                cell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFCCE5FF' }, // כחול בהיר
+                };
+                cell.font = { bold: true };
+                cell.border = {
+                  top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                };
+              });
+            
+              // מיון הפרופילים לפי שם
+              const sortedProfiles = [...profiles].sort((a, b) => {
+                const nameA = a.name || '';
+                const nameB = b.name || '';
+                return nameA.localeCompare(nameB, 'he');
+              });
+              const cellStyles = [];
+              sortedProfiles.forEach((profile, profileIndex) => {
+                const row = {};
+                row['שם'] = profile.name;
+                row['סה"כ ותיק'] = days.reduce((sum, day) => {
+                  const dateStr = day.format('YYYY-MM-DD');
+                  const list = attendanceByDate[dateStr];
+                  if (list) {
+                    const person = list.find(p => p.id === profile.id);
+                    if (person?.attended) sum++;
+                  }
+                  return sum;
+                }, 0);
+                row['סה"כ מטפל'] = days.reduce((sum, day) => {
+                  const dateStr = day.format('YYYY-MM-DD');
+                  const list = attendanceByDate[dateStr];
+                  if (list) {
+                    const person = list.find(p => p.id === profile.id);
+                    if (person?.attended && person.caregiver) sum++;
+                  }
+                  return sum;
+                }, 0);
+                dayNumbers.forEach(dayNum => {
+                  const dayObj = days.find(d => d.format('D') === dayNum);
+                  const dateStr = dayObj.format('YYYY-MM-DD');
+                  const list = attendanceByDate[dateStr];
+                  let value = '';
+                  if (list) {
+                    const person = list.find(p => p.id === profile.id);
+                    if (person?.attended) {
+                      // בדיקה אם זה יום הגעה רגיל או makeup
+                      const dayOfWeek = dayObj.day();
+                      const hebrewDayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
+                      const currentHebrewDay = hebrewDayNames[dayOfWeek];
+                      const isRegularDay = profile.arrivalDays && profile.arrivalDays.includes(currentHebrewDay);
+                      if (isRegularDay) {
+                        value = '✔️'; // ירוק
+                        cellStyles.push({ row: profileIndex + 2, col: columns.indexOf(dayNum) + 1, color: 'FF43A047' });
+                      } else {
+                        value = '✔️'; // כחול
+                        cellStyles.push({ row: profileIndex + 2, col: columns.indexOf(dayNum) + 1, color: 'FF1976D2' });
+                      }
+                      if (person.caregiver) {
+                        value += ' +1';
+                      }
+                    } else if (!person?.attended && person?.reason) {
+                      value = person.reason;
+                      cellStyles.push({ row: profileIndex + 2, col: columns.indexOf(dayNum) + 1, color: 'FFD32F2F' });
+                    }
+                  }
+                  row[dayNum] = value;
+                });
+                worksheet.addRow(row);
+              });
+              // החלת הסטיילינג על התאים
+              cellStyles.forEach(style => {
+                const cell = worksheet.getCell(style.row, style.col);
+                cell.font = { color: { argb: style.color } };
+              });
+              
+              // הוספת מקרא כגוש נפרד לחלוטין ליד הטבלה
+              const legendStartCol = columns.length + 1; // עמודה צמודה לטבלה
+              const legendStartRow = 5; // מתחיל מהשורה החמישית
+              
+              // כותרת המקרא
+              const legendTitleCell = worksheet.getCell(legendStartRow, legendStartCol);
+              legendTitleCell.value = 'מקרא';
+              legendTitleCell.font = { bold: true, size: 14 };
+              legendTitleCell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE4ECF1' },
+              };
+              legendTitleCell.border = {
+                top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                left: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+              };
+              legendTitleCell.alignment = { horizontal: 'center' };
+              
+              // נוכח ביום הגעה - וי ירוק
+              const regularCell = worksheet.getCell(legendStartRow + 1, legendStartCol);
+              regularCell.value = '✔️ נוכח ביום הגעה';
+              regularCell.font = { color: { argb: 'FF43A047' }, size: 12 };
+              regularCell.border = {
+                top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                left: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+              };
+              
+              // נוכח לא ביום הגעה - וי כחול
+              const makeupCell = worksheet.getCell(legendStartRow + 2, legendStartCol);
+              makeupCell.value = '✔️ נוכח לא ביום הגעה';
+              makeupCell.font = { color: { argb: 'FF1976D2' }, size: 12 };
+              makeupCell.border = {
+                top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                left: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+              };
+              
+              // עם מטפל
+              const caregiverCell = worksheet.getCell(legendStartRow + 3, legendStartCol);
+              caregiverCell.value = '+1 עם מטפל';
+              caregiverCell.font = { color: { argb: 'FF888888' }, size: 12 };
+              caregiverCell.border = {
+                top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                left: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+              };
+              
+              // הגדרת רוחב עמודת המקרא
+              worksheet.getColumn(legendStartCol).width = 25;
+              
+              // 🧱 גבולות עדינים לכל תאים בטבלה (לא כולל המקרא)
+              worksheet.eachRow((row, rowNumber) => {
+                row.eachCell((cell, colNumber) => {
+                  // רק לתאים בטבלה (לא למקרא)
+                  if (colNumber <= columns.length) {
+                    cell.border = {
+                      top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                      left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                      bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                      right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                    };
+                    cell.alignment = { horizontal: 'right' };
+                  }
+                });
+              });
+            
+              const buffer = await workbook.xlsx.writeBuffer();
+              const blob = new Blob([buffer], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              });
+            
+              saveAs(blob, `דו"ח נוכחות חודשי - ${dayjs(`${year}-${month}-01`).format('MMMM YYYY')}.xlsx`);
+            }}
+            
+            sx={{
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              border: 'none',
+              outline: 'none',
+              ':hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                outline: 'none'
+              },
+              fontWeight: 'bold',
+              color: 'black',
+              '&:focus': {
+                border: 'none',
+                outline: 'none'
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none'
+              },
+              minWidth: '120px'
+            }}
+          >
+            ייצוא ל־Excel
+          </Button>
+        </Box>
+      </Box>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
         <FormControl size="small" sx={{ minWidth: 100 }}>
           <InputLabel id="month-select-label" sx={{ textAlign: 'right', right: 25, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: '#ebf1f5', px: 0.5 }}>
             חודש
@@ -101,7 +459,7 @@ const MonthlyAttendance = () => {
             input={<OutlinedInput notched={false} label="חודש" />}
           >
             {[...Array(12)].map((_, idx) => (
-              <MenuItem key={idx+1} value={idx+1}>{dayjs().month(idx).format('MMMM')}</MenuItem>
+              <MenuItem key={idx + 1} value={idx + 1}>{dayjs().month(idx).format('MMMM')}</MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -116,117 +474,31 @@ const MonthlyAttendance = () => {
             onChange={e => setYear(Number(e.target.value))}
             input={<OutlinedInput notched={false} label="שנה" />}
           >
-            {Array.from({length: (dayjs().year() + 5) - 2025 + 1}, (_, idx) => 2025 + idx).map(y => (
+            {Array.from({ length: (dayjs().year() + 5) - 2025 + 1 }, (_, idx) => 2025 + idx).map(y => (
               <MenuItem key={y} value={y}>{y}</MenuItem>
             ))}
           </Select>
         </FormControl>
-        <Button
-          variant="contained"
-          onClick={() => {
-            const input = document.getElementById('monthlyReportContent');
-            html2canvas(input).then(canvas => {
-              const imgData = canvas.toDataURL('image/png');
-              // const pdf = new jsPDF('p', 'mm', 'a4');
-              // const imgProps = pdf.getImageProperties(imgData);
-              // const pdfWidth = pdf.internal.pageSize.getWidth();
-              // const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-              // pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-              // pdf.save(`Monthly Attendance Report - ${dayjs(`${year}-${month}-01`).format('MMMM YYYY')}.pdf`);
-            });
-          }}
-        >
-          ייצוא ל־PDF
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => {
-            // Prepare data for Excel (Hebrew headers, same as table, with absence reasons)
-            const dayNumbers = days.map(day => day.format('D')).reverse();
-            const columns = [...dayNumbers, 'סה"כ מטפל', 'סה"כ ותיק', 'שם'];
-            const excelData = profiles.map(profile => {
-              const row = {};
-              // Days columns (right to left)
-              dayNumbers.forEach(dayNum => {
-                // Find the day object for this dayNum
-                const dayObj = days.find(d => d.format('D') === dayNum);
-                const dateStr = dayObj.format('YYYY-MM-DD');
-                const list = attendanceByDate[dateStr];
-                let value = '';
-                if (list) {
-                  const person = list.find(p => p.id === profile.id);
-                  if (person && person.attended === true) {
-                    value = '✔️';
-                  } else if (person && person.attended === false && person.reason) {
-                    value = person.reason;
-                  }
-                }
-                row[dayNum] = value;
-              });
-              // Totals and name
-              row['סה"כ ותיק'] = days.reduce((sum, day) => {
-                const dateStr = day.format('YYYY-MM-DD');
-                const list = attendanceByDate[dateStr];
-                if (list) {
-                  const person = list.find(p => p.id === profile.id);
-                  if (person && person.attended === true) {
-                    return sum + 1;
-                  }
-                }
-                return sum;
-              }, 0);
-              row['סה"כ מטפל'] = days.reduce((sum, day) => {
-                const dateStr = day.format('YYYY-MM-DD');
-                const list = attendanceByDate[dateStr];
-                if (list) {
-                  const person = list.find(p => p.id === profile.id);
-                  if (person && person.attended === true && person.caregiver) {
-                    return sum + 1;
-                  }
-                }
-                return sum;
-              }, 0);
-              row['שם'] = profile.name;
-              return row;
-            });
-            const ws = XLSX.utils.json_to_sheet(excelData, { header: columns });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'נוכחות חודשית');
-            XLSX.writeFile(wb, `דו"ח נוכחות חודשי - ${dayjs(`${year}-${month}-01`).format('MMMM YYYY')}.xlsx`);
-          }}
-        >
-          ייצוא ל־Excel
-        </Button>
       </Box>
-      {showSearch && (
-        <Box sx={{ mb: 2, maxWidth: 300 }}>
-          <TextField
-            fullWidth
-            size="small"
-            label="חפש לפי שם"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            autoFocus
-          />
-        </Box>
-      )}
-      {loading ? (
-        <CircularProgress sx={{ m: 4 }} />
-      ) : error ? (
-        <Typography color="error">{error}</Typography>
-      ) : (
-        <div id="monthlyReportContent">
-          <MonthlyAttendanceTable
-            profiles={profiles}
-            attendanceByDate={attendanceByDate}
-            days={days}
-            searchTerm={searchTerm}
-            setShowSearch={setShowSearch}
-          />
-        </div>
-      )}
-    </Box>
+
+      {
+        loading ? (
+          <CircularProgress sx={{ m: 4 }} />
+        ) : error ? (
+          <Typography color="error">{error}</Typography>
+        ) : (
+          <div id="monthlyReportContent">
+            <MonthlyAttendanceTable
+              profiles={profiles}
+              attendanceByDate={attendanceByDate}
+              days={days}
+              searchTerm={searchTerm}
+              setShowSearch={setShowSearch}
+            />
+          </div>
+        )
+      }
+    </Box >
   );
 };
 

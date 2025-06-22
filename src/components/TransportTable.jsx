@@ -553,12 +553,10 @@ function TransportTable({
                     </Box>
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                    <Tooltip title="לחץ לפירוט מקומות פנויים">
-                      <IconButton onClick={(e) => handleSeatsClick(e, row)} sx={{ p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
-                        <EventSeatIcon sx={{ fontSize: 25, color: availableSeats > 0 ? 'success.main' : 'error.main' }} />
-                      </IconButton>
-                    </Tooltip>
-                    <Typography variant="body2" sx={{ mt: 0.5 }}>{availableSeats}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                      <EventSeatIcon sx={{ fontSize: 25, color: availableSeats > 0 ? 'success.main' : 'error.main' }} />
+                      <Typography variant="body2" sx={{ fontSize: '1rem', fontWeight: 500 }}>{availableSeats}</Typography>
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
                     <Tooltip title="שיריון זמני">
@@ -594,39 +592,6 @@ function TransportTable({
             })}
           </TableBody>
         </Table>
-
-        <Popover
-          open={open}
-          anchorEl={anchorEl}
-          onClose={handleClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'center',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'center',
-          }}
-        >
-          <Box sx={{ p: 2, minWidth: 200 }}>
-            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-              מקומות פנויים לפי יום:
-            </Typography>
-            {selectedTransport && selectedTransport.days?.slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b)).map((day) => {
-              // חישוב עם tempReservationsByTransport
-              let seats = '-';
-              if (selectedTransport) {
-                // נשתמש בפונקציה שמחשבת גם זמניים
-                seats = getAvailableSeats(selectedTransport, day, selectedDateStr);
-              }
-              return (
-                <Typography key={day} sx={{ mb: 0.5 }}>
-                  {(dayMap[day] || day)}: {seats} מקומות פנויים
-                </Typography>
-              );
-            })}
-          </Box>
-        </Popover>
 
         {/* דיאלוג שיריון זמני */}
         <Dialog

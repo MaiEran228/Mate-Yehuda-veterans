@@ -6,7 +6,7 @@ import { collection, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import dayjs from 'dayjs';
 
-const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל', 'שיפוי', 'טיפול בית'];
+const reasonOptions = ['מחלה', 'אשפוז', 'בדיקות', 'סידורים', 'נפל/ה', 'אבל', 'הסעה לא הגיעה', 'טיול', 'הודיע/ה', 'שמחה', 'אחר'];
 
 const dayMap = {
   'ראשון': 'א',

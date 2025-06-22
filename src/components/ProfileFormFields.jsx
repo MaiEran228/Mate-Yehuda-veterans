@@ -2,7 +2,7 @@ import { Box, Typography, FormControl, Select, MenuItem, Checkbox, FormControlLa
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 
 export default function ProfileFormFields({ values, errors, onChange, onImageChange, isUploading }) {
-    
+
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -20,7 +20,7 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
   return (
     <>
       {/* העלאת תמונה */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative', marginBottom: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative', marginBottom: 16, width: '100%', justifyContent: 'center' }}>
         <input
           accept="image/*"
           style={{ display: 'none' }}
@@ -47,9 +47,9 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             onMouseLeave={(e) => !isUploading && (e.target.style.opacity = '1')}
           >
             {values.profileImage ? (
-              <img 
-                src={values.profileImage} 
-                alt="תמונת פרופיל" 
+              <img
+                src={values.profileImage}
+                alt="תמונת פרופיל"
                 style={{
                   width: '100%',
                   height: '100%',
@@ -77,7 +77,7 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         <TextField
           fullWidth
-          placeholder="שם"
+          label="שם"
           name="name"
           value={values.name}
           onChange={onChange}
@@ -85,12 +85,13 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
           error={!!errors.name}
           helperText={errors.name && "שדה חובה"}
           sx={{ maxWidth: "170px" }}
-          inputProps={{ style: { textAlign: 'right' } }}
+          inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
+          InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
         />
         <TextField
           fullWidth
-          placeholder="תעודת זהות"
+          label="תעודת זהות"
           name="id"
           value={values.id}
           onChange={onChange}
@@ -98,8 +99,9 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
           error={!!errors.id}
           helperText={errors.id}
           sx={{ maxWidth: "170px" }}
-          inputProps={{ style: { textAlign: 'right' } }}
+          inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
+          InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
         />
         <TextField
           fullWidth
@@ -124,7 +126,7 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             }
           }}
           sx={{ maxWidth: "170px" }}
-          inputProps={{ style: { textAlign: 'right' } }}
+          inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
         />
 
@@ -150,10 +152,10 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
-        
+
         <TextField
           fullWidth
-          placeholder="טלפון"
+          label="טלפון"
           name="phone"
           value={values.phone}
           onChange={onChange}
@@ -161,44 +163,48 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
           error={!!errors.phone}
           helperText={errors.phone === true ? "שדה חובה" : errors.phone}
           sx={{ maxWidth: "170px" }}
-          inputProps={{ style: { textAlign: 'right' } }}
+          inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
+          InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
         />
         <TextField
           fullWidth
-          placeholder="טלפון נוסף"
+          label="טלפון נוסף"
           name="phone2"
           value={values.phone2}
           onChange={onChange}
           error={!!errors.phone2}
           helperText={errors.phone2}
           sx={{ maxWidth: "170px" }}
-          inputProps={{ style: { textAlign: 'right' } }}
+          inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
+          InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
         />
         <TextField
           fullWidth
-          placeholder="מייל"
+          label="מייל"
           name="email"
           value={values.email || ''}
           onChange={onChange}
           sx={{ maxWidth: "170px" }}
-          inputProps={{ style: { textAlign: 'right' } }}
+          inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
+          InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
         />
         <TextField
           fullWidth
-          placeholder="כתובת"
+          label="כתובת"
           name="address"
           value={values.address}
           onChange={onChange}
           sx={{ maxWidth: "170px" }}
-          inputProps={{ style: { textAlign: 'right' } }}
+          inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
+          InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
         />
         <TextField
           fullWidth
-          placeholder="יישוב"
+          label="יישוב"
           name="city"
           value={values.city}
           onChange={onChange}
@@ -206,8 +212,9 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
           error={!!errors.city}
           helperText={errors.city && "שדה חובה"}
           sx={{ maxWidth: "170px" }}
-          inputProps={{ style: { textAlign: 'right' } }}
+          inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
+          InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
         />
 
         {/* Select: סוג הסעה */}
@@ -273,28 +280,6 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         <FormControl fullWidth sx={{ maxWidth: '170px' }}>
           <Select
-            name="functionLevel"
-            value={values.functionLevel}
-            onChange={onChange}
-            displayEmpty
-            inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'רמת תפקוד' }}
-            MenuProps={{
-              PaperProps: {
-                sx: { textAlign: 'right', direction: 'rtl' }
-              }
-            }}
-          >
-            <MenuItem value="" disabled hidden>
-              רמת תפקוד
-            </MenuItem>
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <MenuItem key={n} value={n}>{n}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth sx={{ maxWidth: '170px' }}>
-          <Select
             name="eligibility"
             value={values.eligibility}
             onChange={onChange}
@@ -346,6 +331,28 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
             <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
             <MenuItem value="אחר">אחר</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth sx={{ maxWidth: '170px' }}>
+          <Select
+            name="functionLevel"
+            value={values.functionLevel}
+            onChange={onChange}
+            displayEmpty
+            inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'רמת תפקוד' }}
+            MenuProps={{
+              PaperProps: {
+                sx: { textAlign: 'right', direction: 'rtl' }
+              }
+            }}
+          >
+            <MenuItem value="" disabled hidden>
+              רמת תפקוד
+            </MenuItem>
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <MenuItem key={n} value={n}>{n}</MenuItem>
+            ))}
           </Select>
         </FormControl>
 

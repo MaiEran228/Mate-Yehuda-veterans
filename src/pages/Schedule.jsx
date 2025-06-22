@@ -83,15 +83,11 @@ const SchedulePage = () => {
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
             alignItems: 'center',
-            mb: 2, mt:5
+            mb: 1, mt: 5
           }}
         >
-          <Typography variant="h4" fontWeight="bold" color="Black">
-            לוח פעילויות
-          </Typography>
-
           <Button
             variant={isEditing ? 'outlined' : 'contained'}
             color="primary"
@@ -115,8 +111,36 @@ const SchedulePage = () => {
           </Button>
         </Box>
 
-        <Box sx={{ 
-          display: 'flex', 
+        {/* מקרא צבעים */}
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 2, mt: 1, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ width: 22, height: 22, borderRadius: 1, bgcolor: 'rgba(173, 203, 228, 0.88)', border: '1.5px solid #b0c4de', mr: 1 }} />
+            <Typography fontSize="1rem">הרצאות</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ width: 22, height: 22, borderRadius: 1, bgcolor: 'rgba(181, 227, 202, 0.8)', border: '1.5px solid #a2d5c6', mr: 1 }} />
+            <Typography fontSize="1rem">לובי</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ width: 22, height: 22, borderRadius: 1, bgcolor: 'rgba(228, 201, 138, 0.93)', border: '1.5px solid #e6c07b', mr: 1 }} />
+            <Typography fontSize="1rem">אומנות</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ width: 22, height: 22, borderRadius: 1, bgcolor: 'rgba(209, 177, 202, 0.77)', border: '1.5px solid #c9a0c9', mr: 1 }} />
+            <Typography fontSize="1rem">תעסוקה</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ width: 22, height: 22, borderRadius: 1, bgcolor: 'rgba(211, 147, 147, 0.89)', border: '1.5px solid #d38d8d', mr: 1 }} />
+            <Typography fontSize="1rem">מדרש</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ width: 22, height: 22, borderRadius: 1, bgcolor: 'rgba(199, 196, 187, 0.88)', border: '1.5px solid #bdbdbd', mr: 1 }} />
+            <Typography fontSize="1rem">פיזיותרפיה</Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{
+          display: 'flex',
           flex: 1,
           gap: '4px',
           width: '95vm',
@@ -148,14 +172,14 @@ const SchedulePage = () => {
               >
                 {day}
               </Box>
-              <Box sx={{ 
+              <Box sx={{
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '4px'
               }}>
                 {[...Array(CELLS_PER_DAY_ROWS)].map((_, rowIdx) => (
-                  <Box key={rowIdx} sx={{ 
+                  <Box key={rowIdx} sx={{
                     display: 'flex',
                     gap: '4px',
                     flex: 1
@@ -164,7 +188,7 @@ const SchedulePage = () => {
                       const cellIdx = rowIdx * CELLS_PER_DAY_COLS + colIdx;
                       const key = `${day}-cell${cellIdx}`;
                       const value = activities[key] || { activity: '', instructor: '', location: '', time: '' };
-                      
+
                       return (
                         <Box
                           key={key}
