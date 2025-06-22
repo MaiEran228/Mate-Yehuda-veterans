@@ -16,6 +16,23 @@ const getMonthDates = (month, year) => {
   return dates;
 };
 
+// פונקציה חדשה: סופרת כמה ימים מתאימים יש בחודש
+function countEligibleDaysInMonth(arrivalDays, year, month) {
+  // arrivalDays: ['ראשון', 'שלישי', ...]
+  // month: 1-based (1=ינואר)
+  const daysInMonth = dayjs(`${year}-${String(month).padStart(2, '0')}-01`).daysInMonth();
+  const hebrewDaysByIndex = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  let count = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = dayjs(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+    const hebDay = hebrewDaysByIndex[date.day()];
+    if (arrivalDays.includes(hebDay)) {
+      count++;
+    }
+  }
+  return count;
+}
+
 const DaysLeft = () => {
   const [loading, setLoading] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
@@ -54,34 +71,45 @@ const DaysLeft = () => {
 
   // For each person, check if missed any required day
   const people = profiles.map(profile => {
-    // Calculate number of weeks in the month
     const [year, month] = selectedMonth.split('-');
-    const firstDay = dayjs(`${year}-${month}-01`);
-    const lastDay = firstDay.endOf('month');
-    const numDays = lastDay.date();
-    const numWeeks = Math.ceil((firstDay.day() + numDays) / 7);
-    // Eligible days = arrivalDays.length * numWeeks
-    const eligible = Array.isArray(profile.arrivalDays) ? profile.arrivalDays.length * numWeeks : 0;
+    const eligible = Array.isArray(profile.arrivalDays) ? countEligibleDaysInMonth(profile.arrivalDays, Number(year), Number(month)) : 0;
     const attendedCount = attendanceData.filter(p => p.id === profile.id && p.attended).length;
     let missed = false;
+    const monthDates = getMonthDates(month, year);
+    const hebrewDaysByIndex = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const today = dayjs().format('YYYY-MM-DD');
+    // ימים שהיה אמור להגיע ולא הגיע (עד היום)
+    const missedDates = [];
+    // הופעות בימים לא זכאים (עד היום)
+    let penalty = 0;
     if (Array.isArray(profile.arrivalDays) && profile.arrivalDays.length > 0) {
-      const monthDates = getMonthDates(month, year);
       for (const dateStr of monthDates) {
-        const weekday = dayjs(dateStr).format('dddd');
-        if (profile.arrivalDays.includes(weekday)) {
-          const attended = attendanceData.some(p => p.id === profile.id && p.date === dateStr && p.attended);
-          if (!attended) {
+        if (dateStr > today) continue; // דילוג על ימים עתידיים
+        const d = dayjs(dateStr);
+        const hebDay = hebrewDaysByIndex[d.day()];
+        const record = attendanceData.find(p => p.id === profile.id && p.date === dateStr);
+        if (profile.arrivalDays.includes(hebDay)) {
+          if (!(record && record.attended === true)) {
+            missedDates.push(dateStr);
             missed = true;
-            break;
+          }
+        } else {
+          if (record && record.attended === true) {
+            penalty++;
           }
         }
       }
     }
+    // מספר הימים שלא הגיע, לאחר ניכוי הופעות לא זכאיות
+    const missedAfterPenalty = Math.max(missedDates.length - penalty, 0);
     return {
       id: profile.id,
       name: profile.name,
       remaining: Math.max(eligible - attendedCount, 0),
-      missed
+      missed,
+      missedDates,
+      penalty,
+      missedAfterPenalty
     };
   });
 
@@ -252,29 +280,21 @@ const DaysLeft = () => {
             </DialogActions>
           </Dialog>
           <Dialog open={surplusOpen} onClose={() => setSurplusOpen(false)}>
-            <DialogTitle>חישוב ימי זכאות מול ימי הופעה בפועל</DialogTitle>
+            <DialogTitle>חישוב ימי עודף</DialogTitle>
             <DialogContent>
               <div id="surplusTableContent">
                 <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl', tableLayout: 'fixed' }}>
                   <thead>
                     <tr>
                       <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>שם</th>
-                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>ימי זכאות (תיאורטי)</th>
-                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>ימי הופעה בפועל בחודש</th>
-                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>הפרש</th>
-                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>מספר ימים שהחסיר</th>
-                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>הפרש + ימים שהחסיר</th>
+                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>מספר ימים שהיה אמור להגיע ולא הגיע</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {surplusList.map(person => (
+                    {people.map(person => (
                       <tr key={person.id}>
                         <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.name}</td>
-                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.eligible}</td>
-                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.actual}</td>
-                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.diff}</td>
-                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.missed}</td>
-                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.total}</td>
+                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.missedAfterPenalty}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -282,23 +302,6 @@ const DaysLeft = () => {
               </div>
             </DialogContent>
             <DialogActions>
-              <Button
-                onClick={async () => {
-                  const input = document.getElementById('surplusTableContent');
-                  if (!input) return;
-                  const canvas = await html2canvas(input);
-                  const imgData = canvas.toDataURL('image/png');
-                  const pdf = new jsPDF('p', 'mm', 'a4');
-                  const pdfWidth = pdf.internal.pageSize.getWidth();
-                  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                  pdf.save('דו"ח ימי עודף.pdf');
-                }}
-                color="primary"
-                variant="outlined"
-              >
-                הנפקת דו"ח ל-PDF
-              </Button>
               <Button onClick={() => setSurplusOpen(false)} color="primary">סגור</Button>
             </DialogActions>
           </Dialog>

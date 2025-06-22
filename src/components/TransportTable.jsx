@@ -63,6 +63,7 @@ function TransportTable({
   const [reservationDate, setReservationDate] = useState(new Date());
   const [searchText, setSearchText] = useState('');
   const [tempReservationsByTransport, setTempReservationsByTransport] = useState({});
+  const [tempReservationsForDialogDate, setTempReservationsForDialogDate] = useState({});
 
   // מיון
   const [order, setOrder] = useState('asc');
@@ -213,9 +214,65 @@ function TransportTable({
       return;
     }
 
+    const dateStr = reservationDate.toISOString().slice(0, 10);
+    const transport = selectedTransport;
+    const totalSeats = transport.type === 'מונית' ? 4 : 14;
+    // קביעת היום בשבוע של התאריך שנבחר להזמנה
+    const daysMap = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    const reservationDayIdx = reservationDate.getDay();
+    const reservationHebDay = daysMap[reservationDayIdx];
+
+    if (tempReservationDialog.reservationType === 'remove') {
+      // הורדת נוסע זמני
+      const tempList = (tempReservationsByTransport[transport.id?.toString()] || []);
+      const exists = tempList.some(r => r.id === selectedProfile.id && r.date === dateStr);
+      try {
+        // ניצור אובייקט שיריון להסרה (לפי id ותאריך)
+        const tempReservation = {
+          id: selectedProfile.id,
+          date: dateStr
+        };
+        await removeTempReservationForDate(transport, tempReservation, dateStr);
+        await fetchTempReservations();
+        handleTempReservationClose();
+        alert('הנוסע הוסר בהצלחה מהשיריון הזמני');
+      } catch (error) {
+        console.error('Error removing temporary reservation:', error && error.message, error);
+        alert('אירעה שגיאה בהסרת הנוסע');
+      }
+      return;
+    }
+
+    // בדיקת מקומות פנויים לפני שמירה
+    // נוסעים קבועים שמגיעים ביום הזה
+    const regular = (transport.passengers || []).filter(p => (p.arrivalDays || []).includes(reservationHebDay));
+    // נוסעים זמניים עם שיריון לאותו תאריך (מהסטייט החדש)
+    const tempList = (tempReservationsForDialogDate[transport.id?.toString()] || []).filter(r => r.date === dateStr);
+    // מיזוג כל הנוסעים (ללא כפילויות)
+    const ids = new Set();
+    const all = [];
+    for (const p of regular) {
+      if (!ids.has(p.id)) {
+        all.push(p);
+        ids.add(p.id);
+      }
+    }
+    for (const t of tempList) {
+      if (!ids.has(t.id)) {
+        all.push(t);
+        ids.add(t.id);
+      }
+    }
+    // חישוב מקומות
+    const usedSeats = all.reduce((total, p) => total + (p.hasCaregiver ? 2 : 1), 0);
+    const availableSeats = totalSeats - usedSeats;
+    if (availableSeats < (selectedProfile.hasCaregiver ? 2 : 1)) {
+      alert('אין מקום פנוי בהסעה!');
+      return;
+    }
+
     try {
-      const updatedTransport = { ...selectedTransport };
-      const dateStr = reservationDate.toISOString().slice(0, 10);
+      const updatedTransport = { ...transport };
       // יצירת שיריון זמני
       const tempReservation = {
         id: selectedProfile.id,
@@ -322,6 +379,57 @@ function TransportTable({
     }
   };
   
+  // הוספת פונקציה חדשה להסרת שיריון זמני
+  const removeTempReservationForDate = async (transport, reservation, dateStr) => {
+    // בדומה ל-addTempReservationForDate, אך מסיר את השיריון
+    const transportIdRaw = transport.id ?? transport.transportId ?? null;
+    if (transportIdRaw === null || transportIdRaw === undefined) {
+      throw new Error('Transport id is missing');
+    }
+    const transportId = transportIdRaw.toString();
+    let dateDoc = await fetchTransportsByDate(dateStr);
+    let transportsList = dateDoc?.transports || [];
+    const idx = transportsList.findIndex(t => {
+      const tIdRaw = t.id ?? t.transportId ?? null;
+      if (tIdRaw === null || tIdRaw === undefined) return false;
+      const tId = tIdRaw.toString();
+      return tId === transportId;
+    });
+    if (idx === -1) {
+      // אין הסעה כזו בתאריך הזה
+      throw new Error('Transport not found for this date');
+    }
+    const t = transportsList[idx];
+    if (!Array.isArray(t.tempReservations)) t.tempReservations = [];
+    // הסר את השיריון לפי id ותאריך
+    t.tempReservations = t.tempReservations.filter(r => !(r.id === reservation.id && r.date === dateStr));
+    transportsList[idx] = t;
+    await saveTransportDate(dateStr, transportsList);
+  };
+
+  // אפס את הנוסע הנבחר בכל שינוי תאריך/הסעה/סוג פעולה
+  useEffect(() => {
+    setSelectedProfile(null);
+  }, [reservationDate, tempReservationDialog.transport, tempReservationDialog.reservationType]);
+
+  // רענון שיריונות זמניים עבור התאריך שנבחר בדיאלוג
+  useEffect(() => {
+    if (!tempReservationDialog.open || !reservationDate) {
+      setTempReservationsForDialogDate({});
+      return;
+    }
+    const dateStr = reservationDate.toISOString().slice(0, 10);
+    fetchTransportsByDate(dateStr).then(dateDoc => {
+      const transportsList = dateDoc?.transports || [];
+      const map = {};
+      for (const t of transportsList) {
+        if (t.tempReservations && t.tempReservations.length > 0) {
+          map[t.id.toString()] = t.tempReservations;
+        }
+      }
+      setTempReservationsForDialogDate(map);
+    });
+  }, [reservationDate, tempReservationDialog.open]);
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -368,7 +476,16 @@ function TransportTable({
               </TableCell>
               <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>מקומות פנויים</TableCell>
               <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>שיריון זמני</TableCell>
-              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>סוג הסעה</TableCell>
+              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>
+                <TableSortLabel
+                  active={orderBy === 'type'}
+                  direction={orderBy === 'type' ? order : 'asc'}
+                  onClick={() => handleSort('type')}
+                  sx={{ '& .MuiTableSortLabel-icon': { opacity: 1 }, flexDirection: 'row-reverse' }}
+                >
+                  סוג הסעה
+                </TableSortLabel>
+              </TableCell>
               <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>רשימת נוסעים</TableCell>
               <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>פעולה</TableCell>
             </TableRow>
@@ -569,7 +686,7 @@ function TransportTable({
               </ToggleButtonGroup>
               {tempReservationDialog.reservationType === 'add' ? (
                 <Autocomplete
-                  options={profiles}
+                  options={[...profiles].sort((a, b) => a.name.localeCompare(b.name, 'he'))}
                   getOptionLabel={(option) => option.name}
                   value={selectedProfile}
                   onChange={(event, newValue) => setSelectedProfile(newValue)}
@@ -582,19 +699,48 @@ function TransportTable({
                   )}
                 />
               ) : (
-                <Autocomplete
-                  options={tempReservationDialog.transport?.passengers || []}
-                  getOptionLabel={(option) => option.name}
-                  value={selectedProfile}
-                  onChange={(event, newValue) => setSelectedProfile(newValue)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="בחר נוסע להורדה"
-                      placeholder="הקלד שם לחיפוש"
+                (() => {
+                  const dateStr = reservationDate.toISOString().slice(0, 10);
+                  const daysMap = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+                  const reservationDayIdx = reservationDate.getDay();
+                  const reservationHebDay = daysMap[reservationDayIdx];
+                  // נוסעים קבועים שמגיעים ביום הזה
+                  const regular = (tempReservationDialog.transport?.passengers || []).filter(p => (p.arrivalDays || []).includes(reservationHebDay));
+                  // נוסעים זמניים עם שיריון לאותו תאריך (מהסטייט החדש)
+                  const tempList = (tempReservationsForDialogDate[tempReservationDialog.transport?.id?.toString()] || []).filter(r => r.date === dateStr);
+                  // מיזוג ללא כפילויות (לפי id)
+                  const ids = new Set();
+                  const merged = [];
+                  for (const p of regular) {
+                    if (!ids.has(p.id)) {
+                      merged.push(p);
+                      ids.add(p.id);
+                    }
+                  }
+                  for (const t of tempList) {
+                    if (!ids.has(t.id)) {
+                      merged.push(t);
+                      ids.add(t.id);
+                    }
+                  }
+                  // מיון לפי שם (א-ב)
+                  merged.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+                  return (
+                    <Autocomplete
+                      options={merged}
+                      getOptionLabel={(option) => option.name}
+                      value={selectedProfile}
+                      onChange={(event, newValue) => setSelectedProfile(newValue)}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="בחר נוסע להורדה"
+                          placeholder="הקלד שם לחיפוש"
+                        />
+                      )}
                     />
-                  )}
-                />
+                  );
+                })()
               )}
             </Box>
           </DialogContent>

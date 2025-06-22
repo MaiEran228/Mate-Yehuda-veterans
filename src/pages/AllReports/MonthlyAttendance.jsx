@@ -34,14 +34,20 @@ const MonthlyAttendance = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let unsub = null;
     setLoading(true);
     setError('');
-    // Fetch profiles once
-    fetchAllProfiles().then(profs => setProfiles(profs));
-    // Listen to all attendance docs
+    // מאזין לשינויים בפרופילים
+    const unsubProfiles = onSnapshot(collection(db, 'profiles'), (snapshot) => {
+      setProfiles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, (e) => {
+      setError('שגיאה בטעינת פרופילים');
+      setLoading(false);
+    });
+
+    // מאזין לנוכחות (כמו קודם)
     const attendanceCol = collection(db, 'attendance');
-    unsub = onSnapshot(attendanceCol, (snapshot) => {
+    const unsubAttendance = onSnapshot(attendanceCol, (snapshot) => {
       const attByDate = {};
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
@@ -54,10 +60,14 @@ const MonthlyAttendance = () => {
       setAttendanceByDate(attByDate);
       setLoading(false);
     }, (e) => {
-      setError('שגיאה בטעינת נתונים');
+      setError('שגיאה בטעינת נתוני נוכחות');
       setLoading(false);
     });
-    return () => { if (unsub) unsub(); };
+
+    return () => {
+      unsubProfiles();
+      unsubAttendance();
+    };
   }, [month, year]);
 
   const days = getMonthDays(year, month);
