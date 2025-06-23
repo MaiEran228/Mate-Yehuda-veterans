@@ -10,6 +10,8 @@ import ExportPDFButton from '../../components/ExportPDFButton';
 import * as XLSX from 'xlsx';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 const AbsencePeople = () => {
   const [attendanceData, setAttendanceData] = useState(null);
@@ -232,7 +234,28 @@ const AbsencePeople = () => {
 
       {/* שורת כפתורים - מחוץ ל-Container של הדוח */}
       <Box className="no-print" sx={{ width: '100%', display: 'flex', alignItems: 'center', mb: 2, mt:5 }}>
-        <Button variant="outlined" onClick={handleBack} sx={{ ml: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={handleBack}
+          sx={{
+            border: '1.7px solid rgba(64, 99, 112, 0.72)',
+            color: 'rgba(64, 99, 112, 0.72)',
+            fontWeight: 'bold',
+            ':hover': {
+              borderColor: '#7b8f99',
+              color: '#5a676e',
+              outline: 'none'
+            },
+            '&:focus': {
+              outline: 'none'
+            },
+            '&:active': {
+              outline: 'none'
+            },
+            minWidth: 'auto',
+            ml: 2
+          }}
+        >
           חזור
         </Button>
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="he"
@@ -349,8 +372,25 @@ const AbsencePeople = () => {
           buttonProps={{
             disableRipple: true,
             sx: {
-              '&:focus': { outline: 'none' },
-              '&:active': { outline: 'none' }
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              border: 'none',
+              outline: 'none',
+              ':hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                outline: 'none'
+              },
+              fontWeight: 'bold',
+              color: 'black',
+              '&:focus': {
+                border: 'none',
+                outline: 'none'
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none'
+              },
+              minWidth: '120px'
             }
           }}
         />
@@ -358,33 +398,109 @@ const AbsencePeople = () => {
           variant="contained"
           color="primary"
           disableRipple
-          onClick={() => {
-            const excelData = absentMembers.map((person, index) => ({
-              'מס': index + 1,
-              'שם': person.name,
-              'יישוב': person.city || 'לא צוין',
-              'סיבת היעדרות': person.reason || 'לא צוינה סיבה',
-              'תאריך': todayFormatted
+          onClick={async () => {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('חסרים', {
+              views: [{ rightToLeft: true }],
+            });
+            const columns = ['מספור', 'שם', 'יישוב', 'סיבת היעדרות'];
+            worksheet.columns = columns.map((col, idx) => ({
+              header: col,
+              key: col,
+              width: [6, 20, 15, 25][idx],
+              style: {
+                alignment: { horizontal: 'right' },
+                font: { name: 'Arial', size: 12 },
+              }
             }));
-            
-            const ws = XLSX.utils.json_to_sheet(excelData);
-            
-            // הגדרת רוחב עמודות
-            ws['!cols'] = [
-              { wch: 5 },   // מס
-              { wch: 25 },  // שם  
-              { wch: 15 },  // יישוב
-              { wch: 20 },  // סיבת היעדרות
-              { wch: 12 }   // תאריך
-            ];
-            
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'חסרים');
-            XLSX.writeFile(wb, `דוח חסרים - ${todayFormatted}.xlsx`);
+            // הוספת שורת תאריך ממוזגת מעל הכותרות
+            worksheet.insertRow(1, []);
+            const dateCell = worksheet.getCell(1, 1);
+            dateCell.value = `תאריך ${todayFormatted}`;
+            dateCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+            dateCell.font = { bold: true, size: 14 };
+            dateCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFE4ECF1' },
+            };
+            worksheet.mergeCells(1, 1, 1, columns.length);
+            // ודא שכל התאים הממוזגים מיושרים לאמצע
+            for (let i = 1; i <= columns.length; i++) {
+              worksheet.getCell(1, i).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+              worksheet.getCell(1, i).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE4ECF1' },
+              };
+            }
+            // עיצוב שורת כותרת (עכשיו בשורה 2)
+            const headerRow = worksheet.getRow(2);
+            headerRow.height = 25;
+            headerRow.eachCell(cell => {
+              cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE4ECF1' }, // אפור בהיר כמו monthly
+              };
+              cell.font = { bold: true };
+              cell.border = {
+                top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+              };
+            });
+            // מיון שמות
+            const sortedAbsent = [...absentMembers].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+            // הוספת שורות נתונים
+            sortedAbsent.forEach((person, idx) => {
+              worksheet.addRow({
+                'מספור': idx + 1,
+                'שם': person.name,
+                'יישוב': person.city || 'לא צוין',
+                'סיבת היעדרות': person.reason || '-'
+              });
+            });
+            // גבולות לכל התאים
+            worksheet.eachRow((row, rowNumber) => {
+              row.eachCell((cell, colNumber) => {
+                cell.border = {
+                  top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                };
+                cell.alignment = { horizontal: 'right' };
+              });
+            });
+            // הורד קובץ
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], {
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            });
+            saveAs(blob, `דוח חסרים - ${todayFormatted}.xlsx`);
           }}
           sx={{
-            '&:focus': { outline: 'none' },
-            '&:active': { outline: 'none' }
+            backgroundColor: 'rgba(142, 172, 183, 0.72)',
+            border: 'none',
+            outline: 'none',
+            ':hover': {
+              backgroundColor: 'rgb(185, 205, 220)',
+              border: 'none',
+              outline: 'none'
+            },
+            fontWeight: 'bold',
+            color: 'black',
+            '&:focus': {
+              border: 'none',
+              outline: 'none'
+            },
+            '&:active': {
+              border: 'none',
+              outline: 'none'
+            },
+            minWidth: '120px'
           }}
         >
           ייצוא ל-Excel

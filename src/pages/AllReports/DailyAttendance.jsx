@@ -11,6 +11,8 @@ import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { heIL } from '@mui/x-date-pickers/locales';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import OutlinedInput from '@mui/material/OutlinedInput';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 
 
@@ -155,6 +157,11 @@ const DailyAttendance = () => {
     return arrivalDays.includes(todayWeekday);
   });
 
+  // סה"כ נוכחים (גם ביום הגעה וגם לא ביום הגעה)
+  const totalPresent = presentExpected.length + presentNotExpected.length;
+  // סה"כ (נוכחים + חסרים)
+  const totalAll = totalPresent + absentMembers.length;
+
   const reportDate = dataToShow?.date || selectedDate;
   const todayFormatted = dayjs(reportDate).format('DD/MM/YYYY');
 
@@ -180,8 +187,9 @@ const DailyAttendance = () => {
       `יום: ${dayjs(reportDate).format('dddd')}`
     ],
     summaryData: [
-      `סה"כ נוכחים: ${presentExpected.length}`,
-      `סה"כ חסרים: ${absentMembers.length}`
+      `סה"כ נוכחים: ${totalPresent}`,
+      `סה"כ חסרים: ${absentMembers.length}`,
+      `סה"כ: ${totalAll}`
     ],
     footerInfo: [
       { text: 'מעון יום לותיקים - דוח אוטומטי', align: 'center' },
@@ -210,7 +218,25 @@ const DailyAttendance = () => {
             variant="outlined"
             color="primary"
             onClick={handleBack}
-            sx={{ ml: 2 }}
+            sx={{
+              border: '1.7px solid rgba(64, 99, 112, 0.72)',
+              color: 'rgba(64, 99, 112, 0.72)',
+              fontWeight: 'bold',
+              
+              ':hover': {
+                borderColor: '#7b8f99',
+                color: '#5a676e',
+                outline: 'none'
+              },
+              '&:focus': {
+                outline: 'none'
+              },
+              '&:active': {
+                outline: 'none'
+              },
+              minWidth: 'auto',
+              ml: 2
+            }}
           >
             חזור
           </Button>
@@ -308,25 +334,252 @@ const DailyAttendance = () => {
             left: 8, top: 80 // מסכים קטנים
           }
         }}>
-          <ExportPDFButton
-            data={pdfData}
-            columns={pdfColumns}
-            fileName={`דוח נוכחות - ${todayFormatted}.pdf`}
-            title={pdfConfig.title}
-            subtitle={pdfConfig.subtitle}
-            headerInfo={pdfConfig.headerInfo}
-            summaryData={pdfConfig.summaryData}
-            footerInfo={pdfConfig.footerInfo}
-            customStyles={pdfConfig.customStyles}
-            buttonText="ייצא ל-PDF"
-            buttonProps={{
-              disableRipple: true,
-              sx: {
-                '&:focus': { outline: 'none' },
-                '&:active': { outline: 'none' }, mt:5
-              }
-            }}
-          />
+          <Box sx={{ display: 'flex', gap: 2, mt: 5 }}>
+            <ExportPDFButton
+              data={pdfData}
+              columns={pdfColumns}
+              fileName={`דוח נוכחות - ${todayFormatted}.pdf`}
+              title={pdfConfig.title}
+              subtitle={pdfConfig.subtitle}
+              headerInfo={pdfConfig.headerInfo}
+              summaryData={pdfConfig.summaryData}
+              footerInfo={pdfConfig.footerInfo}
+              customStyles={pdfConfig.customStyles}
+              buttonText="ייצא ל-PDF"
+              buttonProps={{
+                disableRipple: true,
+                sx: {
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  border: 'none',
+                  outline: 'none',
+                  ':hover': {
+                    backgroundColor: 'rgb(185, 205, 220)',
+                    border: 'none',
+                    outline: 'none'
+                  },
+                  fontWeight: 'bold',
+                  color: 'black',
+                  '&:focus': {
+                    border: 'none',
+                    outline: 'none'
+                  },
+                  '&:active': {
+                    border: 'none',
+                    outline: 'none'
+                  },
+                  minWidth: '120px',
+                }
+              }}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              disableRipple
+              sx={{
+                backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                border: 'none',
+                outline: 'none',
+                ':hover': {
+                  backgroundColor: 'rgb(185, 205, 220)',
+                  border: 'none',
+                  outline: 'none'
+                },
+                fontWeight: 'bold',
+                color: 'black',
+                '&:focus': {
+                  border: 'none',
+                  outline: 'none'
+                },
+                '&:active': {
+                  border: 'none',
+                  outline: 'none'
+                },
+                minWidth: '120px',
+              }}
+              onClick={async () => {
+                const workbook = new ExcelJS.Workbook();
+                const worksheet = workbook.addWorksheet('נוכחות יומית', {
+                  views: [{ rightToLeft: true }],
+                });
+                const columns = ['מספור', 'שם', 'יישוב', 'מטפל', 'נוכחות'];
+                worksheet.columns = columns.map((col, idx) => ({
+                  header: col,
+                  key: col,
+                  width: [6, 20, 15, 12, 10][idx],
+                  style: {
+                    alignment: { horizontal: 'center' },
+                    font: { name: 'Arial', size: 12 },
+                  }
+                }));
+                // הוספת שורת תאריך ממוזגת מעל הכותרות
+                worksheet.insertRow(1, []);
+                const dateCell = worksheet.getCell(1, 1);
+                dateCell.value = `תאריך ${todayFormatted}`;
+                dateCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                dateCell.font = { bold: true, size: 14 };
+                dateCell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFE4ECF1' },
+                };
+                worksheet.mergeCells(1, 1, 1, columns.length);
+                for (let i = 1; i <= columns.length; i++) {
+                  worksheet.getCell(1, i).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                  worksheet.getCell(1, i).fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFE4ECF1' },
+                  };
+                }
+                // עיצוב שורת כותרת (עכשיו בשורה 2)
+                const headerRow = worksheet.getRow(2);
+                headerRow.height = 25;
+                headerRow.eachCell(cell => {
+                  cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFE4ECF1' },
+                  };
+                  cell.font = { bold: true };
+                  cell.border = {
+                    top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                    left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                    bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                    right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  };
+                  cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                });
+                // מיון שמות
+                const sortedList = [...dataToShow.attendanceList].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+                const cellStyles = [];
+                sortedList.forEach((person, idx) => {
+                  let attendanceMark = '';
+                  let attendanceColor = undefined;
+                  let plusOne = false;
+                  const arrivalDays = getProfileArrivalDays(person);
+                  if (person.attended) {
+                    if (arrivalDays.includes(todayWeekday)) {
+                      attendanceMark = '✔️';
+                      attendanceColor = 'FF43A047'; // ירוק
+                    } else {
+                      attendanceMark = '✔️';
+                      attendanceColor = 'FF1976D2'; // כחול
+                    }
+                    if (person.caregiver) {
+                      attendanceMark += ' +1';
+                      plusOne = true;
+                    }
+                  } else {
+                    attendanceMark = person.reason || '-';
+                  }
+                  const row = worksheet.addRow({
+                    'מספור': idx + 1,
+                    'שם': person.name,
+                    'יישוב': person.city || 'לא צוין',
+                    'מטפל': person.caregiver ? 'כן' : '',
+                    'נוכחות': attendanceMark,
+                  });
+                  // צבע את הוי
+                  const cell = row.getCell('נוכחות');
+                  if (attendanceColor) {
+                    // צבע את הוי בלבד (לא את ה+1)
+                    const value = cell.value;
+                    if (plusOne) {
+                      // הפרד את הוי מה+1
+                      cell.value = {
+                        richText: [
+                          { text: '✔️', font: { color: { argb: attendanceColor }, bold: true } },
+                          { text: ' +1', font: { color: { argb: 'FF888888' }, bold: true } }
+                        ]
+                      };
+                    } else {
+                      cell.font = { color: { argb: attendanceColor }, bold: true };
+                    }
+                  }
+                  // אם אין נוכחות (כלומר סיבה או '-') יישר לאמצע
+                  if (!person.attended) {
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                  }
+                });
+                // יישור אמצע לכל התאים
+                worksheet.eachRow((row, rowNumber) => {
+                  row.eachCell(cell => {
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                  });
+                });
+                // גבולות לכל התאים
+                worksheet.eachRow((row, rowNumber) => {
+                  row.eachCell((cell, colNumber) => {
+                    cell.border = {
+                      top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                      left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                      bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                      right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                    };
+                  });
+                });
+                // הוספת מקרא כגוש נפרד לחלוטין ליד הטבלה
+                const legendStartCol = columns.length + 2; // עמודה אחת רווח בין הטבלה למקרא
+                const legendStartRow = 5; // מתחיל מהשורה החמישית
+                // כותרת המקרא
+                const legendTitleCell = worksheet.getCell(legendStartRow, legendStartCol);
+                legendTitleCell.value = 'מקרא';
+                legendTitleCell.font = { bold: true, size: 14 };
+                legendTitleCell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFE4ECF1' },
+                };
+                legendTitleCell.border = {
+                  top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  left: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                };
+                legendTitleCell.alignment = { horizontal: 'center' };
+                // נוכח ביום הגעה - וי ירוק
+                const regularCell = worksheet.getCell(legendStartRow + 1, legendStartCol);
+                regularCell.value = '✔️ נוכח ביום הגעה';
+                regularCell.font = { color: { argb: 'FF43A047' }, size: 12 };
+                regularCell.border = {
+                  top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  left: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                };
+                // נוכח לא ביום הגעה - וי כחול
+                const makeupCell = worksheet.getCell(legendStartRow + 2, legendStartCol);
+                makeupCell.value = '✔️ נוכח לא ביום הגעה';
+                makeupCell.font = { color: { argb: 'FF1976D2' }, size: 12 };
+                makeupCell.border = {
+                  top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  left: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                };
+                // עם מטפל
+                const caregiverCell = worksheet.getCell(legendStartRow + 3, legendStartCol);
+                caregiverCell.value = '+1 עם מטפל';
+                caregiverCell.font = { color: { argb: 'FF888888' }, size: 12 };
+                caregiverCell.border = {
+                  top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  left: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                  right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
+                };
+                // הגדרת רוחב עמודת המקרא
+                worksheet.getColumn(legendStartCol).width = 25;
+                // הורד קובץ
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], {
+                  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                });
+                saveAs(blob, `דוח נוכחות - ${todayFormatted}.xlsx`);
+              }}
+            >
+              ייצוא ל-Excel
+            </Button>
+          </Box>
         </Box>
       </Box>
 
@@ -369,7 +622,7 @@ const DailyAttendance = () => {
               }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h5" color="success.main">
-                    {presentExpected.length}
+                    {totalPresent}
                   </Typography>
                   <Typography variant="body2">נוכחים</Typography>
                 </Box>
@@ -381,7 +634,7 @@ const DailyAttendance = () => {
                 </Box>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h5" color="primary">
-                    {dataToShow.attendanceList.length}
+                    {totalAll}
                   </Typography>
                   <Typography variant="body2">סה"כ</Typography>
                 </Box>

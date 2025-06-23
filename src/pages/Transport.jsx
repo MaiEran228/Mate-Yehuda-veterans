@@ -188,7 +188,7 @@ function Transport() {
   return (
     <>
       <Box sx={{ p: 3, mt:1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, px: 3 }}>
           {/* ימין: תאריך, חיפוש, דוח */}
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexDirection: 'column', alignItems: 'flex-start' }}>
             {/* שורה עליונה: תאריך + יום */}
@@ -266,7 +266,7 @@ function Transport() {
             <Box sx={{ width: '100%', mt: 1 }}>
               <TextField
                 fullWidth
-                placeholder="חיפוש לפי שם או אזור מגורים..."
+                placeholder="חיפוש לפי אזור מגורים..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 variant="outlined"
@@ -320,16 +320,60 @@ function Transport() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              sx={{ height: 40, fontSize: '1rem', minWidth: '150px' }}
+              sx={{
+                backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                border: 'none',
+                outline: 'none',
+                ':hover': {
+                  backgroundColor: 'rgb(185, 205, 220)',
+                  border: 'none',
+                  outline: 'none'
+                },
+                fontWeight: 'bold',
+                color: 'black',
+                '&:focus': {
+                  border: 'none',
+                  outline: 'none'
+                },
+                '&:active': {
+                  border: 'none',
+                  outline: 'none'
+                },
+                minWidth: '90px',
+                height: '40px',
+                fontSize: '0.8rem',
+                gap: 1,
+              }}
               onClick={() => setAddDialog(true)}
-            >
-              הוספת הסעה
+            >  הוספת הסעה
             </Button>
 
             <Button
               variant="contained"
               color="primary"
-              sx={{ height: 40, fontSize: '1rem', minWidth: '150px' }}
+              sx={{
+                backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                border: 'none',
+                outline: 'none',
+                ':hover': {
+                  backgroundColor: 'rgb(185, 205, 220)',
+                  border: 'none',
+                  outline: 'none'
+                },
+                fontWeight: 'bold',
+                color: 'black',
+                '&:focus': {
+                  border: 'none',
+                  outline: 'none'
+                },
+                '&:active': {
+                  border: 'none',
+                  outline: 'none'
+                },
+                minWidth: '90px',
+                height: '40px',
+                fontSize: '0.8rem',
+              }}
               onClick={() => setSeatsDialogOpen(true)}
             >
               דוח מקומות פנויים בהסעה
@@ -397,17 +441,55 @@ function Transport() {
       </Dialog>
 
       <Dialog open={seatsDialogOpen} onClose={() => setSeatsDialogOpen(false)} maxWidth="md" fullWidth dir="rtl">
-        <DialogTitle sx={{ fontWeight: 'bold' }}>רשימת מקומות פנויים בכל ההסעות</DialogTitle>
-        <DialogContent>
-          <div id="seatsReportContent">
-            <Table>
+        <DialogTitle sx={{ position: 'relative', pr: 4, fontWeight: 'bold' }}>
+          רשימת מקומות פנויים בכל ההסעות
+          <Button
+            onClick={() => setSeatsDialogOpen(false)}
+            aria-label="סגור"
+            sx={{
+              position: 'absolute',
+              left: 8,
+              top: 8,
+              minWidth: '32px',
+              width: '32px',
+              height: '32px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: '#888',
+              borderRadius: '50%',
+              boxShadow: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              ':hover': {
+                backgroundColor: '#f0f0f0',
+                color: '#333',
+              },
+              '&:focus': {
+                border: 'none',
+                outline: 'none',
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none',
+              },
+              p: 0,
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </Button>
+        </DialogTitle>
+        <DialogContent sx={{ overflow: 'hidden' }}>
+          <Box sx={{ maxHeight: '400px', overflowY: 'auto', direction: 'ltr', pr: 1 }}>
+            <Table style={{ direction: 'ltr' }}>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>סוג הסעה</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>יישובים</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>ימים</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>מקומות פנויים (לפי יום)</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>מקומות פנויים (לפי יום)</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>ימים</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>יישובים</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>סוג הסעה</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>#</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -415,12 +497,8 @@ function Transport() {
                   const availableSeatsByDay = calculateAvailableSeatsByDay(row.type, row.passengers, row.days);
                   return (
                     <TableRow key={row.id || idx}>
-                      <TableCell>{idx + 1}</TableCell>
-                      <TableCell>{row.type}</TableCell>
-                      <TableCell>{(row.cities || []).join(', ')}</TableCell>
-                      <TableCell>{(row.days || []).join(', ')}</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      <TableCell sx={{ textAlign: 'right' }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'flex-end' }}>
                           {row.days && row.days.length > 0 ? row.days.map(day => (
                             <Box
                               key={day}
@@ -429,9 +507,9 @@ function Transport() {
                                 borderRadius: '16px',
                                 padding: '6px 12px',
                                 minWidth: '120px',
-                                textAlign: 'center',
+                                textAlign: 'right',
                                 fontWeight: 'bold',
-                                backgroundColor: '#f5f5f5'
+                                backgroundColor: '#f5f5f5',
                               }}
                             >
                               {day}: {availableSeatsByDay[day]}
@@ -439,13 +517,16 @@ function Transport() {
                           )) : '—'}
                         </Box>
                       </TableCell>
-
+                      <TableCell sx={{ textAlign: 'right' }}>{(row.days || []).join(', ')}</TableCell>
+                      <TableCell sx={{ textAlign: 'right' }}>{(row.cities || []).join(', ')}</TableCell>
+                      <TableCell sx={{ textAlign: 'right' }}>{row.type}</TableCell>
+                      <TableCell sx={{ textAlign: 'right' }}>{idx + 1}</TableCell>
                     </TableRow>
                   );
                 })}
               </TableBody>
             </Table>
-          </div>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button
@@ -460,12 +541,55 @@ function Transport() {
               pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
               pdf.save('רשימת מקומות פנויים בהסעות.pdf');
             }}
-            color="primary"
             variant="outlined"
+            sx={{
+              border: '1.7px solid rgba(64, 99, 112, 0.72)',
+              color: 'rgba(64, 99, 112, 0.72)',
+              fontWeight: 'bold',
+              ':hover': {
+                borderColor: '#7b8f99',
+                color: '#5a676e',
+                outline: 'none'
+              },
+              '&:focus': {
+                outline: 'none'
+              },
+              '&:active': {
+                outline: 'none'
+              },
+              minWidth: 'auto',
+              ml: 2
+            }}
           >
             ייצוא ל־PDF
           </Button>
-          <Button onClick={() => setSeatsDialogOpen(false)} color="primary" variant="contained">סגור</Button>
+          <Button
+            onClick={() => setSeatsDialogOpen(false)}
+            variant="contained"
+            sx={{
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              border: 'none',
+              outline: 'none',
+              ':hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                outline: 'none'
+              },
+              fontWeight: 'bold',
+              color: 'black',
+              '&:focus': {
+                border: 'none',
+                outline: 'none'
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none'
+              },
+              minWidth: '110px',
+            }}
+          >
+            סגור
+          </Button>
         </DialogActions>
       </Dialog>
     </>

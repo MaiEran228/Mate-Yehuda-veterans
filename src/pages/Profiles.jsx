@@ -170,7 +170,24 @@ function Profiles() {
               height: 40,
               fontSize: '0.9rem',
               minWidth: '120px',
-              
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              border: 'none',
+              outline: 'none',
+              ':hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                outline: 'none'
+              },
+              fontWeight: 'bold',
+              color: 'black',
+              '&:focus': {
+                border: 'none',
+                outline: 'none'
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none'
+              },
             }}
           >
             הוספת פרופיל

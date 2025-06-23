@@ -215,7 +215,8 @@ const MonthlyAttendanceTable = ({
             direction: 'rtl',
             borderTopLeftRadius: '5px',
             borderTopRightRadius: '5px',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            
           }}>
             <TableHead>
               <TableRow>
@@ -327,7 +328,7 @@ const MonthlyAttendanceTable = ({
                       width: `${dayColumnWidth}%`,
                       maxWidth: `${dayColumnWidth}%`,
                       minWidth: 0,
-                      padding: '4px 1px',
+                      padding: '4px 2px',
                       fontSize: '0.7rem',
                       ...(index === days.length - 1 && {
                         borderTopRightRadius: '5px'
@@ -346,14 +347,13 @@ const MonthlyAttendanceTable = ({
             component={Paper} 
             sx={{ 
               maxHeight: 600, 
+              overflowY: 'scroll',
               overflowX: 'auto', 
               direction: 'ltr',
-              // הגדרת רוחב מקסימלי כדי למנוע גלילה אופקית
               '& .MuiTable-root': {
-                tableLayout: 'fixed', // מאלץ את העמודות להיצמד לרוחב שהוגדר
+                tableLayout: 'fixed',
                 width: '100%'
               },
-              // עיצוב הגלילה כמו בטבלה בדף הבית
               '&::-webkit-scrollbar': {
                 width: '8px',
               },

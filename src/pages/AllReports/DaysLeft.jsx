@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAttendanceByDate, fetchAllProfiles } from '../../firebase';
-import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Divider } from '@mui/material';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-//import 'jspdf-font';
 import { useNavigate } from 'react-router-dom';
+import CloseIcon from '@mui/icons-material/Close';
 
 const getMonthDates = (month, year) => {
   const dates = [];
@@ -21,7 +21,7 @@ function countEligibleDaysInMonth(arrivalDays, year, month) {
   // arrivalDays: ['ראשון', 'שלישי', ...]
   // month: 1-based (1=ינואר)
   const daysInMonth = dayjs(`${year}-${String(month).padStart(2, '0')}-01`).daysInMonth();
-  const hebrewDaysByIndex = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  const hebrewDaysByIndex = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
   let count = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const date = dayjs(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
@@ -76,7 +76,7 @@ const DaysLeft = () => {
     const attendedCount = attendanceData.filter(p => p.id === profile.id && p.attended).length;
     let missed = false;
     const monthDates = getMonthDates(month, year);
-    const hebrewDaysByIndex = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const hebrewDaysByIndex = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
     const today = dayjs().format('YYYY-MM-DD');
     // ימים שהיה אמור להגיע ולא הגיע (עד היום)
     const missedDates = [];
@@ -124,7 +124,7 @@ const DaysLeft = () => {
     const numDays = lastDay.date();
     const numWeeks = Math.ceil((firstDay.day() + numDays) / 7);
     const monthDates = getMonthDates(month, year);
-    const hebrewDaysByIndex = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const hebrewDaysByIndex = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
     const letterToDay = { 'א': 'ראשון', 'ב': 'שני', 'ג': 'שלישי', 'ד': 'רביעי', 'ה': 'חמישי', 'ו': 'שישי', 'ז': 'שבת' };
     const normalizeDay = (day) => {
       if (!day) return '';
@@ -187,7 +187,24 @@ const DaysLeft = () => {
           variant="outlined"
           color="primary"
           onClick={() => navigate('/Reports')}
-          sx={{ ml: 2 }}
+          sx={{
+            border: '1.7px solid rgba(64, 99, 112, 0.72)',
+            color: 'rgba(64, 99, 112, 0.72)',
+            fontWeight: 'bold',
+            ':hover': {
+              borderColor: '#7b8f99',
+              color: '#5a676e',
+              outline: 'none'
+            },
+            '&:focus': {
+              outline: 'none'
+            },
+            '&:active': {
+              outline: 'none'
+            },
+            minWidth: 'auto',
+            ml: 2
+          }}
         >
           חזור
         </Button>
@@ -202,17 +219,175 @@ const DaysLeft = () => {
         />
       </Box>
       <Box sx={{
-        position: 'absolute', left: 32, top: 90, zIndex: 10, mt:5,
+        position: 'absolute', left: 32, top: 90, zIndex: 10, mt: 5,
         '@media (max-width:600px)': {
           left: 8, top: 80 // מסכים קטנים
         }
       }}>
-        <Button variant="contained" onClick={handleExportPDF} sx={{ ml: 2 }}>
-          ייצוא ל־PDF
-        </Button>
-        <Button variant="outlined" color="secondary" onClick={handleSurplusOpen} sx={{ ml: 2 }}>
-          ימי עודף
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleSurplusOpen}
+            sx={{
+              border: '1.7px solid rgba(64, 99, 112, 0.72)',
+              color: 'rgba(64, 99, 112, 0.72)',
+              fontWeight: 'bold',
+              ':hover': {
+                borderColor: '#7b8f99',
+                color: '#5a676e',
+                outline: 'none'
+              },
+              '&:focus': {
+                outline: 'none'
+              },
+              '&:active': {
+                outline: 'none'
+              },
+              minWidth: 'auto',
+            }}
+          >
+            ימי עודף
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleExportPDF}
+            sx={{
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              border: 'none',
+              outline: 'none',
+              ':hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                outline: 'none'
+              },
+              fontWeight: 'bold',
+              color: 'black',
+              '&:focus': {
+                border: 'none',
+                outline: 'none'
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none'
+              },
+              minWidth: '120px',
+            }}
+          >
+            ייצוא ל־PDF
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            disableRipple
+            sx={{
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              border: 'none',
+              outline: 'none',
+              ':hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                outline: 'none'
+              },
+              fontWeight: 'bold',
+              color: 'black',
+              '&:focus': {
+                border: 'none',
+                outline: 'none'
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none'
+              },
+              minWidth: '120px',
+            }}
+            onClick={async () => {
+              const ExcelJS = (await import('exceljs')).default;
+              const { saveAs } = await import('file-saver');
+              const workbook = new ExcelJS.Workbook();
+              const worksheet = workbook.addWorksheet('יתרת ימי זכאות', {
+                views: [{ rightToLeft: true }],
+              });
+              const columns = ['מספור', 'שם', 'יתרת ימי זכאות החודש'];
+              worksheet.columns = columns.map((col, idx) => ({
+                header: col,
+                key: col,
+                width: [6, 20, 20][idx],
+                style: {
+                  alignment: { horizontal: 'center' },
+                  font: { name: 'Arial', size: 12 },
+                }
+              }));
+              // הוספת שורת תאריך ממוזגת מעל הכותרות
+              worksheet.insertRow(1, []);
+              const dateCell = worksheet.getCell(1, 1);
+              dateCell.value = `חודש: ${dayjs(selectedMonth).format('MM/YYYY')}`;
+              dateCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+              dateCell.font = { bold: true, size: 14 };
+              dateCell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE4ECF1' },
+              };
+              worksheet.mergeCells(1, 1, 1, columns.length);
+              for (let i = 1; i <= columns.length; i++) {
+                worksheet.getCell(1, i).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                worksheet.getCell(1, i).fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFE4ECF1' },
+                };
+              }
+              // עיצוב שורת כותרת (עכשיו בשורה 2)
+              const headerRow = worksheet.getRow(2);
+              headerRow.height = 25;
+              headerRow.eachCell(cell => {
+                cell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFE4ECF1' },
+                };
+                cell.font = { bold: true };
+                cell.border = {
+                  top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                };
+                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+              });
+              // מיון שמות
+              const sortedPeople = [...people].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+              sortedPeople.forEach((person, idx) => {
+                worksheet.addRow({
+                  'מספור': idx + 1,
+                  'שם': person.name,
+                  'יתרת ימי זכאות החודש': person.remaining
+                });
+              });
+              // גבולות ויישור לכל התאים
+              worksheet.eachRow((row, rowNumber) => {
+                row.eachCell((cell, colNumber) => {
+                  cell.border = {
+                    top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                    left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                    bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                    right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  };
+                  cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                });
+              });
+              // הורד קובץ
+              const buffer = await workbook.xlsx.writeBuffer();
+              const blob = new Blob([buffer], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              });
+              saveAs(blob, `יתרת_ימי_זכאות_${dayjs(selectedMonth).format('MM_YYYY')}.xlsx`);
+            }}
+          >
+            ייצוא ל-Excel
+          </Button>
+        </Box>
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'start', width: '100%', px: { xs: 2, md: 8 }, }}>
@@ -279,19 +454,76 @@ const DaysLeft = () => {
               <Button onClick={() => setExtraOpen(false)} color="primary">סגור</Button>
             </DialogActions>
           </Dialog>
-          <Dialog open={surplusOpen} onClose={() => setSurplusOpen(false)}>
-            <DialogTitle>חישוב ימי עודף</DialogTitle>
-            <DialogContent>
-              <div id="surplusTableContent">
-                <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl', tableLayout: 'fixed' }}>
+          <Dialog open={surplusOpen} onClose={() => setSurplusOpen(false)} maxWidth="sm" fullWidth>
+            <DialogTitle sx={{ position: 'relative', pr: 4 }}>
+              חישוב ימי עודף
+              <Button
+                onClick={() => setSurplusOpen(false)}
+                aria-label="סגור"
+                sx={{
+                  position: 'absolute',
+                  left: 8,
+                  top: 8,
+                  minWidth: '32px',
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: '#888',
+                  borderRadius: '50%',
+                  boxShadow: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  ':hover': {
+                    backgroundColor: '#f0f0f0',
+                    color: '#333',
+                  },
+                  '&:focus': {
+                    border: 'none',
+                    outline: 'none',
+                  },
+                  '&:active': {
+                    border: 'none',
+                    outline: 'none',
+                  },
+                  p: 0,
+                }}
+              >
+                <CloseIcon fontSize="small" />
+              </Button>
+            </DialogTitle>
+
+            <DialogContent sx={{ overflow: 'hidden' }}>
+              <Divider sx={{ mb: 2, mt: 0, borderColor: '#e0e0e0', borderBottomWidth: 1 }} />
+              <Box
+                id="surplusTableContent"
+                sx={{
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  direction: 'ltr', 
+                  pr: 1 
+                }}
+              >
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    direction: 'rtl', 
+                    tableLayout: 'fixed',
+                  }}
+                >
                   <thead>
                     <tr>
                       <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>שם</th>
-                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>מספר ימים שהיה אמור להגיע ולא הגיע</th>
+                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>
+                        מספר ימים שהיה אמור להגיע ולא הגיע
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {people.map(person => (
+                    {people.map((person) => (
                       <tr key={person.id}>
                         <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.name}</td>
                         <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.missedAfterPenalty}</td>
@@ -299,12 +531,40 @@ const DaysLeft = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </Box>
             </DialogContent>
+
             <DialogActions>
-              <Button onClick={() => setSurplusOpen(false)} color="primary">סגור</Button>
+              <Button
+                onClick={() => setSurplusOpen(false)}
+                variant="contained"
+                sx={{
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  border: 'none',
+                  outline: 'none',
+                  ':hover': {
+                    backgroundColor: 'rgb(185, 205, 220)',
+                    border: 'none',
+                    outline: 'none'
+                  },
+                  fontWeight: 'bold',
+                  color: 'black',
+                  '&:focus': {
+                    border: 'none',
+                    outline: 'none'
+                  },
+                  '&:active': {
+                    border: 'none',
+                    outline: 'none'
+                  },
+                 
+                }}
+              >
+                סגור
+              </Button>
             </DialogActions>
           </Dialog>
+
         </Container>
       </Box>
     </>

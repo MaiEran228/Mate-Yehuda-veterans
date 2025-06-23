@@ -111,12 +111,42 @@ const Birthday = () => {
           variant="outlined"
           color="primary"
           onClick={handleBack}
-          sx={{ ml: 2 }}
+          sx={{
+            border: '1.7px solid rgba(64, 99, 112, 0.72)',
+            color: 'rgba(64, 99, 112, 0.72)',
+            fontWeight: 'bold',
+            ':hover': {
+              borderColor: '#7b8f99',
+              color: '#5a676e',
+              outline: 'none'
+            },
+            '&:focus': {
+              outline: 'none'
+            },
+            '&:active': {
+              outline: 'none'
+            },
+            minWidth: 'auto',
+            ml: 2
+          }}
         >
           חזור
         </Button>
         <FormControl size="small" sx={{ minWidth: 100, ml: 2 }}>
-          <InputLabel id="month-select-label" sx={{ textAlign: 'right', right: 25, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: '#ebf1f5', px: 0.5 }}>
+          <InputLabel id="month-select-label"
+            sx={{
+              textAlign: 'right',
+              right: 25,
+              left: 'unset',
+              transformOrigin: 'top right',
+              direction: 'rtl',
+              backgroundColor: '#ebf1f5',
+              px: 0.5,
+              color: 'rgba(64, 99, 112, 0.72)',
+              '&.Mui-focused': {
+                color: 'rgba(64, 99, 112, 0.72)',
+              },
+            }}>
             חודש
           </InputLabel>
           <Select
@@ -124,7 +154,28 @@ const Birthday = () => {
             value={selectedMonth}
             label="חודש"
             onChange={e => setSelectedMonth(e.target.value)}
-            input={<OutlinedInput notched={false} label="חודש" />}
+            input={
+              <OutlinedInput
+                notched={false}
+                label="חודש"
+                sx={{
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(64, 99, 112, 0.72)',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#7b8f99',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(64, 99, 112, 0.72)',
+                    borderWidth: 2,
+                  },
+                  '&.Mui-focused': {
+                    boxShadow: 'none',
+                  },
+                  outline: 'none',
+                }}
+              />
+            }
           >
             {hebrewMonths.map((month, idx) => (
               <MenuItem key={idx + 1} value={(idx + 1).toString()}>{month}</MenuItem>
@@ -142,13 +193,12 @@ const Birthday = () => {
         <ExportPDFButton
           data={prepareFestivePDFData()}
           columns={pdfColumns}
-          fileName={`ימי_הולדת_חודש${currentMonthName}.pdf`}
+          fileName={`ימי_הולדת_חודש ${currentMonthName}.pdf`}
           title="ימי הולדת החודש"
           subtitle={`חודש ${currentMonthName} `}
           headerInfo={[
             `מספר חוגגים החודש: ${currentMonthCount}`,
           ]}
-          
           footerInfo={[
             { text: `דוח נוצר ב-${dayjs().format('DD/MM/YYYY HH:mm')} במעון יום לותיקים`, align: 'center' },
           ]}
@@ -182,31 +232,143 @@ const Birthday = () => {
               tableLineColor: [255, 105, 180] // ורוד חגיגי
             }
           }}
+          buttonProps={{
+            disableRipple: true,
+            sx: {
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              border: 'none',
+              outline: 'none',
+              ':hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                outline: 'none'
+              },
+              fontWeight: 'bold',
+              color: 'black',
+              '&:focus': {
+                border: 'none',
+                outline: 'none'
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none'
+              },
+              minWidth: '120px'
+            }
+          }}
         />
-        
         <Button
           variant="contained"
           color="primary"
-          onClick={() => {
-            const columns = ['שם', 'תאריך לידה', 'גיל'];
-            const monthProfiles = profilesByMonth[selectedMonth] || [];
-            const excelData = monthProfiles
-              .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'))
-              .map(profile => {
-                const birthDate = dayjs(profile.birthDate);
-                const age = dayjs().diff(birthDate, 'year');
-                return {
-                  'שם': profile.name,
-                  'תאריך לידה': birthDate.format('DD/MM/YYYY'),
-                  'גיל': age
-                };
-              });
-            const ws = XLSX.utils.json_to_sheet(excelData, { header: columns });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'ימי הולדת');
-            XLSX.writeFile(wb, `דוח_ימי_הולדת_${currentMonthName}_${todayFormatted}.xlsx`);
+          disableRipple
+          sx={{
+            backgroundColor: 'rgba(142, 172, 183, 0.72)',
+            border: 'none',
+            outline: 'none',
+            ':hover': {
+              backgroundColor: 'rgb(185, 205, 220)',
+              border: 'none',
+              outline: 'none'
+            },
+            fontWeight: 'bold',
+            color: 'black',
+            '&:focus': {
+              border: 'none',
+              outline: 'none'
+            },
+            '&:active': {
+              border: 'none',
+              outline: 'none'
+            },
+            minWidth: '120px',
+            ml: 2
           }}
-          sx={{ ml: 2 }}
+          onClick={async () => {
+            const ExcelJS = (await import('exceljs')).default;
+            const { saveAs } = await import('file-saver');
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('ימי הולדת', {
+              views: [{ rightToLeft: true }],
+            });
+            const columns = ['שם', 'תאריך לידה', 'גיל'];
+            worksheet.columns = columns.map((col, idx) => ({
+              header: col,
+              key: col,
+              width: [20, 15, 10][idx],
+              style: {
+                alignment: { horizontal: 'center' },
+                font: { name: 'Arial', size: 12 },
+              }
+            }));
+            // הוספת שורת תאריך ממוזגת מעל הכותרות
+            worksheet.insertRow(1, []);
+            const dateCell = worksheet.getCell(1, 1);
+            dateCell.value = `חודש: ${currentMonthName}`;
+            dateCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+            dateCell.font = { bold: true, size: 14 };
+            dateCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFE4ECF1' },
+            };
+            worksheet.mergeCells(1, 1, 1, columns.length);
+            for (let i = 1; i <= columns.length; i++) {
+              worksheet.getCell(1, i).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+              worksheet.getCell(1, i).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE4ECF1' },
+              };
+            }
+            // עיצוב שורת כותרת (עכשיו בשורה 2)
+            const headerRow = worksheet.getRow(2);
+            headerRow.height = 25;
+            headerRow.eachCell(cell => {
+              cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE4ECF1' },
+              };
+              cell.font = { bold: true };
+              cell.border = {
+                top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+              };
+              cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+            });
+            // מיון שמות
+            const monthProfiles = profilesByMonth[selectedMonth] || [];
+            const sortedProfiles = [...monthProfiles].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+            sortedProfiles.forEach((profile) => {
+              const birthDate = dayjs(profile.birthDate);
+              const age = dayjs().diff(birthDate, 'year');
+              worksheet.addRow({
+                'שם': profile.name,
+                'תאריך לידה': birthDate.format('DD/MM/YYYY'),
+                'גיל': age
+              });
+            });
+            // גבולות ויישור לכל התאים
+            worksheet.eachRow((row, rowNumber) => {
+              row.eachCell((cell, colNumber) => {
+                cell.border = {
+                  top: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  left: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                  right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
+                };
+                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+              });
+            });
+            // הורד קובץ
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], {
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            });
+            saveAs(blob, `דוח_ימי_הולדת_${currentMonthName}_${todayFormatted}.xlsx`);
+          }}
         >
           ייצוא ל־Excel
         </Button>

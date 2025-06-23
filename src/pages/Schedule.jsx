@@ -89,22 +89,34 @@ const SchedulePage = () => {
           }}
         >
           <Button
-            variant={isEditing ? 'outlined' : 'contained'}
+            variant="contained"
             color="primary"
             onClick={() => setIsEditing(prev => !prev)}
             sx={{
-              height: '40px',
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              border: 'none',
+              outline: 'none',
+              ':hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                outline: 'none'
+              },
               fontWeight: 'bold',
-              fontSize: '0.9rem',
-              width: '180px',
-              px: 2,
-              bgcolor: 'rgba(142, 172, 183, 0.72)',
-              border: '2px solid rgba(97, 116, 123, 0.72)',
               color: 'black',
-              '&:hover': {
-                bgcolor: 'rgba(142, 172, 183, 0.72)',
-                border: '2px solid rgb(181, 170, 170)'
-              }
+              '&:focus': {
+                border: 'none',
+                outline: 'none'
+              },
+              '&:active': {
+                border: 'none',
+                outline: 'none'
+              },
+              minWidth: '120px',
+              ml: 2,
+              height: '40px',
+              fontSize: '0.9rem',
+              px: 2,
+              boxShadow: 'none',
             }}
           >
             {isEditing ? 'סיים עריכה' : 'ערוך לוח פעילויות'}
@@ -153,7 +165,7 @@ const SchedulePage = () => {
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                border: '2px solid #ddd',
+                border: '2.5px solid rgba(142, 172, 183, 0.72)',
                 backgroundColor: '#fff',
                 borderRadius: 2,
                 p: 1,
@@ -166,7 +178,7 @@ const SchedulePage = () => {
                   textAlign: 'center',
                   fontSize: '1.25rem',
                   fontWeight: 'bold',
-                  borderBottom: '1px solid #ddd',
+                  borderBottom: '1.5px solid rgba(142, 172, 183, 0.72)',
                   mb: 1,
                 }}
               >
@@ -194,7 +206,7 @@ const SchedulePage = () => {
                           key={key}
                           sx={{
                             flex: 1,
-                            border: '2px solid #eee',
+                            border: '1.5px solid rgba(153, 169, 173, 0.72)',
                             borderRadius: 1,
                             p: 0.5,
                             display: 'flex',

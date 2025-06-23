@@ -1,11 +1,64 @@
 // src/components/ToolbarMUI.jsx
-import { AppBar, Toolbar, Button, Box, Divider } from '@mui/material';
-import { Link, useLocation } from 'react-router-dom';
+import { AppBar, Toolbar, Button, Box, Divider, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logoMateYehuda from '../assets/Logo2.jpeg';
 import Tooltip from '@mui/material/Tooltip';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import EditIcon from '@mui/icons-material/Edit';
+import LockResetIcon from '@mui/icons-material/LockReset';
+import DeleteIcon from '@mui/icons-material/Delete';
+import React, { useState, useEffect } from 'react';
+import { auth, db } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 function ToolbarMUI({ onLogout }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [username, setUsername] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  const handleUserMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleUserMenuClose = () => setAnchorEl(null);
+  const handleUserMenuClick = (path) => {
+    handleUserMenuClose();
+    navigate(path);
+  };
+
+  // מעקב אחר מצב האימות וקריאת שם המשתמש
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        try {
+          const userDocRef = doc(db, 'users', user.email);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            setUsername(userDoc.data().username || 'משתמש');
+          } else {
+            // אם אין מסמך, יצירת מסמך חדש עם שם משתמש ברירת מחדל
+            const defaultUsername = user.email.split('@')[0]; // שם משתמש מהמייל
+            await setDoc(userDocRef, {
+              username: defaultUsername,
+              email: user.email,
+              uid: user.uid,
+              createdAt: new Date().toISOString()
+            });
+            setUsername(defaultUsername);
+          }
+        } catch (error) {
+          console.error('שגיאה בקריאת נתוני המשתמש:', error);
+          setUsername('משתמש');
+        }
+      } else {
+        setCurrentUser(null);
+        setUsername('');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
   
   // Define navigation items (without home)
   const navItems = [
@@ -127,6 +180,25 @@ function ToolbarMUI({ onLogout }) {
         {/* מרווח גמיש */}
         <Box sx={{ flexGrow: 1 }} />
 
+        {/* הצגת שלום + שם משתמש */}
+        {currentUser && username && (
+          <Typography
+            variant="body1"
+            sx={{
+              ml: 2,
+              color: 'inherit',
+              fontWeight: 500,
+            }}
+          >
+            {username}
+          </Typography>
+        )}
+
+        {/* אייקון משתמש – ניווט לעמוד ניהול משתמש */}
+        <IconButton color="inherit" onClick={() => navigate('/user-management')} sx={{ ml: 1 }}>
+          <AccountCircleIcon sx={{ fontSize: 34 }} />
+        </IconButton>
+        
         {/* כפתור התנתקות – בצד שמאל */}
         <Button color="inherit" onClick={onLogout} sx={{ fontSize: '1.1rem', px: 2 }}>
           התנתק

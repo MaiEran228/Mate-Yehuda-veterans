@@ -12,6 +12,7 @@ import Birthday from './pages/AllReports/Birthday';
 import AbsencePeople from './pages/AllReports/AbsencePeople';
 import MonthlyAttendance from './pages/AllReports/MonthlyAttendance';
 import DaysLeft from './pages/AllReports/DaysLeft';
+import UserManagement from './pages/UserManagement';
 
 
 
@@ -51,6 +52,7 @@ function AppWrapper() {
               <Route path="/AllReports/AbsencePeople" element={<AbsencePeople />} />
               <Route path="/AllReports/MonthlyAttendance" element={<MonthlyAttendance />} />
               <Route path="/AllReports/DaysLeft" element={<DaysLeft />} />
+              <Route path="/user-management" element={<UserManagement />} />
               <Route path="/login" element={<Navigate to="/" />} />
             </Routes>
           </div>
