@@ -4,7 +4,7 @@ import { Typography, CircularProgress, Box, Paper, Button, Container, TextField,
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
-import ExportPDFButton from '../../components/ExportPDFButton'; // הגירסה הראשונה - עם תמונות
+import DailyAttendancePDF from '../../components/PDFDailyAttendance.jsx';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -165,49 +165,10 @@ const DailyAttendance = () => {
   const reportDate = dataToShow?.date || selectedDate;
   const todayFormatted = dayjs(reportDate).format('DD/MM/YYYY');
 
-  const pdfColumns = [
-    { key: 'name', header: 'שם', defaultValue: '' },
-    { key: 'city', header: 'יישוב', defaultValue: 'לא צוין' },
-    { key: 'caregiver', header: 'מטפל', defaultValue: '' },
-    { key: 'serialNumber', header: 'מס\'', defaultValue: '' }
-  ];
-
-  const pdfData = presentExpected.map((person, index) => ({
-    name: person.name || '',
-    city: person.city || 'לא צוין',
-    caregiver: person.caregiver || '',
-    serialNumber: index + 1
-  }));
-
-  const pdfConfig = {
-    title: 'דוח נוכחות יומי',
-    subtitle: 'מעון יום לותיקים',
-    headerInfo: [
-      `תאריך: ${todayFormatted}`,
-      `יום: ${dayjs(reportDate).format('dddd')}`
-    ],
-    summaryData: [
-      `סה"כ נוכחים: ${totalPresent}`,
-      `סה"כ חסרים: ${absentMembers.length}`,
-      `סה"כ: ${totalAll}`
-    ],
-    footerInfo: [
-      { text: 'מעון יום לותיקים - דוח אוטומטי', align: 'center' },
-      { text: `נוצר בתאריך: ${dayjs().format('DD/MM/YYYY HH:mm')}`, align: 'center' }
-    ],
-    customStyles: {
-      styles: {
-        fontSize: 11,
-        cellPadding: 6,
-        font: 'AlefHebrew'
-      },
-      headStyles: {
-        fillColor: [66, 139, 202], // צבע כחול כמו בדוח המקורי
-        fontSize: 12,
-        font: 'AlefHebrew'
-      }
-    }
-  };
+  // מיון א"ב לפני יצירת הדאטה ל-PDF
+  const sortedPresentExpected = [...presentExpected].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+  const sortedPresentNotExpected = [...presentNotExpected].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+  const sortedAbsentMembers = [...absentMembers].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
 
   return (
     <>
@@ -335,42 +296,7 @@ const DailyAttendance = () => {
           }
         }}>
           <Box sx={{ display: 'flex', gap: 2, mt: 5 }}>
-            <ExportPDFButton
-              data={pdfData}
-              columns={pdfColumns}
-              fileName={`דוח נוכחות - ${todayFormatted}.pdf`}
-              title={pdfConfig.title}
-              subtitle={pdfConfig.subtitle}
-              headerInfo={pdfConfig.headerInfo}
-              summaryData={pdfConfig.summaryData}
-              footerInfo={pdfConfig.footerInfo}
-              customStyles={pdfConfig.customStyles}
-              buttonText="ייצא ל-PDF"
-              buttonProps={{
-                disableRipple: true,
-                sx: {
-                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
-                  border: 'none',
-                  outline: 'none',
-                  ':hover': {
-                    backgroundColor: 'rgb(185, 205, 220)',
-                    border: 'none',
-                    outline: 'none'
-                  },
-                  fontWeight: 'bold',
-                  color: 'black',
-                  '&:focus': {
-                    border: 'none',
-                    outline: 'none'
-                  },
-                  '&:active': {
-                    border: 'none',
-                    outline: 'none'
-                  },
-                  minWidth: '120px',
-                }
-              }}
-            />
+            <DailyAttendancePDF attendanceData={dataToShow} profiles={profiles} reportDate={reportDate} />
             <Button
               variant="contained"
               color="primary"
@@ -450,42 +376,49 @@ const DailyAttendance = () => {
                   cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
                 });
                 // מיון שמות
-                const sortedList = [...dataToShow.attendanceList].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
-                const cellStyles = [];
-                sortedList.forEach((person, idx) => {
-                  let attendanceMark = '';
-                  let attendanceColor = undefined;
-                  let plusOne = false;
-                  const arrivalDays = getProfileArrivalDays(person);
-                  if (person.attended) {
-                    if (arrivalDays.includes(todayWeekday)) {
-                      attendanceMark = '✔️';
-                      attendanceColor = 'FF43A047'; // ירוק
-                    } else {
-                      attendanceMark = '✔️';
-                      attendanceColor = 'FF1976D2'; // כחול
-                    }
-                    if (person.caregiver) {
-                      attendanceMark += ' +1';
-                      plusOne = true;
-                    }
-                  } else {
-                    attendanceMark = person.reason || '-';
-                  }
-                  const row = worksheet.addRow({
-                    'מספור': idx + 1,
-                    'שם': person.name,
-                    'יישוב': person.city || 'לא צוין',
-                    'מטפל': person.caregiver ? 'כן' : '',
-                    'נוכחות': attendanceMark,
-                  });
-                  // צבע את הוי
-                  const cell = row.getCell('נוכחות');
-                  if (attendanceColor) {
-                    // צבע את הוי בלבד (לא את ה+1)
-                    const value = cell.value;
+                // --- התחלה חדשה: ייצוא לפי מה שמוצג בדף ---
+                // 1. נוכחים שהיו אמורים להגיע
+                let rowIndex = 1;
+                if (presentExpected.length > 0) {
+                  presentExpected.forEach((person, idx) => {
+                    const arrivalDays = getProfileArrivalDays(person);
+                    let attendanceMark = '✔️';
+                    let attendanceColor = 'FF43A047'; // ירוק
+                    let plusOne = person.caregiver;
+                    const row = worksheet.addRow({
+                      'מספור': rowIndex++,
+                      'שם': person.name,
+                      'יישוב': person.city || 'לא צוין',
+                      'מטפל': person.caregiver ? 'כן' : '',
+                      'נוכחות': attendanceMark,
+                    });
+                    const cell = row.getCell('נוכחות');
                     if (plusOne) {
-                      // הפרד את הוי מה+1
+                      cell.value = {
+                        richText: [
+                          { text: '✔️', font: { color: { argb: attendanceColor }, bold: true } },
+                        ]
+                      };
+                    } else {
+                      cell.font = { color: { argb: attendanceColor }, bold: true };
+                    }
+                  });
+                }
+                // 2. נוכחים חריגים
+                if (presentNotExpected.length > 0) {
+                  presentNotExpected.forEach((person, idx) => {
+                    let attendanceMark = '✔️';
+                    let attendanceColor = 'FF1976D2'; // כחול
+                    let plusOne = person.caregiver;
+                    const row = worksheet.addRow({
+                      'מספור': rowIndex++,
+                      'שם': person.name,
+                      'יישוב': person.city || 'לא צוין',
+                      'מטפל': person.caregiver ? 'כן' : '',
+                      'נוכחות': attendanceMark,
+                    });
+                    const cell = row.getCell('נוכחות');
+                    if (plusOne) {
                       cell.value = {
                         richText: [
                           { text: '✔️', font: { color: { argb: attendanceColor }, bold: true } },
@@ -495,12 +428,21 @@ const DailyAttendance = () => {
                     } else {
                       cell.font = { color: { argb: attendanceColor }, bold: true };
                     }
-                  }
-                  // אם אין נוכחות (כלומר סיבה או '-') יישר לאמצע
-                  if (!person.attended) {
-                    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-                  }
-                });
+                  });
+                }
+                // 3. נעדרים שהיו אמורים להגיע
+                if (absentMembers.length > 0) {
+                  absentMembers.forEach((person, idx) => {
+                    const row = worksheet.addRow({
+                      'מספור': rowIndex++,
+                      'שם': person.name,
+                      'יישוב': person.city || 'לא צוין',
+                      'מטפל': person.caregiver ? 'כן' : '',
+                      'נוכחות': person.reason || '-',
+                    });
+                  });
+                }
+                // --- סוף שינוי ---
                 // יישור אמצע לכל התאים
                 worksheet.eachRow((row, rowNumber) => {
                   row.eachCell(cell => {
@@ -557,16 +499,7 @@ const DailyAttendance = () => {
                   bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
                   right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
                 };
-                // עם מטפל
-                const caregiverCell = worksheet.getCell(legendStartRow + 3, legendStartCol);
-                caregiverCell.value = '+1 עם מטפל';
-                caregiverCell.font = { color: { argb: 'FF888888' }, size: 12 };
-                caregiverCell.border = {
-                  top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
-                  bottom: { style: 'thin', color: { argb: 'FFA0A7AC' } },
-                  left: { style: 'thin', color: { argb: 'FFA0A7AC' } },
-                  right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
-                };
+
                 // הגדרת רוחב עמודת המקרא
                 worksheet.getColumn(legendStartCol).width = 25;
                 // הורד קובץ

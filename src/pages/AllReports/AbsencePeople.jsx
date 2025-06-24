@@ -127,7 +127,7 @@ const AbsencePeople = () => {
       // בדוק אם יש לו arrivalDays והאם היום נמצא שם
       return profile && Array.isArray(profile.arrivalDays) && profile.arrivalDays.includes(todayWeekday);
     })
-    .sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
 
   // הגדרת עמודות עבור ה-PDF - בסדר RTL (מימין לשמאל)
   const pdfColumns = [

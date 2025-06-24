@@ -10,6 +10,7 @@ import IconButton from "@mui/material/IconButton";
 import EditIcon from '@mui/icons-material/Edit';
 import EditProfileWindow from "./EditProfileWindow";
 import dayjs from "dayjs";
+import CustomDialog from './CustomDialog';
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
 const DAYS = ["'א", "'ב", "'ג", "'ד", "'ה"];
@@ -310,71 +311,54 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
             </DialogContent>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog
-                open={deleteDialogOpen}
-                onClose={() => setDeleteDialogOpen(false)}
-                dir="rtl"
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{
-                    sx: {
-                        borderRadius: '12px',
-                    }
-                }}
+            <CustomDialog
+              open={deleteDialogOpen}
+              onClose={() => setDeleteDialogOpen(false)}
+              title="אישור מחיקה"
+              dialogContentSx={{ mt: 2 }}
+              actions={[
+                <Button
+                  key="cancel"
+                  onClick={() => setDeleteDialogOpen(false)}
+                  variant="outlined"
+                  sx={{
+                    borderColor: 'white',
+                    color: 'black',
+                    '&:hover': {
+                      borderColor: 'black',
+                      color: 'black'
+                    },
+                    minWidth: '100px'
+                  }}
+                >
+                  ביטול
+                </Button>,
+                <Button
+                  key="confirm"
+                  onClick={confirmDelete}
+                  variant="contained"
+                  sx={{
+                    backgroundColor: '#d32f2f',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: '#aa2424'
+                    },
+                    minWidth: '100px'
+                  }}
+                >
+                  אישור
+                </Button>
+              ]}
             >
-                <DialogTitle sx={{
-                    backgroundColor: '#f5f5f5',
-                    borderBottom: '1px solid #e0e0e0',
-                    py: 2
-                }}>
-                    אישור מחיקה
-                </DialogTitle>
-                <DialogContent sx={{ mt: 2 }}>
-                    <Typography variant="body1" sx={{
-                        textAlign: 'right',
-                        color: 'black',
-                        fontSize: '1.1rem',
-                        fontWeight: 500
-                    }}>
-                        האם אתה בטוח שברצונך למחוק את {profile.name}?
-                    </Typography>
-                </DialogContent>
-                <DialogActions sx={{
-                    borderTop: '1px solid #e0e0e0',
-                    p: 2,
-                    justifyContent: 'flex-end'
-                }}>
-                    <Button
-                        onClick={() => setDeleteDialogOpen(false)}
-                        variant="outlined"
-                        sx={{
-                            borderColor: 'white',
-                            color: 'black',
-                            '&:hover': {
-                                borderColor: 'black',
-                                color: 'black'
-                            },
-                            minWidth: '100px'
-                        }}
-                    >
-                        ביטול
-                    </Button>
-                    <Button
-                        onClick={confirmDelete}
-                        variant="contained"
-                        sx={{
-                            backgroundColor: '#d32f2f',
-                            color: 'white',
-                            '&:hover': {
-                                backgroundColor: '#aa2424'
-                            },
-                            minWidth: '100px'
-                        }}
-                    >
-                        אישור
-                    </Button>
-                </DialogActions>
-            </Dialog>
+              <Typography variant="body1" sx={{
+                textAlign: 'right',
+                color: 'black',
+                fontSize: '1.1rem',
+                fontWeight: 500
+              }}>
+                האם אתה בטוח שברצונך למחוק את {profile.name}?
+              </Typography>
+            </CustomDialog>
         </Dialog>
     );
 }

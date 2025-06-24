@@ -187,7 +187,34 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     setErrors(newErrors);
 
     if (!hasErrors) {
-      await handleSave(profileData);
+      let finalImageUrl = profileData.profileImage;
+      
+      // אם יש תמונה חדשה (data URL), העלה אותה לפיירבייס
+      if (imagePreview && imagePreview !== initialProfile.profileImage) {
+        setIsUploading(true);
+        try {
+          // המרת data URL לקובץ
+          const response = await fetch(imagePreview);
+          const blob = await response.blob();
+          
+          const fileName = `profile-images/${profileData.id}-${Date.now()}.jpg`;
+          const storageRef = ref(storage, fileName);
+          
+          const snapshot = await uploadBytes(storageRef, blob);
+          finalImageUrl = await getDownloadURL(snapshot.ref);
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          alert('שגיאה בהעלאת התמונה: ' + error.message);
+          setIsUploading(false);
+          return;
+        }
+        setIsUploading(false);
+      }
+  
+      await handleSave({
+        ...profileData,
+        profileImage: finalImageUrl
+      });
     }
   };
 
@@ -234,30 +261,13 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
-    // Preview the image
+  
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
+      handleChange("profileImage")({ target: { value: reader.result } });
     };
     reader.readAsDataURL(file);
-
-    try {
-      setIsUploading(true);
-      // Create a reference to the storage location with a unique filename
-      const uniqueFileName = `${Date.now()}-${file.name}`;
-      const storageRef = ref(storage, `profile-images/${uniqueFileName}`);
-      // Upload the file
-      const snapshot = await uploadBytes(storageRef, file);
-      // Get the download URL
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      // Update profile image in initialProfile
-      handleChange('profileImage')({ target: { value: downloadURL } });
-      setIsUploading(false);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setIsUploading(false);
-    }
   };
 
   return (
@@ -285,39 +295,64 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, position: 'relative', mb: 2 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative', marginBottom: 16, width: '100%', justifyContent: 'center' }}>
               <input
                 accept="image/*"
                 style={{ display: 'none' }}
-                id="edit-profile-image-upload"
+                id="profile-image-upload"
                 type="file"
                 onChange={handleImageUpload}
+                disabled={isUploading}
               />
-              <label htmlFor="edit-profile-image-upload">
-                <Avatar
-                  src={imagePreview || initialProfile.profileImage}
-                  sx={{
+              <label htmlFor="profile-image-upload">
+                <div
+                  style={{
                     width: 120,
                     height: 120,
-                    bgcolor: 'grey.200',
-                    cursor: 'pointer',
-                    '&:hover': { opacity: 0.8 }
+                    borderRadius: '50%',
+                    backgroundColor: '#f5f5f5',
+                    cursor: isUploading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    transition: 'opacity 0.2s'
                   }}
+                  onMouseEnter={(e) => !isUploading && (e.target.style.opacity = '0.8')}
+                  onMouseLeave={(e) => !isUploading && (e.target.style.opacity = '1')}
                 >
-                  {!imagePreview && !initialProfile.profileImage && <AddPhotoAlternateIcon sx={{ fontSize: 40 }} />}
-                </Avatar>
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="תמונת פרופיל"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  ) : initialProfile.profileImage ? (
+                    <img src={initialProfile.profileImage} alt="תמונת פרופיל" style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'}} />
+                  ) : (
+                    <AddPhotoAlternateIcon sx={{ fontSize: 40, color: '#999' }} />
+                  )}
+                </div>
               </label>
               {isUploading && (
                 <Typography variant="body2" color="text.secondary">
                   מעלה תמונה...
                 </Typography>
               )}
-              {!imagePreview && !isUploading && !initialProfile.profileImage && (
+              {!imagePreview && !initialProfile.profileImage && !isUploading && (
                 <Typography variant="body2" color="text.secondary">
                   העלאת תמונת פרופיל
                 </Typography>
               )}
-            </Box>
+            </div>
+
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
               <TextField
                 fullWidth

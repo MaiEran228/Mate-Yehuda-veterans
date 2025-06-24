@@ -179,6 +179,10 @@ const DaysLeft = () => {
     });
   };
 
+  // מיון people לפי שם
+  const sortedPeople = [...people].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+  const sortedExtraPeople = [...extraPeople].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+
   return (
     <>
       {/* שורת כפתורים - מחוץ ל-Container של הדוח */}
@@ -357,7 +361,6 @@ const DaysLeft = () => {
                 cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
               });
               // מיון שמות
-              const sortedPeople = [...people].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
               sortedPeople.forEach((person, idx) => {
                 worksheet.addRow({
                   'מספור': idx + 1,
@@ -424,7 +427,7 @@ const DaysLeft = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {people.map(person => (
+                        {sortedPeople.map(person => (
                           <tr key={person.id} style={{ minHeight: 48, }}>
                             <td style={{ border: '1px solid #ccc', padding: 16, textAlign: 'center', }}>{person.name}</td>
                             <td style={{ border: '1px solid #ccc', padding: 16, textAlign: 'center', }}>{person.remaining}</td>
@@ -440,11 +443,11 @@ const DaysLeft = () => {
           <Dialog open={extraOpen} onClose={() => setExtraOpen(false)}>
             <DialogTitle>רשימת אנשים עם ימי אקסטרה</DialogTitle>
             <DialogContent>
-              {extraPeople.length === 0 ? (
+              {sortedExtraPeople.length === 0 ? (
                 <div>אין אנשים עם ימי אקסטרה החודש.</div>
               ) : (
                 <ul style={{ direction: 'rtl', paddingRight: 0 }}>
-                  {extraPeople.map(p => (
+                  {sortedExtraPeople.map(p => (
                     <li key={p.id}>{p.name}</li>
                   ))}
                 </ul>
@@ -523,7 +526,7 @@ const DaysLeft = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {people.map((person) => (
+                    {sortedPeople.map((person) => (
                       <tr key={person.id}>
                         <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.name}</td>
                         <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.missedAfterPenalty}</td>

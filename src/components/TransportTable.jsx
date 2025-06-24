@@ -3,8 +3,7 @@ import {
   Box, Table, TableHead, TableRow, TableCell, TableBody,
   TextField, Select, MenuItem, InputLabel, FormControl,
   Button, IconButton, Tooltip, Chip, Stack,
-  Popover, Typography, Dialog, DialogTitle, DialogContent,
-  DialogActions, Autocomplete, Paper, ToggleButton, ToggleButtonGroup,
+  Popover, Typography, Autocomplete, Paper, ToggleButton, ToggleButtonGroup,
   TableSortLabel
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -20,17 +19,10 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { calculateAvailableSeatsByDay } from '../utils/transportUtils';
 import { collection, getDocs } from 'firebase/firestore';
 import { db, saveTransportDate, fetchTransportsByDate } from '../firebase';
+import CustomDialog from './CustomDialog';
 
-// Mapping from Hebrew days to א-ב-ג
-const dayMap = {
-  'ראשון': 'א',
-  'שני': 'ב',
-  'שלישי': 'ג',
-  'רביעי': 'ד',
-  'חמישי': 'ה',
-};
+
 const dayOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
-
 const dayShortMap = {
   'ראשון': 'א',
   'שני': 'ב',
@@ -68,6 +60,10 @@ function TransportTable({
   // מיון
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('');
+
+  // הוסף state להודעות דיאלוג
+  const [dialog, setDialog] = useState({ open: false, message: '', type: 'info' });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
 
   const handleSort = (property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -120,16 +116,6 @@ function TransportTable({
   useEffect(() => {
     fetchTempReservations();
   }, [selectedDate]);
-
-  const handleSeatsClick = (event, transport) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedTransport(transport);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-    setSelectedTransport(null);
-  };
 
   const open = Boolean(anchorEl);
 
@@ -210,7 +196,7 @@ function TransportTable({
 
   const handleTempReservationSave = async () => {
     if (!selectedProfile || !reservationDate) {
-      alert('יש למלא את כל השדות');
+      setDialog({ open: true, message: 'יש למלא את כל השדות', type: 'error' });
       return;
     }
 
@@ -235,10 +221,10 @@ function TransportTable({
         await removeTempReservationForDate(transport, tempReservation, dateStr);
         await fetchTempReservations();
         handleTempReservationClose();
-        alert('הנוסע הוסר בהצלחה מהשיריון הזמני');
+        setDialog({ open: true, message: 'הנוסע הוסר בהצלחה מהשיריון הזמני', type: 'success' });
       } catch (error) {
         console.error('Error removing temporary reservation:', error && error.message, error);
-        alert('אירעה שגיאה בהסרת הנוסע');
+        setDialog({ open: true, message: 'אירעה שגיאה בהסרת הנוסע', type: 'error' });
       }
       return;
     }
@@ -267,7 +253,7 @@ function TransportTable({
     const usedSeats = all.reduce((total, p) => total + (p.hasCaregiver ? 2 : 1), 0);
     const availableSeats = totalSeats - usedSeats;
     if (availableSeats < (selectedProfile.hasCaregiver ? 2 : 1)) {
-      alert('אין מקום פנוי בהסעה!');
+      setDialog({ open: true, message: 'אין מקום פנוי בהסעה!', type: 'error' });
       return;
     }
 
@@ -284,10 +270,10 @@ function TransportTable({
       await addTempReservationForDate(updatedTransport, tempReservation, dateStr);
       await fetchTempReservations(); // רענון מיידי אחרי שמירה
       handleTempReservationClose();
-      alert('שיריון זמני נשמר בהצלחה');
+      setDialog({ open: true, message: 'שיריון זמני נשמר בהצלחה', type: 'success' });
     } catch (error) {
       console.error('Error saving temporary reservation:', error && error.message, error);
-      alert('אירעה שגיאה בשמירת השינויים');
+      setDialog({ open: true, message: 'אירעה שגיאה בשמירת השינויים', type: 'error' });
     }
   };
 
@@ -296,32 +282,32 @@ function TransportTable({
     console.log('selectedTransport:', transport);
     console.log('reservation:', reservation);
     console.log('dateStr:', dateStr);
-  
+
     // בדיקת תקינות transport
     if (!transport) {
       throw new Error('Transport is undefined or null');
     }
-  
+
     // מצא מזהה הסעה תקין
     const transportIdRaw = transport.id ?? transport.transportId ?? null;
     if (transportIdRaw === null || transportIdRaw === undefined) {
       throw new Error('Transport id is missing');
     }
     const transportId = transportIdRaw.toString();
-  
+
     let dateDoc = await fetchTransportsByDate(dateStr);
     let transportsList = dateDoc?.transports || [];
     console.log('transportsList before:', transportsList);
-  
+
     const idx = transportsList.findIndex(t => {
       const tIdRaw = t.id ?? t.transportId ?? null;
       if (tIdRaw === null || tIdRaw === undefined) return false;
       const tId = tIdRaw.toString();
       return tId === transportId;
     });
-  
+
     console.log('idx:', idx);
-  
+
     if (idx === -1) {
       // יצירת אובייקט הסעה חדש לשמירה
       const newTransport = {
@@ -331,30 +317,30 @@ function TransportTable({
       if (typeof transport.type === 'string') newTransport.type = transport.type;
       if (Array.isArray(transport.days)) newTransport.days = transport.days;
       if (Array.isArray(transport.cities)) newTransport.cities = transport.cities;
-  
+
       console.log('newTransport:', JSON.stringify(newTransport));
       transportsList.push(newTransport);
     } else {
       // עדכון הסעה קיימת
       const t = transportsList[idx];
       if (!Array.isArray(t.tempReservations)) t.tempReservations = [];
-  
+
       // הסר שיריון קיים עם אותו id אם קיים
       t.tempReservations = t.tempReservations.filter(r => r.id !== reservation.id);
-  
+
       // הוסף שיריון חדש
       t.tempReservations.push(reservation);
-  
+
       transportsList[idx] = t;
     }
-  
+
     // בדיקה שאין ערכים undefined ב-reservation
     Object.entries(reservation).forEach(([k, v]) => {
       if (v === undefined) {
         console.error('reservation has undefined field:', k);
       }
     });
-  
+
     // בדיקה שאין ערכים undefined ב-transportsList
     transportsList.forEach(t => {
       Object.entries(t).forEach(([key, val]) => {
@@ -370,7 +356,7 @@ function TransportTable({
         });
       });
     });
-  
+
     try {
       await saveTransportDate(dateStr, transportsList);
     } catch (error) {
@@ -378,7 +364,7 @@ function TransportTable({
       throw error;
     }
   };
-  
+
   // הוספת פונקציה חדשה להסרת שיריון זמני
   const removeTempReservationForDate = async (transport, reservation, dateStr) => {
     // בדומה ל-addTempReservationForDate, אך מסיר את השיריון
@@ -430,6 +416,13 @@ function TransportTable({
       setTempReservationsForDialogDate(map);
     });
   }, [reservationDate, tempReservationDialog.open]);
+
+  const handleDelete = () => {
+    // Implement the delete logic here
+    console.log('Deleting item:', deleteDialog.item);
+    // Close the dialog
+    setDeleteDialog({ open: false, item: null });
+  };
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -581,7 +574,7 @@ function TransportTable({
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="מחק">
-                        <IconButton onClick={() => onDeleteClick(index)}>
+                        <IconButton onClick={() => setDeleteDialog({ open: true, item: row })}>
                           <DeleteIcon color="error" />
                         </IconButton>
                       </Tooltip>
@@ -594,133 +587,194 @@ function TransportTable({
         </Table>
 
         {/* דיאלוג שיריון זמני */}
-        <Dialog
+        <CustomDialog
           open={tempReservationDialog.open}
           onClose={handleTempReservationClose}
-          maxWidth="sm"
-          fullWidth
-          dir="rtl"
-        >
-          <DialogTitle>שיריון מקום זמני</DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
-                <DatePicker
-                  label="בחר תאריך"
-                  value={reservationDate}
-                  onChange={(newDate) => {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    if (newDate >= today) {
-                      setReservationDate(newDate);
-                    } else {
-                      alert('לא ניתן לבחור תאריך בעבר');
-                    }
-                  }}
-                  minDate={new Date()}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      InputLabelProps: {
-                        shrink: true,
-                      }
-                    }
-                  }}
-                />
-              </LocalizationProvider>
-              <ToggleButtonGroup
-                value={tempReservationDialog.reservationType}
-                exclusive
-                onChange={(e, newValue) => {
-                  if (newValue !== null) {
-                    setTempReservationDialog(prev => ({
-                      ...prev,
-                      reservationType: newValue
-                    }));
-                    setSelectedProfile(null);
-                  }
-                }}
-                fullWidth
-              >
-                <ToggleButton value="add">
-                  הוספת נוסע
-                </ToggleButton>
-                <ToggleButton value="remove">
-                  הורדת נוסע
-                </ToggleButton>
-              </ToggleButtonGroup>
-              {tempReservationDialog.reservationType === 'add' ? (
-                <Autocomplete
-                  options={[...profiles].sort((a, b) => a.name.localeCompare(b.name, 'he'))}
-                  getOptionLabel={(option) => option.name}
-                  value={selectedProfile}
-                  onChange={(event, newValue) => setSelectedProfile(newValue)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="בחר נוסע"
-                      placeholder="הקלד שם לחיפוש"
-                    />
-                  )}
-                />
-              ) : (
-                (() => {
-                  const dateStr = reservationDate.toISOString().slice(0, 10);
-                  const daysMap = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-                  const reservationDayIdx = reservationDate.getDay();
-                  const reservationHebDay = daysMap[reservationDayIdx];
-                  // נוסעים קבועים שמגיעים ביום הזה
-                  const regular = (tempReservationDialog.transport?.passengers || []).filter(p => (p.arrivalDays || []).includes(reservationHebDay));
-                  // נוסעים זמניים עם שיריון לאותו תאריך (מהסטייט החדש)
-                  const tempList = (tempReservationsForDialogDate[tempReservationDialog.transport?.id?.toString()] || []).filter(r => r.date === dateStr);
-                  // מיזוג ללא כפילויות (לפי id)
-                  const ids = new Set();
-                  const merged = [];
-                  for (const p of regular) {
-                    if (!ids.has(p.id)) {
-                      merged.push(p);
-                      ids.add(p.id);
-                    }
-                  }
-                  for (const t of tempList) {
-                    if (!ids.has(t.id)) {
-                      merged.push(t);
-                      ids.add(t.id);
-                    }
-                  }
-                  // מיון לפי שם (א-ב)
-                  merged.sort((a, b) => a.name.localeCompare(b.name, 'he'));
-                  return (
-                    <Autocomplete
-                      options={merged}
-                      getOptionLabel={(option) => option.name}
-                      value={selectedProfile}
-                      onChange={(event, newValue) => setSelectedProfile(newValue)}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="בחר נוסע להורדה"
-                          placeholder="הקלד שם לחיפוש"
-                        />
-                      )}
-                    />
-                  );
-                })()
-              )}
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleTempReservationClose}>ביטול</Button>
+          title="שיריון מקום זמני"
+          dialogContentSx={{ mt: 2 }}
+          actions={[
+            <Button key="cancel" onClick={handleTempReservationClose}>ביטול</Button>,
             <Button
+              key="save"
               onClick={handleTempReservationSave}
               variant="contained"
               disabled={!selectedProfile || !reservationDate}
             >
               שמור
             </Button>
-          </DialogActions>
-        </Dialog>
+          ]}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
+              <DatePicker
+                label="בחר תאריך"
+                value={reservationDate}
+                onChange={(newDate) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  if (newDate >= today) {
+                    setReservationDate(newDate);
+                  } else {
+                    alert('לא ניתן לבחור תאריך בעבר');
+                  }
+                }}
+                minDate={new Date()}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    InputLabelProps: {
+                      shrink: true,
+                    }
+                  }
+                }}
+              />
+            </LocalizationProvider>
+            <ToggleButtonGroup
+              value={tempReservationDialog.reservationType}
+              exclusive
+              onChange={(e, newValue) => {
+                if (newValue !== null) {
+                  setTempReservationDialog(prev => ({
+                    ...prev,
+                    reservationType: newValue
+                  }));
+                  setSelectedProfile(null);
+                }
+              }}
+              fullWidth
+            >
+              <ToggleButton value="add">
+                הוספת נוסע
+              </ToggleButton>
+              <ToggleButton value="remove">
+                הורדת נוסע
+              </ToggleButton>
+            </ToggleButtonGroup>
+            {tempReservationDialog.reservationType === 'add' ? (
+              <Autocomplete
+                options={[...profiles].sort((a, b) => a.name.localeCompare(b.name, 'he'))}
+                getOptionLabel={(option) => option.name}
+                value={selectedProfile}
+                onChange={(event, newValue) => setSelectedProfile(newValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="בחר נוסע"
+                    placeholder="הקלד שם לחיפוש"
+                  />
+                )}
+              />
+            ) : (
+              (() => {
+                const dateStr = reservationDate.toISOString().slice(0, 10);
+                const daysMap = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+                const reservationDayIdx = reservationDate.getDay();
+                const reservationHebDay = daysMap[reservationDayIdx];
+                // נוסעים קבועים שמגיעים ביום הזה
+                const regular = (tempReservationDialog.transport?.passengers || []).filter(p => (p.arrivalDays || []).includes(reservationHebDay));
+                // נוסעים זמניים עם שיריון לאותו תאריך (מהסטייט החדש)
+                const tempList = (tempReservationsForDialogDate[tempReservationDialog.transport?.id?.toString()] || []).filter(r => r.date === dateStr);
+                // מיזוג ללא כפילויות (לפי id)
+                const ids = new Set();
+                const merged = [];
+                for (const p of regular) {
+                  if (!ids.has(p.id)) {
+                    merged.push(p);
+                    ids.add(p.id);
+                  }
+                }
+                for (const t of tempList) {
+                  if (!ids.has(t.id)) {
+                    merged.push(t);
+                    ids.add(t.id);
+                  }
+                }
+                // מיון לפי שם (א-ב)
+                merged.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+                return (
+                  <Autocomplete
+                    options={merged}
+                    getOptionLabel={(option) => option.name}
+                    value={selectedProfile}
+                    onChange={(event, newValue) => setSelectedProfile(newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="בחר נוסע להורדה"
+                        placeholder="הקלד שם לחיפוש"
+                      />
+                    )}
+                  />
+                );
+              })()
+            )}
+          </Box>
+        </CustomDialog>
       </Paper>
+
+      {/* דיאלוג הודעה גנרי */}
+      <CustomDialog
+        open={dialog.open}
+        onClose={() => setDialog({ ...dialog, open: false })}
+        title={dialog.type === 'error' ? 'שגיאה' : dialog.type === 'success' ? 'הצלחה' : 'הודעה'}
+        actions={
+          <Button onClick={() => setDialog({ ...dialog, open: false })} variant="contained" color="primary">
+            סגור
+          </Button>
+        }
+      >
+        {dialog.message}
+      </CustomDialog>
+
+      <CustomDialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, item: null })}
+        title="אישור מחיקה"
+        dialogContentSx={{ mt: 2 }}
+        actions={[
+          <Button
+            key="cancel"
+            onClick={() => setDeleteDialog({ open: false, item: null })}
+            variant="outlined"
+            sx={{
+              borderColor: 'white',
+              color: 'black',
+              '&:hover': {
+                borderColor: 'black',
+                color: 'black'
+              },
+              minWidth: '100px'
+            }}
+          >
+            ביטול
+          </Button>,
+          <Button
+            key="confirm"
+            onClick={handleDelete}
+            variant="contained"
+            sx={{
+              backgroundColor: '#d32f2f',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: '#aa2424'
+              },
+              minWidth: '100px'
+            }}
+          >
+            אישור
+          </Button>
+        ]}
+      >
+        <Typography variant="body1" sx={{
+          textAlign: 'right',
+          color: 'black',
+          fontSize: '1.1rem',
+          fontWeight: 500
+        }}>
+          האם אתה בטוח שברצונך למחוק את {deleteDialog.item?.name}?
+        </Typography>
+      </CustomDialog>
+
     </Box>
   );
 }

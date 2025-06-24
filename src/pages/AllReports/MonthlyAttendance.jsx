@@ -139,16 +139,6 @@ const MonthlyAttendance = () => {
     };
   }, [attendanceByDate]);
 
-  // שלב פרופילים עם נתוני נוכחות כשאחד מהם משתנה
-  useEffect(() => {
-    if (profiles.length > 0 || Object.keys(attendanceByDate).length > 0) {
-      const currentProfiles = profiles; // כל הפרופילים
-      const combinedProfiles = combineProfilesWithAttendance(currentProfiles, attendanceByDate);
-      console.log('Recombining profiles:', combinedProfiles.length, combinedProfiles);
-      setProfiles(combinedProfiles);
-    }
-  }, [attendanceByDate, profiles]);
-
   const days = getMonthDays(year, month);
 
   return (
@@ -254,14 +244,34 @@ const MonthlyAttendance = () => {
                 }
               }));
             
+              // 🟦 הוספת שורת כותרת חודש ושנה בראש האקסל
+              worksheet.insertRow(1, []);
+              const titleCell = worksheet.getCell(1, 1);
+              titleCell.value = `דו"ח נוכחות חודשי - ${dayjs(`${year}-${month}-01`).format('MMMM YYYY')}`;
+              titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+              titleCell.font = { bold: true, size: 15 };
+              titleCell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE4ECF1' },
+              };
+              worksheet.mergeCells(1, 1, 1, columns.length);
+              for (let i = 1; i <= columns.length; i++) {
+                worksheet.getCell(1, i).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                worksheet.getCell(1, i).fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFE4ECF1' },
+                };
+              }
               // 🟦 עיצוב שורת כותרת
-              const headerRow = worksheet.getRow(1);
+              const headerRow = worksheet.getRow(2);
               headerRow.height = 25; // הגדלת גובה השורה הראשונה
               headerRow.eachCell(cell => {
                 cell.fill = {
                   type: 'pattern',
                   pattern: 'solid',
-                  fgColor: { argb: 'FFCCE5FF' }, // כחול בהיר
+                  fgColor: { argb: 'FFE4ECF1' },
                 };
                 cell.font = { bold: true };
                 cell.border = {
@@ -270,6 +280,7 @@ const MonthlyAttendance = () => {
                   bottom: { style: 'hair', color: { argb: 'FFB0B0B0' } },
                   right: { style: 'hair', color: { argb: 'FFB0B0B0' } },
                 };
+                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
               });
             
               // מיון הפרופילים לפי שם

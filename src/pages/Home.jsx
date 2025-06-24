@@ -6,7 +6,7 @@ import ExportPDFButton from '../components/ExportPDFButton'; // קומפוננט
 import dayjs from 'dayjs';
 import DailyAttendance from "./AllReports/DailyAttendance";
 import { useNavigate } from 'react-router-dom';
-
+import CustomDialog from '../components/CustomDialog';
 
 import { saveAttendanceForDate, fetchAllProfiles, fetchAttendanceByDate } from '../firebase'; // יבוא הפונקציה החדשה
 
@@ -262,40 +262,12 @@ function Home({ onLogout }) {
             </Box>
 
             {/* Dialog */}
-            <Dialog
+            <CustomDialog
                 open={dialog.open}
                 onClose={handleDialogClose}
-                dir="rtl"
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{
-                    sx: {
-                        borderRadius: '12px',
-                    }
-                }}
-            >
-                <DialogTitle sx={{
-                    backgroundColor: '#f5f5f5',
-                    borderBottom: '1px solid #e0e0e0',
-                    py: 2
-                }}>
-                    {dialog.isSuccess ? 'שמירת נתונים' : 'שגיאה'}
-                </DialogTitle>
-                <DialogContent sx={{ mt: 2 }}>
-                    <Typography variant="body1" sx={{
-                        textAlign: 'right',
-                        color: dialog.isSuccess ? 'black' : '#d32f2f',
-                        fontSize: '1.1rem',
-                        fontWeight: 500
-                    }}>
-                        {dialog.message}
-                    </Typography>
-                </DialogContent>
-                <DialogActions sx={{
-                    borderTop: '1px solid #e0e0e0',
-                    p: 2,
-                    justifyContent: 'flex-end'
-                }}>
+                title={dialog.isSuccess ? 'שמירת נתונים' : 'שגיאה'}
+                dialogContentSx={{ mt: 2 }}
+                actions={
                     <Button
                         onClick={handleDialogClose}
                         variant="contained"
@@ -310,8 +282,17 @@ function Home({ onLogout }) {
                     >
                         אישור
                     </Button>
-                </DialogActions>
-            </Dialog>
+                }
+            >
+                <Typography variant="body1" sx={{
+                    textAlign: 'right',
+                    color: dialog.isSuccess ? 'black' : '#d32f2f',
+                    fontSize: '1.1rem',
+                    fontWeight: 500
+                }}>
+                    {dialog.message}
+                </Typography>
+            </CustomDialog>
         </Box>
     );
 }
