@@ -4,8 +4,7 @@ import { Typography, CircularProgress, Box, Paper, Button, Container, Select, Me
 import dayjs from 'dayjs';
 import 'dayjs/locale/he';
 import { useLocation, useNavigate } from 'react-router-dom';
-import ExportPDFButton from '../../components/ExportPDFButton';
-import CakeIcon from '@mui/icons-material/Cake';
+import PDFBirthday from '../../components/PDFBirthday';
 import * as XLSX from 'xlsx';
 import OutlinedInput from '@mui/material/OutlinedInput';
 
@@ -70,36 +69,6 @@ const Birthday = () => {
   ];
 
   const currentMonthName = hebrewMonths[Number(selectedMonth) - 1];
-
-  // הכנת נתונים חגיגיים לייצוא PDF - מותאם לטיפול ב-ExportPDFButton
-  const prepareFestivePDFData = () => {
-    const monthProfiles = profilesByMonth[selectedMonth] || [];
-    const sortedMonthProfiles = monthProfiles.sort((a, b) => 
-      (a.name || '').localeCompare(b.name || '', 'he')
-    );
-
-    return sortedMonthProfiles.map((profile, index) => {
-      const birthDate = dayjs(profile.birthDate);
-      const age = dayjs().diff(birthDate, 'year');
-      const dayInMonth = birthDate.date();
-      
-      // הודעה חגיגית פשוטה - בלי אימוג'ים
-      const name = profile.name || 'לא צוין';
-      const celebration = `${name} חוגג ${age} שנים ב-${dayInMonth} ל${currentMonthName}`;
-      
-      return {
-        celebration: celebration
-      };
-    });
-  };
-
-  const pdfColumns = [
-    { 
-      key: 'celebration', 
-      header: `חגיגות יום הולדת - ${currentMonthName}`,
-      formatter: (value) => value
-    }
-  ];
 
   const currentMonthCount = (profilesByMonth[selectedMonth] || []).length;
 
@@ -190,72 +159,9 @@ const Birthday = () => {
           left: 8, top: 80 // מסכים קטנים
         }
       }}>
-        <ExportPDFButton
-          data={prepareFestivePDFData()}
-          columns={pdfColumns}
-          fileName={`ימי_הולדת_חודש ${currentMonthName}.pdf`}
-          title="ימי הולדת החודש"
-          subtitle={`חודש ${currentMonthName} `}
-          headerInfo={[
-            `מספר חוגגים החודש: ${currentMonthCount}`,
-          ]}
-          footerInfo={[
-            { text: `דוח נוצר ב-${dayjs().format('DD/MM/YYYY HH:mm')} במעון יום לותיקים`, align: 'center' },
-          ]}
-          buttonText="ייצוא ל-PDF"
-          customStyles={{
-            styles: {
-              fontSize: 12,
-              cellPadding: 8,
-              halign: 'center',
-              fillColor: [255, 248, 220], // רקע קרם חם
-              textColor: [139, 69, 19]    // חום כהה
-            },
-            headStyles: {
-              fillColor: [255, 182, 193], // ורוד בהיר חגיגי
-              textColor: [139, 0, 0],     // אדום כהה
-              fontStyle: 'bold',
-              fontSize: 14,
-              cellPadding: 10
-            },
-            columnStyles: {
-              0: { 
-                cellWidth: 'auto', 
-                halign: 'center',
-                fillColor: [255, 240, 245], // ורוד עדין מאוד
-                minCellHeight: 15
-              }
-            },
-            tableOptions: {
-              theme: 'plain',
-              tableLineWidth: 2,
-              tableLineColor: [255, 105, 180] // ורוד חגיגי
-            }
-          }}
-          buttonProps={{
-            disableRipple: true,
-            sx: {
-              backgroundColor: 'rgba(142, 172, 183, 0.72)',
-              border: 'none',
-              outline: 'none',
-              ':hover': {
-                backgroundColor: 'rgb(185, 205, 220)',
-                border: 'none',
-                outline: 'none'
-              },
-              fontWeight: 'bold',
-              color: 'black',
-              '&:focus': {
-                border: 'none',
-                outline: 'none'
-              },
-              '&:active': {
-                border: 'none',
-                outline: 'none'
-              },
-              minWidth: '120px'
-            }
-          }}
+        <PDFBirthday 
+          profilesByMonth={profilesByMonth}
+          selectedMonth={selectedMonth}
         />
         <Button
           variant="contained"

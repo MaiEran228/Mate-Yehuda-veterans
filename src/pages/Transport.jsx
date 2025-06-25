@@ -6,7 +6,7 @@ import TransportTable from '../components/TransportTable';
 import AddTransportDialog from '../components/AddTransportDialog';
 import EditTransportDialog from '../components/EditTransportDialog';
 import ViewPassengersDialog from '../components/ViewPassengersDialog';
-import { transportService, fetchTransportsByDate } from '../firebase';
+import { transportService, fetchTransportsByDate, fetchAllProfiles, updateProfile } from '../firebase';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
@@ -40,6 +40,7 @@ function Transport() {
   const [searchTerm, setSearchTerm] = useState('');
   const [availableCities, setAvailableCities] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [profiles, setProfiles] = useState([]);
 
   // Dialog states
   const [addDialog, setAddDialog] = useState(false);
@@ -47,6 +48,7 @@ function Transport() {
   const [viewDialog, setViewDialog] = useState({ open: false, passengers: [], days: [] });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, index: null });
   const [seatsDialogOpen, setSeatsDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState({ open: false, message: '' });
 
   // New: fetch transports by date
   useEffect(() => {
@@ -61,6 +63,8 @@ function Transport() {
         setLoading(false);
       }
     );
+    // טען את כל הפרופילים
+    fetchAllProfiles().then(setProfiles);
     return () => unsubscribe();
   }, []);
   
@@ -162,10 +166,33 @@ function Transport() {
   const handleDeleteConfirm = async () => {
     try {
       const transportToDelete = data[deleteDialog.index];
+      const passengers = transportToDelete.passengers || [];
+      // עדכון כל הפרופילים של הנוסעים להסיר את השיבוץ
+      for (const passenger of passengers) {
+        await updateProfile(passenger.id, { transport: '' }); // או "נדרש שיבוץ"
+      }
+      // ריקון הנוסעים מההסעה (ליתר ביטחון)
+      if (passengers.length > 0) {
+        await transportService.updateTransport(transportToDelete.id, {
+          ...transportToDelete,
+          passengers: []
+        });
+      }
+      // מחיקת ההסעה
       await transportService.deleteTransport(transportToDelete.id);
+      // הודעה מתאימה
+      let text = `ההסעה ${transportToDelete.cities?.join(', ') || ''} נמחקה בהצלחה.\nימים: ${(transportToDelete.days || []).join(', ')}`;
+      setSuccessMessage({
+        open: true,
+        message: passengers.length > 0
+          ? { text, passengers: passengers.map(p => ({ name: p.name, id: p.id })) }
+          : text
+      });
+      setData(prev => prev.filter((t, i) => i !== deleteDialog.index));
       handleDeleteClose();
     } catch (error) {
       console.error("Error deleting transport:", error);
+      setSuccessMessage({ open: true, message: 'אירעה שגיאה במחיקת ההסעה. אנא נסה שוב.' });
     }
   };
 
@@ -421,6 +448,7 @@ function Transport() {
         onClose={handleViewClose}
         passengers={viewDialog.passengers}
         transportDays={viewDialog.days}
+        profiles={profiles}
       />
 
       <Dialog
@@ -430,7 +458,32 @@ function Transport() {
       >
         <DialogTitle>אישור מחיקה</DialogTitle>
         <DialogContent>
-          האם אתה בטוח שברצונך למחוק את ההסעה?
+          {deleteDialog.index !== null && (
+            <>
+              <Typography>
+                האם אתה בטוח שברצונך למחוק את ההסעה:
+                <b> {data[deleteDialog.index]?.cities?.join(', ') || ''} </b>
+                בימים: <b>{(data[deleteDialog.index]?.days || []).join(', ')}</b>?
+              </Typography>
+              {(data[deleteDialog.index]?.passengers?.length > 0) && (
+                <>
+                  <Typography color="error" sx={{ mt: 2, mb: 1 }}>
+                    יש נוסעים משובצים להסעה זו! לאחר המחיקה תצטרך לשבץ אותם מחדש:
+                  </Typography>
+                  <Stack spacing={1}>
+                    {data[deleteDialog.index]?.passengers.map((p) => (
+                      <Chip
+                        key={p.id}
+                        label={`${p.name} (ת.ז. ${p.id})`}
+                        sx={{ fontSize: '1rem', fontWeight: 500, borderRadius: '16px', px: 2, py: 1, background: '#ffe0e0' }}
+                        variant="outlined"
+                      />
+                    ))}
+                  </Stack>
+                </>
+              )}
+            </>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteClose}>ביטול</Button>
@@ -592,9 +645,64 @@ function Transport() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        open={successMessage.open}
+        onClose={() => setSuccessMessage({ open: false, message: '' })}
+        dir="rtl"
+      >
+        <DialogTitle sx={{ 
+          backgroundColor: '#f5f5f5',
+          borderBottom: '1px solid #e0e0e0',
+          fontWeight: 'bold'
+        }}>
+          הודעת מערכת
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {successMessage.message && typeof successMessage.message === 'object' ? (
+            <>
+              <Typography sx={{ mb: 1 }}>{successMessage.message.text}</Typography>
+              {successMessage.message.passengers && successMessage.message.passengers.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography sx={{ fontWeight: 'bold', mb: 1 }}>נוסעים שדורשים שיבוץ מחדש:</Typography>
+                  <Stack spacing={1}>
+                    {successMessage.message.passengers.map((p) => (
+                      <Chip
+                        key={p.id}
+                        label={`${p.name} (ת.ז. ${p.id})`}
+                        sx={{ fontSize: '1rem', fontWeight: 500, borderRadius: '16px', px: 2, py: 1, background: '#e3f2fd' }}
+                        variant="outlined"
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+            </>
+          ) : (
+            <Typography>{successMessage.message}</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setSuccessMessage({ open: false, message: '' })}
+            variant="contained"
+            sx={{
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              '&:hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+              },
+              color: 'black',
+              fontWeight: 'bold'
+            }}
+          >
+            סגור
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
 
 export default Transport;
+
 

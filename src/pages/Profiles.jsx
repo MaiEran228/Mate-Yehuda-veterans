@@ -97,19 +97,25 @@ function Profiles() {
     });
 
   return (
-    <Box sx={{ p: 1.5, mt:2}}>
-      <AppBar 
-        position="fixed" 
-        color="transparent" 
+    <Box sx={{ p: 1.5, mt:2 }}>
+      {/* Spacer ראשון עבור ToolBarMUI הראשי */}
+      <Toolbar sx={{ minHeight: '90px' }} />
+      {/* Spacer שני עבור ה-AppBar של החיפוש */}
+      <Toolbar sx={{ minHeight: '64px' }} />
+
+      {/* AppBar נוסף - חיפוש + הוספה */}
+      <AppBar
+        position="fixed"
+        color="default"
         elevation={0}
-        sx={{ 
-          top: 'auto', 
-          bottom: 'auto',
-          backgroundColor: 'transparent'
+        sx={{
+          top: '90px', // גובה ה-ToolBarMUI הראשי
+          zIndex: 1200,
+          backgroundColor: '#ebf1f5', // צבע רקע זהה לרקע העמוד
         }}
       >
-        <Toolbar sx={{ 
-          justifyContent: 'flex-start', 
+        <Toolbar sx={{
+          justifyContent: 'flex-start',
           minHeight: '64px !important',
           padding: '0 24px',
           gap: 2
@@ -194,7 +200,6 @@ function Profiles() {
           </Button>
         </Toolbar>
       </AppBar>
-      <Toolbar sx={{ mb: 12 }} />
 
       {/* אזור הפרופילים */}
       <Box sx={{ 

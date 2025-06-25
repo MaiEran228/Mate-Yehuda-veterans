@@ -208,6 +208,12 @@ function TransportTable({
     const reservationDayIdx = reservationDate.getDay();
     const reservationHebDay = daysMap[reservationDayIdx];
 
+    // בדיקה: האם יום ההסעה בתוקף להסעה זו
+    if (!transport.days || !transport.days.includes(reservationHebDay)) {
+      setDialog({ open: true, message: 'אי אפשר לשריין ליום זה – ההסעה לא פועלת ביום הזה', type: 'error' });
+      return;
+    }
+
     if (tempReservationDialog.reservationType === 'remove') {
       // הורדת נוסע זמני
       const tempList = (tempReservationsByTransport[transport.id?.toString()] || []);
@@ -547,8 +553,45 @@ function TransportTable({
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                      <EventSeatIcon sx={{ fontSize: 25, color: availableSeats > 0 ? 'success.main' : 'error.main' }} />
-                      <Typography variant="body2" sx={{ fontSize: '1rem', fontWeight: 500 }}>{availableSeats}</Typography>
+                      {selectedHebDay && (row.days || []).includes(selectedHebDay) ? (
+                        <Tooltip title={`מקומות פנויים: ${availableSeats}`}>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1,
+                            backgroundColor: availableSeats > 0 ? '#4caf50' : '#f44336',
+                            color: 'white',
+                            padding: '4px 12px',
+                            borderRadius: '16px',
+                            minWidth: '80px',
+                            justifyContent: 'center'
+                          }}>
+                            <EventSeatIcon sx={{ fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontSize: '1rem', fontWeight: 500 }}>
+                              {availableSeats}
+                            </Typography>
+                          </Box>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="אין הסעה ביום זה">
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1,
+                            backgroundColor: '#9e9e9e',
+                            color: 'white',
+                            padding: '4px 12px',
+                            borderRadius: '16px',
+                            minWidth: '80px',
+                            justifyContent: 'center'
+                          }}>
+                            <EventSeatIcon sx={{ fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontSize: '1rem', fontWeight: 500 }}>
+                              —
+                            </Typography>
+                          </Box>
+                        </Tooltip>
+                      )}
                     </Box>
                   </TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
@@ -574,7 +617,7 @@ function TransportTable({
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="מחק">
-                        <IconButton onClick={() => setDeleteDialog({ open: true, item: row })}>
+                        <IconButton onClick={() => onDeleteClick(index)}>
                           <DeleteIcon color="error" />
                         </IconButton>
                       </Tooltip>
