@@ -11,7 +11,7 @@ import ForgotPasswordModal from '../components/ForgotPassword';
 function TabPanel({ children, value, index }) {
   return (
     <div hidden={value !== index}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: 2 }}>{children}</Box>}
     </div>
   );
 }
@@ -149,14 +149,15 @@ export default function UserManagement() {
         <Typography
           variant="h4"
           sx={{
-            mb: 4,
+            mt: -5,
+            mb: 1,
             color: 'rgb(105, 148, 179)',
             fontWeight: 600,
             textAlign: 'center',
             direction: 'rtl'
           }}
         >
-          שלום, {currentUsername}
+          שלום, {currentUsername.split(' ')[0]}
         </Typography>
       )}
 
@@ -164,17 +165,57 @@ export default function UserManagement() {
       <Paper elevation={3} sx={{ 
         borderRadius: 3, 
         width: { xs: '90%', sm: 450, md: 500 }, 
-        minHeight: 420,
-        height: 500,
+        minHeight: 'unset',
+        height: 'auto',
+        maxHeight: 600,
+        overflowY: 'auto',
         p: 2,
         maxWidth: 600,
         direction: 'rtl'
       }}>
-        <Tabs value={tab} onChange={handleTabChange} centered variant="fullWidth">
+        <Tabs value={tab} onChange={handleTabChange} centered variant="fullWidth"
+          TabIndicatorProps={{
+            style: {
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              height: 4,
+              borderRadius: 2,
+            }
+          }}
+          sx={{
+            bgcolor: '#fff',
+            borderRadius: 2,
+            mb: 1.5,
+            '& .MuiTab-root': {
+              color: 'black',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              backgroundColor: 'transparent',
+            },
+            '& .Mui-selected': {
+              color: 'black',
+              backgroundColor: 'transparent',
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+            },
+            '& .MuiTab-root:focus': {
+              outline: 'none',
+              border: 'none',
+            },
+            '& .MuiTab-root:active': {
+              outline: 'none',
+              border: 'none',
+            },
+          }}
+        >
           <Tab icon={<EditIcon />} label="שינוי שם משתמש" />
           <Tab icon={<LockResetIcon />} label="החלפת סיסמה" />
           <Tab icon={<DeleteIcon />} label="מחיקת משתמש" />
         </Tabs>
+        
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <Box sx={{ borderBottom: '1px solid #e0e0e0', width: '100%' }} />
+        </Box>
         
         <TabPanel value={tab} index={0}>
           <Typography variant="h6" mb={2} textAlign="center">שינוי שם משתמש</Typography>
@@ -182,12 +223,26 @@ export default function UserManagement() {
             שם המשתמש הנוכחי: {currentUsername}
           </Typography>
           <TextField
+            variant="outlined"
             label="שם משתמש חדש"
             fullWidth
             value={username}
             onChange={e => setUsername(e.target.value)}
-            sx={{ mb: 2 }}
-            inputProps={{ style: { direction: 'rtl' } }}
+            sx={{ 
+              mb: 2, 
+              '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'black',
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: 'black',
+              },
+            }}
+            inputProps={{ style: { direction: 'rtl', textAlign: 'right', paddingRight: 16 } }}
+            InputLabelProps={{
+              style: { right: 8, left: 'unset', textAlign: 'right', width: 'auto', background: '#fff', paddingRight: 8 },
+              shrink: true
+            }}
           />
           <Button 
             variant="contained" 
@@ -195,6 +250,14 @@ export default function UserManagement() {
             fullWidth 
             disabled={!username.trim() || loading}
             onClick={handleChangeUsername}
+            sx={{
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              color: 'black',
+              fontWeight: 'bold',
+              '&:hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+              },
+            }}
           >
             {loading ? 'שומר...' : 'שמור שם משתמש'}
           </Button>
@@ -206,41 +269,112 @@ export default function UserManagement() {
             label="סיסמה נוכחית"
             type="password"
             fullWidth
+            size="small"
             value={currentPassword}
             onChange={e => setCurrentPassword(e.target.value)}
-            sx={{ mb: 2 }}
-            inputProps={{ style: { direction: 'ltr' } }}
+            sx={{ mb: 1, maxWidth: 480,
+              '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'black',
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: 'black',
+              },
+            }}
+            inputProps={{ style: { direction: 'rtl', textAlign: 'right', paddingRight: 16 } }}
+            InputProps={{ sx: { textAlign: 'right' } }}
+            InputLabelProps={{
+              style: { right: 8, left: 'unset', textAlign: 'right', width: 'auto', background: '#fff', paddingRight: 8 },
+              shrink: true
+            }}
           />
           <Button 
             variant="text" 
             color="primary" 
-            sx={{ mb: 2, width: '100%' }} 
+            size="small"
+            sx={{ mb: 0.5, width: '100%', maxWidth:100 ,
+              color:  'rgba(53, 63, 67, 0.72)',
+              border: 'none',
+              fontWeight: 'bold',
+              fontSize: '0.85rem',
+              padding: '4px 0',
+              textDecoration: 'underline',
+              '&:hover': {
+                border: 'none',
+                boxShadow: 'none',
+                textDecoration: 'underline',
+              },
+              '&:focus': {
+                outline: 'none',
+                border: 'none',
+                boxShadow: 'none',
+                textDecoration: 'underline',
+              },
+              '&:active': {
+                outline: 'none',
+                border: 'none',
+                boxShadow: 'none',
+                textDecoration: 'underline',
+              },
+            }} 
             onClick={() => setShowForgotPassword(true)}
           >
             שכחתי סיסמא
           </Button>
+          <Typography variant="subtitle1" textAlign="center" sx={{ mb: 1.5, mt: 1, fontWeight: 500 }}>
+            איפוס סיסמא
+          </Typography>
           <TextField
             label="סיסמה חדשה"
             type="password"
             fullWidth
+            size="small"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            sx={{ mb: 2 }}
-            inputProps={{ style: { direction: 'ltr' } }}
+            sx={{ mb: 2, maxWidth: 480,
+              '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'black',
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: 'black',
+              },
+            }}
+            inputProps={{ style: { direction: 'rtl', textAlign: 'right', paddingRight: 16 } }}
+            InputProps={{ sx: { textAlign: 'right' } }}
+            InputLabelProps={{
+              style: { right: 8, left: 'unset', textAlign: 'right', width: 'auto', background: '#fff', paddingRight: 8 },
+              shrink: true
+            }}
           />
           <TextField
             label="אימות סיסמה"
             type="password"
             fullWidth
+            size="small"
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
-            sx={{ mb: 2 }}
-            inputProps={{ style: { direction: 'ltr' } }}
+            sx={{ mb: 1, maxWidth: 480,
+              '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'black',
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: 'black',
+              },
+            }}
+            inputProps={{ style: { direction: 'rtl', textAlign: 'right', paddingRight: 16 } }}
+            InputProps={{ sx: { textAlign: 'right' } }}
+            InputLabelProps={{
+              style: { right: 8, left: 'unset', textAlign: 'right', width: 'auto', background: '#fff', paddingRight: 8 },
+              shrink: true
+            }}
           />
           <Button
             variant="contained"
             color="primary"
             fullWidth
+            size="small"
             disabled={!currentPassword || !password || password !== confirmPassword || loading}
             onClick={handleChangePassword}
           >

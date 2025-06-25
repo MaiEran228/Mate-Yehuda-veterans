@@ -7,6 +7,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import dayjs from 'dayjs';
+import ErrorDialog from './ErrorDialog';
 
 const typeColors = {
   regular: '#43a047', // ירוק
@@ -76,6 +77,7 @@ const MonthlyAttendanceTable = ({
   const [editDialog, setEditDialog] = useState({ open: false, profile: null, date: null, values: {} }); // { open, profile, date, values }
   const [showSearchField, setShowSearchField] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState('');
+  const [errorDialog, setErrorDialog] = useState({ open: false, message: '' });
 
   // אפס מצב עריכה וסטייטים פנימיים בכל שינוי ב-attendanceByDate
   useEffect(() => {
@@ -156,11 +158,17 @@ const MonthlyAttendanceTable = ({
   };
 
   const handleOpenEditDialog = (profile, dateStr) => {
+    const today = dayjs().startOf('day');
+    const editDay = dayjs(dateStr).startOf('day');
+    // 1. עדכון יום עתידי
+    if (editDay.isAfter(today)) {
+      setErrorDialog({ open: true, message: 'לא ניתן לעדכן יום עתידי. ' });
+      return;
+    }
     const list = attendanceByDate[dateStr];
     let attended = false;
     let hasCaregiver = false;
     let absenceReason = '';
-    
     if (list) {
       const person = list.find(p => p.id === profile.id);
       if (person && person.attended === true) {
@@ -170,7 +178,6 @@ const MonthlyAttendanceTable = ({
         absenceReason = person.reason;
       }
     }
-    
     setEditDialog({
       open: true,
       profile,
@@ -185,6 +192,11 @@ const MonthlyAttendanceTable = ({
 
   const handleSaveEditDialog = async () => {
     const { profile, date, values } = editDialog;
+    // בדיקה: לא ניתן לסמן מטפל בלי שהמשתתף עצמו נוכח
+    if (values.caregiver && !values.attended) {
+      setErrorDialog({ open: true, message: 'לא ניתן לסמן "מטפל" כאשר הפרופיל לא נוכח.' });
+      return;
+    }
     const updates = {
       attended: values.attended || false,
       caregiver: values.caregiver || false,
@@ -750,6 +762,13 @@ const MonthlyAttendanceTable = ({
           </Button>
         </DialogActions>
       </Dialog>
+      <ErrorDialog
+        open={errorDialog.open}
+        onClose={() => setErrorDialog({ open: false, message: '' })}
+        title="שגיאה בעדכון נוכחות"
+      >
+        {errorDialog.message}
+      </ErrorDialog>
     </>
   );
 };

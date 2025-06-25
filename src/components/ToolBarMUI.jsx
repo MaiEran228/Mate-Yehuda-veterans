@@ -1,7 +1,7 @@
 // src/components/ToolbarMUI.jsx
 import { AppBar, Toolbar, Button, Box, Divider, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import logoMateYehuda from '../assets/Logo2.jpeg';
+import logoMateYehuda from '../assets/Logo.png';
 import Tooltip from '@mui/material/Tooltip';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import EditIcon from '@mui/icons-material/Edit';
@@ -86,7 +86,7 @@ function ToolbarMUI({ onLogout }) {
               display: 'flex',
               alignItems: 'center',
               textDecoration: 'none',
-              mr: 2, // מרווח מימין
+              mr: 0.5, // מרווח קטן יותר מימין
               cursor: 'pointer',
               '&:hover': {
                 opacity: 0.8,
@@ -98,11 +98,11 @@ function ToolbarMUI({ onLogout }) {
               src={logoMateYehuda}
               alt="לוגו החברה"
               style={{
-                height: '90px',
+                height: '80px',
                 width: 'auto',
-                maxWidth: '120px',
+                maxWidth: '85px',
                 borderRadius: '100%', // עיגול הפינות
-                border: '2px solid rgba(196, 241, 165, 0.89)',
+                border: '2px solid rgba(76, 109, 55, 0.89)',
               }}
             />
           </Box>
@@ -195,7 +195,7 @@ function ToolbarMUI({ onLogout }) {
         )}
 
         {/* אייקון משתמש – ניווט לעמוד ניהול משתמש */}
-        <IconButton color="inherit" onClick={() => navigate('/user-management')} sx={{ ml: 1 }}>
+        <IconButton color="inherit" onClick={() => navigate('/user-management')} sx={{ ml: 1, '&:focus': { outline: 'none', border: 'none' }, '&:active': { outline: 'none', border: 'none' } }}>
           <AccountCircleIcon sx={{ fontSize: 34 }} />
         </IconButton>
         

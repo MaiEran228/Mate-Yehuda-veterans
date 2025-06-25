@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, getDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 
 /**
@@ -68,9 +68,12 @@ export const findMatchingTransports = async (arrivalDays, city, needsTransport, 
         return false;
       }
 
-      // בודק אם יש חפיפה בימים
-      const hasMatchingDays = arrivalDays.some(day => transport.days.includes(day));
-      
+      // בודק שכל ימי ההגעה של הנוסע כלולים בימי ההסעה
+      const allDaysIncluded = arrivalDays.every(day => transport.days.includes(day));
+      if (!allDaysIncluded) {
+        return false;
+      }
+
       // בודק אם היישוב נמצא במסלול ההסעה
       const isInRoute = transport.cities.includes(city);
       
@@ -81,7 +84,7 @@ export const findMatchingTransports = async (arrivalDays, city, needsTransport, 
         return availableSeats >= seatsNeeded;
       });
 
-      return hasMatchingDays && isInRoute && hasAvailableSeats;
+      return allDaysIncluded && isInRoute && hasAvailableSeats;
     });
 
     return matchingTransports;

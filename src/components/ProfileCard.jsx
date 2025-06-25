@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box } from '@mui/material';
 
-function ProfileCard({ profile, onClick }) {
+function ProfileCard({ profile, onClick, missingTransport }) {
   return (
     <Box sx={{ 
         position: 'relative', 
@@ -88,6 +88,21 @@ function ProfileCard({ profile, onClick }) {
           >
             יישוב: {profile.city}
           </Typography>
+          {/* Transport status badge */}
+          {missingTransport && (
+            <Box sx={{
+              display: 'inline-block',
+              color: '#c62828',
+              borderRadius: '12px',
+              px: 2,
+              py: 0.5,
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              mb: 1
+            }}>
+              חסר הסעה
+            </Box>
+          )}
         </CardContent>
       </Card>
     </Box>

@@ -54,7 +54,8 @@ const MonthlyAttendance = () => {
             id: person.id,
             name: person.name || `פרופיל ללא שם (${person.id})`,
             city: person.city || 'לא צוין',
-            arrivalDays: person.arrivalDays || []
+            arrivalDays: person.arrivalDays || [],
+            isDeleted: true // מסמן שזה פרופיל שנמחק
           });
         }
       });
@@ -183,45 +184,6 @@ const MonthlyAttendance = () => {
 
         {/* צד שמאל: כפתורי ייצוא */}
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="contained"
-            onClick={() => {
-              const input = document.getElementById('monthlyReportContent');
-              html2canvas(input).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgProps = pdf.getImageProperties(imgData);
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`Monthly Attendance Report - ${dayjs(`${year}-${month}-01`).format('MMMM YYYY')}.pdf`);
-              });
-            }}
-            sx={{
-              backgroundColor: 'rgba(142, 172, 183, 0.72)',
-              border: 'none',
-              outline: 'none',
-              ':hover': {
-                backgroundColor: 'rgb(185, 205, 220)',
-                border: 'none',
-                outline: 'none'
-              },
-              fontWeight: 'bold',
-              color: 'black',
-              '&:focus': {
-                border: 'none',
-                outline: 'none'
-              },
-              '&:active': {
-                border: 'none',
-                outline: 'none'
-              },
-              minWidth: '120px'
-            }}
-          >
-            ייצוא ל־PDF
-          </Button>
-
           <Button
             variant="contained"
             color="primary"

@@ -1,27 +1,16 @@
 import React from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  Checkbox,
-  ListItemText,
-  OutlinedInput,
-  Box,
-  Typography,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, Select, MenuItem, InputLabel,
+  FormControl, Checkbox, ListItemText, OutlinedInput, Box, Typography,
 } from '@mui/material';
 
 const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 const transportTypes = ['מיניבוס', 'מונית'];
 const cities = [
   'ירושלים','אדרת','אביעזר','נחם','אשתאול','תרום','תעוז',
-
 ];
+
+const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 
 function EditTransportDialog({ open, onClose, onSave, transportData }) {
   const [formData, setFormData] = React.useState({
@@ -111,7 +100,7 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
                   value={formData?.days || []}
                   onChange={handleChange('days')}
                   input={<OutlinedInput label="ימים" />}
-                  renderValue={(selected) => selected.join(', ')}
+                  renderValue={(selected) => selected.slice().sort((a, b) => arrivalDaysOrder.indexOf(a) - arrivalDaysOrder.indexOf(b)).join(', ')}
                 >
                   {daysOfWeek.map((day) => (
                     <MenuItem key={day} value={day}>

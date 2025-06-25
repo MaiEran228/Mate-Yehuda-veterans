@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, InputAdornment, IconButton, Autocomplete, FormControl, InputLabel, Select, MenuItem, Stack, Chip } from '@mui/material';
+import { Box, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
+  Button, TextField, InputAdornment, IconButton, Stack, Chip
+ } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import TransportTable from '../components/TransportTable';
@@ -7,20 +9,13 @@ import AddTransportDialog from '../components/AddTransportDialog';
 import EditTransportDialog from '../components/EditTransportDialog';
 import ViewPassengersDialog from '../components/ViewPassengersDialog';
 import { transportService, fetchTransportsByDate, fetchAllProfiles, updateProfile } from '../firebase';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableBody from '@mui/material/TableBody';
 import { calculateAvailableSeatsByDay } from '../utils/transportUtils';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { he } from 'date-fns/locale';
 import AddIcon from '@mui/icons-material/Add';
 import dayjs from 'dayjs';
+import AvailableSeatsListDialog from '../components/AvailableSeatsListDialog';
 
 // מיפוי ימים לעברית
 const daysMap = {
@@ -67,7 +62,7 @@ function Transport() {
     fetchAllProfiles().then(setProfiles);
     return () => unsubscribe();
   }, []);
-  
+
 
   useEffect(() => {
     async function fetchTempReservations() {
@@ -76,27 +71,22 @@ function Transport() {
         return;
       }
       const dateStr = selectedDate.format ? selectedDate.format('YYYY-MM-DD') : selectedDate.toISOString().slice(0, 10);
-      console.log('🔍 בודק שיריונות זמניים לתאריך:', dateStr);
-  
       const dateDoc = await fetchTransportsByDate(dateStr);
-      console.log('📦 תוצאה מ-fetchTransportsByDate:', dateDoc);
-  
       const transportsList = dateDoc?.transports || [];
-  
+
       const map = {};
       for (const t of transportsList) {
         if (t.tempReservations && t.tempReservations.length > 0) {
           map[t.id.toString()] = t.tempReservations;
         }
       }
-  
-      console.log('✅ מפה של שיריונות זמניים לפי הסעה:', map);
+
       setTempReservationsByTransport(map);
     }
-  
+
     fetchTempReservations();
   }, [selectedDate]);
-  
+
 
   // Add handlers
   const handleAddOpen = () => setAddDialog(true);
@@ -122,37 +112,37 @@ function Transport() {
       if (updatedTransport.tempReservations && updatedTransport.tempReservations.length > 0) {
         const lastIndex = updatedTransport.tempReservations.length - 1;
         const lastReservation = updatedTransport.tempReservations[lastIndex];
-  
+
         // בודק אם השריון האחרון עדיין לא קיבל מזהה
         if (lastReservation && !lastReservation.id) {
           // שולף את כל ה-id הקיימים שהינם מספרים
           const existingIds = updatedTransport.tempReservations
             .map(r => Number(r.id))
             .filter(id => !isNaN(id));
-  
+
           // מחשב את ה-id הבא: מקסימום קיים + 1 או מתחיל מ-0
           const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 0;
-  
+
           // מוסיף את השריון החדש עם id תקין במסד הנתונים
           await transportService.addTemporaryReservation(updatedTransport.id, {
             ...lastReservation,
             id: nextId.toString()
           });
-  
+
           // מעדכן גם את האובייקט המקומי כדי לשמור על ה-id החדש
           updatedTransport.tempReservations[lastIndex].id = nextId.toString();
         }
       }
-  
+
       // מעדכן את ההסעה במסד הנתונים עם השריונות המעודכנים
       await transportService.updateTransport(updatedTransport.id, updatedTransport);
       handleEditClose();
-  
+
     } catch (error) {
       console.error("Error updating transport:", error?.message, error);
     }
   };
-  
+
 
   // Delete handlers
   const handleDeleteOpen = (index) => {
@@ -214,7 +204,7 @@ function Transport() {
 
   return (
     <>
-      <Box sx={{ p: 3, mt:1 }}>
+      <Box sx={{ p: 3, mt: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3, px: 3 }}>
           {/* ימין: תאריך, חיפוש, דוח */}
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -403,7 +393,7 @@ function Transport() {
               }}
               onClick={() => setSeatsDialogOpen(true)}
             >
-              דוח מקומות פנויים בהסעה
+              רשימת מקומות פנויים בהסעות
             </Button>
           </Box>
         </Box>
@@ -493,165 +483,19 @@ function Transport() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={seatsDialogOpen} onClose={() => setSeatsDialogOpen(false)} maxWidth="md" fullWidth dir="rtl">
-        <DialogTitle sx={{ position: 'relative', pr: 4, fontWeight: 'bold' }}>
-          רשימת מקומות פנויים בכל ההסעות
-          <Button
-            onClick={() => setSeatsDialogOpen(false)}
-            aria-label="סגור"
-            sx={{
-              position: 'absolute',
-              left: 8,
-              top: 8,
-              minWidth: '32px',
-              width: '32px',
-              height: '32px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: '#888',
-              borderRadius: '50%',
-              boxShadow: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              ':hover': {
-                backgroundColor: '#f0f0f0',
-                color: '#333',
-              },
-              '&:focus': {
-                border: 'none',
-                outline: 'none',
-              },
-              '&:active': {
-                border: 'none',
-                outline: 'none',
-              },
-              p: 0,
-            }}
-          >
-            <CloseIcon fontSize="small" />
-          </Button>
-        </DialogTitle>
-        <DialogContent sx={{ overflow: 'hidden' }}>
-          <Box sx={{ maxHeight: '400px', overflowY: 'auto', direction: 'ltr', pr: 1 }}>
-            <Table style={{ direction: 'ltr' }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>מקומות פנויים (לפי יום)</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>ימים</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>יישובים</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>סוג הסעה</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>#</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {data.map((row, idx) => {
-                  const availableSeatsByDay = calculateAvailableSeatsByDay(row.type, row.passengers, row.days);
-                  return (
-                    <TableRow key={row.id || idx}>
-                      <TableCell sx={{ textAlign: 'right' }}>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'flex-end' }}>
-                          {row.days && row.days.length > 0 ? row.days.map(day => (
-                            <Box
-                              key={day}
-                              sx={{
-                                border: '2px solid #ccc',
-                                borderRadius: '16px',
-                                padding: '6px 12px',
-                                minWidth: '120px',
-                                textAlign: 'right',
-                                fontWeight: 'bold',
-                                backgroundColor: '#f5f5f5',
-                              }}
-                            >
-                              {day}: {availableSeatsByDay[day]}
-                            </Box>
-                          )) : '—'}
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'right' }}>{(row.days || []).join(', ')}</TableCell>
-                      <TableCell sx={{ textAlign: 'right' }}>{(row.cities || []).join(', ')}</TableCell>
-                      <TableCell sx={{ textAlign: 'right' }}>{row.type}</TableCell>
-                      <TableCell sx={{ textAlign: 'right' }}>{idx + 1}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={async () => {
-              const input = document.getElementById('seatsReportContent');
-              if (!input) return;
-              const canvas = await html2canvas(input);
-              const imgData = canvas.toDataURL('image/png');
-              const pdf = new jsPDF('p', 'mm', 'a4');
-              const pdfWidth = pdf.internal.pageSize.getWidth();
-              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-              pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-              pdf.save('רשימת מקומות פנויים בהסעות.pdf');
-            }}
-            variant="outlined"
-            sx={{
-              border: '1.7px solid rgba(64, 99, 112, 0.72)',
-              color: 'rgba(64, 99, 112, 0.72)',
-              fontWeight: 'bold',
-              ':hover': {
-                borderColor: '#7b8f99',
-                color: '#5a676e',
-                outline: 'none'
-              },
-              '&:focus': {
-                outline: 'none'
-              },
-              '&:active': {
-                outline: 'none'
-              },
-              minWidth: 'auto',
-              ml: 2
-            }}
-          >
-            ייצוא ל־PDF
-          </Button>
-          <Button
-            onClick={() => setSeatsDialogOpen(false)}
-            variant="contained"
-            sx={{
-              backgroundColor: 'rgba(142, 172, 183, 0.72)',
-              border: 'none',
-              outline: 'none',
-              ':hover': {
-                backgroundColor: 'rgb(185, 205, 220)',
-                border: 'none',
-                outline: 'none'
-              },
-              fontWeight: 'bold',
-              color: 'black',
-              '&:focus': {
-                border: 'none',
-                outline: 'none'
-              },
-              '&:active': {
-                border: 'none',
-                outline: 'none'
-              },
-              minWidth: '110px',
-            }}
-          >
-            סגור
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AvailableSeatsListDialog
+        open={seatsDialogOpen}
+        onClose={() => setSeatsDialogOpen(false)}
+        data={data}
+        calculateAvailableSeatsByDay={calculateAvailableSeatsByDay}
+      />
 
       <Dialog
         open={successMessage.open}
         onClose={() => setSuccessMessage({ open: false, message: '' })}
         dir="rtl"
       >
-        <DialogTitle sx={{ 
+        <DialogTitle sx={{
           backgroundColor: '#f5f5f5',
           borderBottom: '1px solid #e0e0e0',
           fontWeight: 'bold'
@@ -683,7 +527,7 @@ function Transport() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => setSuccessMessage({ open: false, message: '' })}
             variant="contained"
             sx={{
@@ -704,5 +548,3 @@ function Transport() {
 }
 
 export default Transport;
-
-

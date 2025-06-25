@@ -154,6 +154,16 @@ const Reports = () => {
                   boxShadow: '0 8px 32px 0 rgba(64,99,112,0.22)',
                   transform: 'translateY(-2px)',
                 },
+                '&:focus': {
+                  outline: 'none',
+                  border: '3px solid #406370',
+                  boxShadow: '0 6px 24px 0 rgba(64,99,112,0.18)',
+                },
+                '&:active': {
+                  outline: 'none',
+                  border: '3px solid #406370',
+                  boxShadow: '0 6px 24px 0 rgba(64,99,112,0.18)',
+                },
               }}>
               <span style={{ fontSize: '1.1rem', fontWeight: 700 }}>{report.name}</span>
               <span style={{ marginTop: 12, display: 'block' }}>{reportIcons[index]}</span>

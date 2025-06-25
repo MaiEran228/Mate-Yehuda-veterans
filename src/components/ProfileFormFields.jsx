@@ -1,4 +1,5 @@
-import { Box, Typography, FormControl, Select, MenuItem, Checkbox, FormControlLabel, TextField } from '@mui/material';
+import { Box, Typography, FormControl, Select, MenuItem, Checkbox, FormControlLabel,
+  TextField } from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 
 export default function ProfileFormFields({ values, errors, onChange, onImageChange, isUploading }) {
@@ -7,15 +8,14 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
     const file = event.target.files[0];
     if (!file) return;
 
-    // כאן תוכל להוסיף לוגיקה להעלאת התמונה ולקבלת URL
-    // לדוגמה עם Firebase או שרת אחר
     const reader = new FileReader();
     reader.onloadend = () => {
-      // זה רק לתצוגה מקדימה - במציאות תרצה להעלות לשרת ולקבל URL
       onImageChange(reader.result);
     };
     reader.readAsDataURL(file);
   };
+
+  const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 
   return (
     <>
@@ -261,9 +261,11 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
                   checked={values.arrivalDays.includes(value)}
                   onChange={() => {
                     const isSelected = values.arrivalDays.includes(value);
-                    const newDays = isSelected
+                    let newDays = isSelected
                       ? values.arrivalDays.filter((d) => d !== value)
                       : [...values.arrivalDays, value];
+                    // Sort according to arrivalDaysOrder
+                    newDays = newDays.sort((a, b) => arrivalDaysOrder.indexOf(a) - arrivalDaysOrder.indexOf(b));
                     onChange({ target: { name: 'arrivalDays', value: newDays } });
                   }}
                   sx={errors.arrivalDays ? { color: 'error.main' } : {}}

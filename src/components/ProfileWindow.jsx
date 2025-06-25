@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
-import { deleteProfile } from "../firebase";
 import { removePassengerFromTransports, getPassengerTransport } from "../utils/transportUtils";
-import {
-    Dialog, DialogTitle, DialogContent, Typography, Button, TextField, MenuItem, Checkbox, FormControlLabel,
-    Box, Avatar, DialogActions
+import { Dialog, DialogTitle, DialogContent, Typography, Button, Box, Avatar,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
@@ -12,9 +9,6 @@ import EditProfileWindow from "./EditProfileWindow";
 import dayjs from "dayjs";
 import CustomDialog from './CustomDialog';
 
-const GENDERS = ["זכר", "נקבה", "אחר"];
-const DAYS = ["'א", "'ב", "'ג", "'ד", "'ה"];
-
 const dayMap = {
   'ראשון': 'א',
   'שני': 'ב',
@@ -22,6 +16,8 @@ const dayMap = {
   'רביעי': 'ד',
   'חמישי': 'ה',
 };
+
+const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 
 function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelete }) {
     if (!initialProfile) return null;
@@ -114,6 +110,8 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
         }
         return age;
     }
+
+    const sortedArrivalDays = (profile.arrivalDays || []).slice().sort((a, b) => arrivalDaysOrder.indexOf(a) - arrivalDaysOrder.indexOf(b));
 
     return (
         <Dialog
@@ -245,7 +243,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                             </Typography>
                             <Typography sx={{ my: 0 }}>
                                 <Box component="span" fontWeight="bold" fontSize="1.1rem">ימי הגעה: </Box>
-                                <Box component="span">{profile.arrivalDays && profile.arrivalDays.length > 0 ? profile.arrivalDays.map(day => dayMap[day] || day).join(", ") : "לא צוינו"}</Box>
+                                <Box component="span">{sortedArrivalDays.map(day => dayMap[day] || day).join(", ")}</Box>
                             </Typography>
                             
                             <Typography sx={{ my: 0 }}>

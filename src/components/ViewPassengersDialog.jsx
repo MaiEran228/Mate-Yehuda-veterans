@@ -1,18 +1,7 @@
 import React, { useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-  Box,
-  Divider,
-  ToggleButton,
-  ToggleButtonGroup,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, List, ListItem,
+  Typography, Box, Divider,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -22,16 +11,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 function ViewPassengersDialog({ open, onClose, passengers, transportDays = [], profiles = [] }) {
   const [selectedDay, setSelectedDay] = useState('all');
 
-  const handleDayChange = (event, newDay) => {
-    if (newDay !== null) {
-      setSelectedDay(newDay);
-    }
-  };
-
-  // מסנן את הנוסעים לפי היום הנבחר
-  const filteredPassengers = selectedDay === 'all'
-    ? passengers
-    : passengers.filter(passenger => passenger.arrivalDays?.includes(selectedDay));
+  const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 
   return (
     <Dialog
@@ -93,9 +73,12 @@ function ViewPassengersDialog({ open, onClose, passengers, transportDays = [], p
                         {
                           (() => {
                             const profile = profiles.find(p => p.id === passenger.id);
-                            return profile && profile.arrivalDays && profile.arrivalDays.length > 0
-                              ? profile.arrivalDays.join(', ')
-                              : (passenger.arrivalDays?.join(', ') || 'לא צוין');
+                            const days = profile && profile.arrivalDays && profile.arrivalDays.length > 0
+                              ? profile.arrivalDays
+                              : (passenger.arrivalDays || []);
+                            return days.length > 0
+                              ? days.slice().sort((a, b) => arrivalDaysOrder.indexOf(a) - arrivalDaysOrder.indexOf(b)).join(', ')
+                              : 'לא צוין';
                           })()
                         }
                       </Typography>

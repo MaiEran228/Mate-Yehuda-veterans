@@ -10,17 +10,32 @@ import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import { collection, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getPassengerTransport } from '../utils/transportUtils';
 
 function Profiles() {
   const [profiles, setProfiles] = useState([]);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [missingTransportMap, setMissingTransportMap] = useState({});
 
   useEffect(() => {
     const loadProfiles = async () => {
       const data = await fetchAllProfiles();
       setProfiles(data);
+      // אחרי טעינת הפרופילים, בודק לכל אחד אם חסרה לו הסעה
+      const missingMap = {};
+      await Promise.all(
+        data.map(async (profile) => {
+          if (profile.transport === 'פרטי') {
+            missingMap[profile.id] = false;
+          } else {
+            const transport = await getPassengerTransport(profile.id);
+            missingMap[profile.id] = !transport;
+          }
+        })
+      );
+      setMissingTransportMap(missingMap);
     };
     loadProfiles();
   }, []);
@@ -29,6 +44,19 @@ function Profiles() {
     await addProfile(newProfile);
     const data = await fetchAllProfiles();
     setProfiles(data);
+    // עדכון סטטוס הסעה
+    const missingMap = {};
+    await Promise.all(
+      data.map(async (profile) => {
+        if (profile.transport === 'פרטי') {
+          missingMap[profile.id] = false;
+        } else {
+          const transport = await getPassengerTransport(profile.id);
+          missingMap[profile.id] = !transport;
+        }
+      })
+    );
+    setMissingTransportMap(missingMap);
   };
 
   const handleDeleteProfile = async (profileId) => {
@@ -52,6 +80,19 @@ function Profiles() {
       const data = await fetchAllProfiles();
       setProfiles(data);
       setSelectedProfile(null);
+      // עדכון סטטוס הסעה
+      const missingMap = {};
+      await Promise.all(
+        data.map(async (profile) => {
+          if (profile.transport === 'פרטי') {
+            missingMap[profile.id] = false;
+          } else {
+            const transport = await getPassengerTransport(profile.id);
+            missingMap[profile.id] = !transport;
+          }
+        })
+      );
+      setMissingTransportMap(missingMap);
     } catch (error) {
       console.error('Error deleting profile and attendance records:', error);
     }
@@ -74,6 +115,19 @@ function Profiles() {
       // מעדכן את הרשימה המקומית
       const data = await fetchAllProfiles();
       setProfiles(data);
+      // עדכון סטטוס הסעה
+      const missingMap = {};
+      await Promise.all(
+        data.map(async (profile) => {
+          if (profile.transport === 'פרטי') {
+            missingMap[profile.id] = false;
+          } else {
+            const transport = await getPassengerTransport(profile.id);
+            missingMap[profile.id] = !transport;
+          }
+        })
+      );
+      setMissingTransportMap(missingMap);
       
       // סגירת החלון
       setSelectedProfile(null);
@@ -216,6 +270,7 @@ function Profiles() {
               <ProfileCard
                 profile={profile}
                 onClick={() => setSelectedProfile(profile)}
+                missingTransport={missingTransportMap[profile.id]}
               />
             </Grid>
           ))}

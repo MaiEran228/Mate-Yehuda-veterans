@@ -1,13 +1,14 @@
 import {
   TextField, MenuItem, Checkbox, FormControlLabel, Typography, Box, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, Select, InputLabel, FormControl, Avatar
+  Dialog, DialogTitle, DialogContent, DialogActions, Select, FormControl,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { findMatchingTransports, addPassengerToTransport, getPassengerTransport, removePassengerFromTransports } from '../utils/transportUtils';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import { useNavigate } from 'react-router-dom';
+import CustomDialog from './CustomDialog';
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
 const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
@@ -26,15 +27,23 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   const [imagePreview, setImagePreview] = useState(initialProfile.profileImage || null);
   const [isUploading, setIsUploading] = useState(false);
   const [noTransportDialogOpen, setNoTransportDialogOpen] = useState(false);
+  const [assignDialog, setAssignDialog] = useState({ open: false, message: '', type: 'info' });
   const navigate = useNavigate();
+
+  const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
+  const sortedArrivalDays = (initialProfile.arrivalDays || []).slice().sort((a, b) => arrivalDaysOrder.indexOf(a) - arrivalDaysOrder.indexOf(b));
 
   // בודק אם השדות הרלוונטיים להסעה השתנו
   const hasTransportFieldsChanged = () => {
+    // השוואה מדויקת יותר של מערכי ימי הגעה
+    const currentDaysSorted = (initialProfile.arrivalDays || []).slice().sort();
+    const originalDaysSorted = (originalTransportData.arrivalDays || []).slice().sort();
+
     return (
       initialProfile.city !== originalTransportData.city ||
       initialProfile.transport !== originalTransportData.transport ||
       initialProfile.hasCaregiver !== originalTransportData.hasCaregiver ||
-      JSON.stringify(initialProfile.arrivalDays?.sort()) !== JSON.stringify(originalTransportData.arrivalDays?.sort())
+      JSON.stringify(currentDaysSorted) !== JSON.stringify(originalDaysSorted)
     );
   };
 
@@ -73,24 +82,37 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       if (initialProfile.transport === "פרטי") {
         await removePassengerFromTransports(initialProfile.id);
         setSuccessDialog({ open: true, message: "דרך ההגעה השתנתה לפרטי" });
+        setOriginalTransportData({
+          city: initialProfile.city,
+          transport: initialProfile.transport,
+          arrivalDays: initialProfile.arrivalDays,
+          hasCaregiver: initialProfile.hasCaregiver
+        });
         setLoading(false);
         return;
       }
-      // קודם מסיר את הנוסע מההסעה הקודמת
-      await removePassengerFromTransports(initialProfile.id);
 
-      const matchingTransports = await findMatchingTransports(
-        initialProfile.arrivalDays || [],
-        initialProfile.city,
-        initialProfile.transport,
-        initialProfile.hasCaregiver || false
-      );
+      // וידוא שיש את כל הנתונים הנדרשים
+      if (!initialProfile.arrivalDays || initialProfile.arrivalDays.length === 0) {
+        setSuccessDialog({ open: true, message: "נא לבחור ימי הגעה לפני עדכון הסעה" });
+        setLoading(false);
+        return;
+      }
+      if (!initialProfile.city) {
+        setSuccessDialog({ open: true, message: "נא למלא יישוב לפני עדכון הסעה" });
+        setLoading(false);
+        return;
+      }
 
-      if (matchingTransports.length === 0) {
-        setNoTransportDialogOpen(true);
-      } else if (matchingTransports.length === 1) {
-        const transport = matchingTransports[0];
-        await addPassengerToTransport(transport.id, {
+      // בדוק אם הנוסע כבר משובץ להסעה
+      const currentTransport = await getPassengerTransport(initialProfile.id);
+      const allDaysIncluded = currentTransport && initialProfile.arrivalDays.every(day => currentTransport.days.includes(day)) && currentTransport.type === initialProfile.transport && currentTransport.cities.includes(initialProfile.city);
+      if (currentTransport && allDaysIncluded) {
+        // עדכן את arrivalDays של הנוסע בתוך ההסעה הקיימת
+        const updatedPassengers = (currentTransport.passengers || []).map(p =>
+          p.id === initialProfile.id ? { ...p, arrivalDays: initialProfile.arrivalDays, hasCaregiver: initialProfile.hasCaregiver } : p
+        );
+        await addPassengerToTransport(currentTransport.id, {
           id: initialProfile.id,
           name: initialProfile.name,
           phone: initialProfile.phone,
@@ -98,8 +120,54 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
           hasCaregiver: initialProfile.hasCaregiver || false,
           arrivalDays: initialProfile.arrivalDays || []
         });
-        const successMessage = `${initialProfile.name} שובץ להסעה מספר ${transport.serialNumber} - ${transport.cities.join(' -> ')}`;
-        setSuccessDialog({ open: true, message: successMessage });
+        setSuccessDialog({
+          open: true,
+          message: `${initialProfile.name} עודכן להסעה מספר ${currentTransport.serialNumber} - ${currentTransport.cities.join(' -> ')} (ימים: ${initialProfile.arrivalDays.join(', ')})`
+        });
+        setOriginalTransportData({
+          city: initialProfile.city,
+          transport: initialProfile.transport,
+          arrivalDays: initialProfile.arrivalDays,
+          hasCaregiver: initialProfile.hasCaregiver
+        });
+        setLoading(false);
+        return;
+      }
+
+      // אם אין הסעה קיימת מתאימה, המשך עם הלוגיקה הרגילה
+      await removePassengerFromTransports(initialProfile.id);
+      let attempts = 0;
+      const maxAttempts = 5;
+      let checkTransport = null;
+      do {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        checkTransport = await getPassengerTransport(initialProfile.id);
+        attempts++;
+      } while (checkTransport && attempts < maxAttempts);
+
+      const matchingTransports = await findMatchingTransports(
+        initialProfile.arrivalDays || [],
+        initialProfile.city,
+        initialProfile.transport,
+        initialProfile.hasCaregiver || false,
+        initialProfile.id
+      );
+
+      if (matchingTransports.length === 0) {
+        setNoTransportDialogOpen(true);
+      } else if (matchingTransports.length === 1) {
+        await addPassengerToTransport(matchingTransports[0].id, {
+          id: initialProfile.id,
+          name: initialProfile.name,
+          phone: initialProfile.phone,
+          city: initialProfile.city,
+          hasCaregiver: initialProfile.hasCaregiver || false,
+          arrivalDays: initialProfile.arrivalDays || []
+        });
+        setSuccessDialog({
+          open: true,
+          message: `${initialProfile.name} שובץ להסעה מספר ${matchingTransports[0].serialNumber} - ${matchingTransports[0].cities.join(' -> ')} (ימים: ${initialProfile.arrivalDays.join(', ')})`
+        });
         setOriginalTransportData({
           city: initialProfile.city,
           transport: initialProfile.transport,
@@ -119,8 +187,13 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
 
   const handleTransportSelect = async (transport) => {
     try {
-      // קודם מסיר את הנוסע מההסעה הקודמת
+      console.log('Selecting transport:', transport.serialNumber); // לוג לדיבוג
+
+      // קודם מסיר את הנוסע מההסעה הקודמת (וידוא כפול)
       await removePassengerFromTransports(initialProfile.id);
+
+      // המתנה קצרה
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       await addPassengerToTransport(transport.id, {
         id: initialProfile.id,
@@ -130,7 +203,12 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         hasCaregiver: initialProfile.hasCaregiver || false,
         arrivalDays: initialProfile.arrivalDays || []
       });
-      alert(`${initialProfile.name} שובץ להסעה מספר ${transport.serialNumber} - ${transport.cities.join(' -> ')}`);
+
+      setAssignDialog({
+        open: true,
+        message: `${initialProfile.name} שובץ להסעה מספר ${transport.serialNumber} - ${transport.cities.join(' -> ')}`,
+        type: 'success'
+      });
       setTransportDialog({ open: false, transports: [] });
 
       // עדכון הנתונים המקוריים לאחר שיבוץ מוצלח
@@ -142,7 +220,11 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       });
     } catch (error) {
       console.error('Error assigning to transport:', error);
-      alert('אירעה שגיאה בשיבוץ להסעה: ' + error.message);
+      setAssignDialog({
+        open: true,
+        message: 'אירעה שגיאה בשיבוץ להסעה: ' + error.message,
+        type: 'error'
+      });
     }
   };
 
@@ -188,7 +270,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
 
     if (!hasErrors) {
       let finalImageUrl = profileData.profileImage;
-      
+
       // אם יש תמונה חדשה (data URL), העלה אותה לפיירבייס
       if (imagePreview && imagePreview !== initialProfile.profileImage) {
         setIsUploading(true);
@@ -196,10 +278,10 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
           // המרת data URL לקובץ
           const response = await fetch(imagePreview);
           const blob = await response.blob();
-          
+
           const fileName = `profile-images/${profileData.id}-${Date.now()}.jpg`;
           const storageRef = ref(storage, fileName);
-          
+
           const snapshot = await uploadBytes(storageRef, blob);
           finalImageUrl = await getDownloadURL(snapshot.ref);
         } catch (error) {
@@ -210,7 +292,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         }
         setIsUploading(false);
       }
-  
+
       await handleSave({
         ...profileData,
         profileImage: finalImageUrl
@@ -261,7 +343,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-  
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
@@ -335,7 +417,8 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                     <img src={initialProfile.profileImage} alt="תמונת פרופיל" style={{
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover'}} />
+                      objectFit: 'cover'
+                    }} />
                   ) : (
                     <AddPhotoAlternateIcon sx={{ fontSize: 40, color: '#999' }} />
                   )}
@@ -520,12 +603,12 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                     key={value}
                     control={
                       <Checkbox
-                        checked={initialProfile.arrivalDays.includes(value)}
+                        checked={sortedArrivalDays.includes(value)}
                         onChange={() => {
-                          const isSelected = initialProfile.arrivalDays.includes(value);
+                          const isSelected = sortedArrivalDays.includes(value);
                           const updatedDays = isSelected
-                            ? initialProfile.arrivalDays.filter((d) => d !== value)
-                            : [...initialProfile.arrivalDays, value];
+                            ? sortedArrivalDays.filter((d) => d !== value)
+                            : [...sortedArrivalDays, value];
                           handleChange("arrivalDays")({ target: { value: updatedDays } });
                         }}
                         sx={errors.arrivalDays ? { color: 'error.main' } : {}}
@@ -671,15 +754,9 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
                   onClick={handleAssignTransport}
                   variant="outlined"
                   color="primary"
-                  disabled={
-                    loading ||
-                    !initialProfile.city ||
-                    !initialProfile.transport ||
-                    !initialProfile.arrivalDays?.length ||
-                    !hasTransportFieldsChanged()
-                  }
+                  disabled={loading || isUploading}
                 >
-                  עדכון הסעה
+                  {loading ? 'מעדכן...' : 'עדכון הסעה'}
                 </Button>
               </Box>
 
@@ -740,27 +817,14 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         </DialogActions>
       </Dialog>
 
-      <Dialog
-        open={successDialog.open}
-        onClose={() => setSuccessDialog({ open: false, message: '' })}
-        maxWidth="sm"
-        fullWidth
-        dir="rtl"
+      <CustomDialog
+        open={assignDialog.open}
+        onClose={() => setAssignDialog({ ...assignDialog, open: false })}
+        title={assignDialog.type === 'error' ? 'שגיאה' : 'הצלחה'}
+        actions={<Button onClick={() => setAssignDialog({ ...assignDialog, open: false })} variant="contained">סגור</Button>}
       >
-        <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0' }}>
-          עדכון הסעה
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {successDialog.message}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSuccessDialog({ open: false, message: '' })}>
-            סגור
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {assignDialog.message}
+      </CustomDialog>
 
       {/* דיאלוג הודעה על חוסר הסעה */}
       <Dialog

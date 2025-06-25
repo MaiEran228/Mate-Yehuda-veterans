@@ -171,6 +171,7 @@ const ExportPDFButton = ({
         columnStyles: safeCustomStyles.columnStyles || {},
         tableLineWidth: 0.1,
         tableLineColor: [0, 0, 0],
+        rowPageBreak: 'avoid',
         
         // callback functions עם תמיכה בעברית
         didParseCell: function(data) {

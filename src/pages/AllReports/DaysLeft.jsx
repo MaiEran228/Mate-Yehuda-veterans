@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchAttendanceByDate, fetchAllProfiles } from '../../firebase';
 import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Divider } from '@mui/material';
 import dayjs from 'dayjs';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import PDFDaysLeft from '../../components/PDFDaysLeft';
 import { useNavigate } from 'react-router-dom';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -105,6 +104,8 @@ const DaysLeft = () => {
     return {
       id: profile.id,
       name: profile.name,
+      eligible,
+      attendedCount,
       remaining: Math.max(eligible - attendedCount, 0),
       missed,
       missedDates,
@@ -166,19 +167,6 @@ const DaysLeft = () => {
     setSurplusOpen(true);
   };
 
-  const handleExportPDF = () => {
-    const input = document.getElementById('daysLeftReportContent');
-    html2canvas(input).then(canvas => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`דו"ח ימים נותרים - ${selectedMonth}.pdf`);
-    });
-  };
-
   // מיון people לפי שם
   const sortedPeople = [...people].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
   const sortedExtraPeople = [...extraPeople].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
@@ -229,57 +217,7 @@ const DaysLeft = () => {
         }
       }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={handleSurplusOpen}
-            sx={{
-              border: '1.7px solid rgba(64, 99, 112, 0.72)',
-              color: 'rgba(64, 99, 112, 0.72)',
-              fontWeight: 'bold',
-              ':hover': {
-                borderColor: '#7b8f99',
-                color: '#5a676e',
-                outline: 'none'
-              },
-              '&:focus': {
-                outline: 'none'
-              },
-              '&:active': {
-                outline: 'none'
-              },
-              minWidth: 'auto',
-            }}
-          >
-            ימי עודף
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleExportPDF}
-            sx={{
-              backgroundColor: 'rgba(142, 172, 183, 0.72)',
-              border: 'none',
-              outline: 'none',
-              ':hover': {
-                backgroundColor: 'rgb(185, 205, 220)',
-                border: 'none',
-                outline: 'none'
-              },
-              fontWeight: 'bold',
-              color: 'black',
-              '&:focus': {
-                border: 'none',
-                outline: 'none'
-              },
-              '&:active': {
-                border: 'none',
-                outline: 'none'
-              },
-              minWidth: '120px',
-            }}
-          >
-            ייצוא ל־PDF
-          </Button>
+          <PDFDaysLeft people={people} selectedMonth={selectedMonth} />
           <Button
             variant="contained"
             color="primary"
@@ -312,11 +250,11 @@ const DaysLeft = () => {
               const worksheet = workbook.addWorksheet('יתרת ימי זכאות', {
                 views: [{ rightToLeft: true }],
               });
-              const columns = ['מספור', 'שם', 'יתרת ימי זכאות החודש'];
+              const columns = ['מספור', 'שם', 'סה"כ ימי זכאות החודש', 'מספר הגעות בפועל', 'יתרת ימי זכאות החודש', 'היעדרויות מהימים הצפויים'];
               worksheet.columns = columns.map((col, idx) => ({
                 header: col,
                 key: col,
-                width: [6, 20, 20][idx],
+                width: [6, 20, 20, 20, 20, 24][idx],
                 style: {
                   alignment: { horizontal: 'center' },
                   font: { name: 'Arial', size: 12 },
@@ -365,7 +303,10 @@ const DaysLeft = () => {
                 worksheet.addRow({
                   'מספור': idx + 1,
                   'שם': person.name,
-                  'יתרת ימי זכאות החודש': person.remaining
+                  'סה"כ ימי זכאות החודש': person.eligible,
+                  'מספר הגעות בפועל': person.attendedCount,
+                  'יתרת ימי זכאות החודש': person.remaining,
+                  'היעדרויות מהימים הצפויים': person.missedAfterPenalty
                 });
               });
               // גבולות ויישור לכל התאים
@@ -390,6 +331,7 @@ const DaysLeft = () => {
           >
             ייצוא ל-Excel
           </Button>
+
         </Box>
       </Box>
 
@@ -416,21 +358,27 @@ const DaysLeft = () => {
                 </Box>
                 <Box sx={{ mt: 4 }}>
                   <Typography variant="h6" gutterBottom sx={{ pb: 1 }}>
-                    טבלת יתרת ימי זכאות לחודש
+                    טבלת זכאות החודש
                   </Typography>
                   <Box sx={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', direction: 'rtl', tableLayout: 'fixed' }}>
                       <thead>
                         <tr>
                           <th style={{ border: '1px solid #ccc', padding: 16, backgroundColor: '#f5f5f5' }}>שם</th>
+                          <th style={{ border: '1px solid #ccc', padding: 16, backgroundColor: '#f5f5f5' }}>סה"כ ימי זכאות החודש</th>
+                          <th style={{ border: '1px solid #ccc', padding: 16, backgroundColor: '#f5f5f5' }}>ימים שנוצלו</th>
                           <th style={{ border: '1px solid #ccc', padding: 16, backgroundColor: '#f5f5f5' }}>יתרת ימי זכאות החודש</th>
+                          <th style={{ border: '1px solid #ccc', padding: 16, backgroundColor: '#f5f5f5' }}>היעדרות מהימי הגעה</th>
                         </tr>
                       </thead>
                       <tbody>
                         {sortedPeople.map(person => (
                           <tr key={person.id} style={{ minHeight: 48, }}>
                             <td style={{ border: '1px solid #ccc', padding: 16, textAlign: 'center', }}>{person.name}</td>
+                            <td style={{ border: '1px solid #ccc', padding: 16, textAlign: 'center', }}>{person.eligible}</td>
+                            <td style={{ border: '1px solid #ccc', padding: 16, textAlign: 'center', }}>{person.attendedCount}</td>
                             <td style={{ border: '1px solid #ccc', padding: 16, textAlign: 'center', }}>{person.remaining}</td>
+                            <td style={{ border: '1px solid #ccc', padding: 16, textAlign: 'center', }}>{person.missedAfterPenalty}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -457,117 +405,6 @@ const DaysLeft = () => {
               <Button onClick={() => setExtraOpen(false)} color="primary">סגור</Button>
             </DialogActions>
           </Dialog>
-          <Dialog open={surplusOpen} onClose={() => setSurplusOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ position: 'relative', pr: 4 }}>
-              חישוב ימי עודף
-              <Button
-                onClick={() => setSurplusOpen(false)}
-                aria-label="סגור"
-                sx={{
-                  position: 'absolute',
-                  left: 8,
-                  top: 8,
-                  minWidth: '32px',
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: '#888',
-                  borderRadius: '50%',
-                  boxShadow: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  ':hover': {
-                    backgroundColor: '#f0f0f0',
-                    color: '#333',
-                  },
-                  '&:focus': {
-                    border: 'none',
-                    outline: 'none',
-                  },
-                  '&:active': {
-                    border: 'none',
-                    outline: 'none',
-                  },
-                  p: 0,
-                }}
-              >
-                <CloseIcon fontSize="small" />
-              </Button>
-            </DialogTitle>
-
-            <DialogContent sx={{ overflow: 'hidden' }}>
-              <Divider sx={{ mb: 2, mt: 0, borderColor: '#e0e0e0', borderBottomWidth: 1 }} />
-              <Box
-                id="surplusTableContent"
-                sx={{
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  direction: 'ltr', 
-                  pr: 1 
-                }}
-              >
-                <table
-                  style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    direction: 'rtl', 
-                    tableLayout: 'fixed',
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>שם</th>
-                      <th style={{ border: '1px solid #ccc', padding: 12, backgroundColor: '#f5f5f5' }}>
-                        מספר ימים שהיה אמור להגיע ולא הגיע
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedPeople.map((person) => (
-                      <tr key={person.id}>
-                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.name}</td>
-                        <td style={{ border: '1px solid #ccc', padding: 12, textAlign: 'center' }}>{person.missedAfterPenalty}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Box>
-            </DialogContent>
-
-            <DialogActions>
-              <Button
-                onClick={() => setSurplusOpen(false)}
-                variant="contained"
-                sx={{
-                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
-                  border: 'none',
-                  outline: 'none',
-                  ':hover': {
-                    backgroundColor: 'rgb(185, 205, 220)',
-                    border: 'none',
-                    outline: 'none'
-                  },
-                  fontWeight: 'bold',
-                  color: 'black',
-                  '&:focus': {
-                    border: 'none',
-                    outline: 'none'
-                  },
-                  '&:active': {
-                    border: 'none',
-                    outline: 'none'
-                  },
-                 
-                }}
-              >
-                סגור
-              </Button>
-            </DialogActions>
-          </Dialog>
-
         </Container>
       </Box>
     </>

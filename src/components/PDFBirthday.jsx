@@ -65,56 +65,52 @@ const PDFBirthday = ({ profilesByMonth, selectedMonth }) => {
     doc.text(processHebrewText(`סה"כ חוגגים החודש: ${profilesByMonth[selectedMonth]?.length || 0}`), 105, 38, { align: 'center' });
     
     // Card layout
+    const monthProfiles = (profilesByMonth[selectedMonth] || []).slice();
     const cardsPerRow = 3;
     const cardWidth = 54;
     const cardHeight = 32;
     const marginX = 8;
     const marginY = 10;
     const startX = 15;
-    let x = startX;
     let y = 50;
-    let col = 0;
 
-    const sortedMonthProfiles = (profilesByMonth[selectedMonth] || []).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+    for (let i = 0; i < monthProfiles.length; i += cardsPerRow) {
+      const row = monthProfiles.slice(i, i + cardsPerRow).reverse(); // הפוך כל שורה
+      let x = startX;
+      row.forEach((profile, idxInRow) => {
+        // Draw shadow
+        doc.setFillColor(220, 225, 230);
+        doc.roundedRect(x + 1, y + 1, cardWidth, cardHeight, 6, 6, 'F');
 
-    sortedMonthProfiles.forEach((profile, idx) => {
-      // Draw shadow
-      doc.setFillColor(220, 225, 230);
-      doc.roundedRect(x + 1, y + 1, cardWidth, cardHeight, 6, 6, 'F');
-      
-      // Draw card background
-      doc.setFillColor(235, 245, 255);
-      doc.roundedRect(x, y, cardWidth, cardHeight, 6, 6, 'F');
-      
-      // Name (bold, blue), right-aligned
-      doc.setFont('AlefHebrew', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(33, 102, 183);
-      doc.text(processHebrewText(profile.name || ''), x + cardWidth - 6, y + 12, { align: 'right' });
+        // Draw card background
+        doc.setFillColor(235, 245, 255);
+        doc.roundedRect(x, y, cardWidth, cardHeight, 6, 6, 'F');
 
-      // Age and birth date (no cake icon)
-      doc.setFont('AlefHebrew', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(80, 80, 80);
-      const birthDate = dayjs(profile.birthDate);
-      const age = dayjs().diff(birthDate, 'year');
-      doc.text(processHebrewText(`גיל: ${age}`), x + cardWidth - 6, y + 20, { align: 'right' });
-      doc.text(processHebrewText(`תאריך לידה: ${birthDate.format('DD/MM/YYYY')}`), x + cardWidth - 6, y + 28, { align: 'right' });
+        // Name (bold, blue), right-aligned
+        doc.setFont('AlefHebrew', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(33, 102, 183);
+        doc.text(processHebrewText(profile.name || ''), x + cardWidth - 6, y + 12, { align: 'right' });
 
-      // Next card position
-      col++;
-      if (col === cardsPerRow) {
-        col = 0;
-        x = startX;
-        y += cardHeight + marginY;
-        if (y + cardHeight + marginY > 285) {
-          doc.addPage();
-          y = 20;
-        }
-      } else {
+        // Age and birth date (no cake icon)
+        doc.setFont('AlefHebrew', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        const birthDate = dayjs(profile.birthDate);
+        const age = dayjs().diff(birthDate, 'year');
+        doc.text(processHebrewText(`גיל: ${age}`), x + cardWidth - 6, y + 20, { align: 'right' });
+        doc.text(processHebrewText(`תאריך לידה: ${birthDate.format('DD/MM/YYYY')}`), x + cardWidth - 6, y + 28, { align: 'right' });
+
+        // Next card position in row
         x += cardWidth + marginX;
+      });
+      // Next row position
+      y += cardHeight + marginY;
+      if (y + cardHeight + marginY > 285) {
+        doc.addPage();
+        y = 20;
       }
-    });
+    }
 
     // Footer
     doc.setFont('AlefHebrew', 'normal');
@@ -141,7 +137,16 @@ const PDFBirthday = ({ profilesByMonth, selectedMonth }) => {
         },
         fontWeight: 'bold',
         color: 'black',
-        minWidth: '120px'
+        '&:focus': {
+          border: 'none',
+          outline: 'none'
+        },
+        '&:active': {
+          border: 'none',
+          outline: 'none'
+        },
+        minWidth: '120px',
+        ml: 2
       }}
     >
       ייצוא ל-PDF
@@ -149,4 +154,4 @@ const PDFBirthday = ({ profilesByMonth, selectedMonth }) => {
   );
 };
 
-export default PDFBirthday;  
+export default PDFBirthday; 
