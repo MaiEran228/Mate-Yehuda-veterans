@@ -5,7 +5,6 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import backgtoundLoginpage from '../assets/backgtoundLoginpage.jpg';
 import loginOlder from '../assets/LoginOlder.jpg';
 import { auth } from '../firebase';
 import {
@@ -224,7 +223,9 @@ export default function Login({ onLogin }) {
                                 mb: 2,
                                 '&:hover': {
                                     background: 'rgb(109, 169, 212)',
-                                }
+                                },
+                                '&:focus': { outline: 'none', border: 'none' },
+                                '&:active': { outline: 'none', border: 'none' }
                             }}
                         >
                             כניסה

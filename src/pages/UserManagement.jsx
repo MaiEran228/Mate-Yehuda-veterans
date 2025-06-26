@@ -374,9 +374,16 @@ export default function UserManagement() {
             variant="contained"
             color="primary"
             fullWidth
-            size="small"
             disabled={!currentPassword || !password || password !== confirmPassword || loading}
             onClick={handleChangePassword}
+            sx={{
+              backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              color: 'black',
+              fontWeight: 'bold',
+              '&:hover': {
+                backgroundColor: 'rgb(185, 205, 220)',
+              },
+            }}
           >
             {loading ? 'מחליף...' : 'החלף סיסמה'}
           </Button>

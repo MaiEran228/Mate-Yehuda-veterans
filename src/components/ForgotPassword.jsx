@@ -31,8 +31,22 @@ function ForgotPassword({ onClose }) {
         style={styles.input}
       />
       <div style={styles.buttons}>
-        <button onClick={onClose} style={{ ...styles.button, background: 'transparent', color: 'rgb(105, 148, 179)', border: '1px solid rgb(114, 152, 179)' }}>בטל</button>
-        <button onClick={handleReset} style={styles.button}>שלח</button>
+        <button
+          onClick={onClose}
+          style={{ ...styles.button, background: 'transparent', color: 'rgb(105, 148, 179)', border: '1px solid rgb(114, 152, 179)', outline: 'none' }}
+          onFocus={e => e.target.style.outline = 'none'}
+          onMouseDown={e => e.target.style.outline = 'none'}
+        >
+          ביטול
+        </button>
+        <button
+          onClick={handleReset}
+          style={{ ...styles.button, outline: 'none' }}
+          onFocus={e => e.target.style.outline = 'none'}
+          onMouseDown={e => e.target.style.outline = 'none'}
+        >
+          שליחה
+        </button>
       </div>
     </div>
   );
@@ -101,5 +115,7 @@ const styles = {
     color: '#fff',
     fontWeight: 600,
     transition: 'background 0.2s',
+    '&:focus': { outline: 'none', border: 'none' },
+    '&:active': { outline: 'none', border: 'none' }
   }
 };

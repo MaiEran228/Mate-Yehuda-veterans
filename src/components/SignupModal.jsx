@@ -155,7 +155,9 @@ export default function SignupModal({ open, onClose }) {
           border: '1px solid rgb(114, 152, 179)',
           background: 'transparent',
           borderRadius: 2,
-          px: 4
+          px: 4,
+          '&:focus': { outline: 'none', border: 'none' },
+          '&:active': { outline: 'none', border: 'none' }
         }}>
           ביטול
         </Button>
@@ -166,7 +168,9 @@ export default function SignupModal({ open, onClose }) {
           border: 'none',
           borderRadius: 2,
           px: 4,
-          '&:hover': { background: 'rgb(90, 130, 160)' }
+          '&:hover': { background: 'rgb(90, 130, 160)' },
+          '&:focus': { outline: 'none', border: 'none' },
+          '&:active': { outline: 'none', border: 'none' }
         }}>
           שמור
         </Button>

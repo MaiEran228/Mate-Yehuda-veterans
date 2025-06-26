@@ -102,7 +102,7 @@ function ToolbarMUI({ onLogout }) {
                 width: 'auto',
                 maxWidth: '85px',
                 borderRadius: '100%', // עיגול הפינות
-                border: '2px solid rgba(76, 109, 55, 0.89)',
+                
               }}
             />
           </Box>

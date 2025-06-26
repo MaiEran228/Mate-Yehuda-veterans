@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { removePassengerFromTransports, getPassengerTransport } from "../utils/transportUtils";
-import { Dialog, DialogTitle, DialogContent, Typography, Button, Box, Avatar,
+import {
+    Dialog, DialogTitle, DialogContent, Typography, Button, Box, Avatar,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
@@ -10,11 +11,11 @@ import dayjs from "dayjs";
 import CustomDialog from './CustomDialog';
 
 const dayMap = {
-  'ראשון': 'א',
-  'שני': 'ב',
-  'שלישי': 'ג',
-  'רביעי': 'ד',
-  'חמישי': 'ה',
+    'ראשון': 'א',
+    'שני': 'ב',
+    'שלישי': 'ג',
+    'רביעי': 'ד',
+    'חמישי': 'ה',
 };
 
 const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
@@ -129,20 +130,24 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
             }}
         >
             <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box sx={{ display: 'flex', gap: 2, position: 'absolute', right: 16, top: 16, 
+                <Box sx={{
+                    display: 'flex', gap: 2, position: 'absolute', right: 16, top: 16,
                     mt: 1
                 }}>
                     <Button
                         onClick={() => setIsEditing(true)}
                         variant="outlined"
                         size="small"
-                        sx={{ 
-                            minWidth: '30px',
-                            height: '25px',
-                            fontSize: '0.8rem',
-                            padding: '4px 0px 4px 14px'
+                        sx={{
+                            border: '1.7px solid rgba(64, 99, 112, 0.72)',
+                            color: 'rgba(64, 99, 112, 0.72)',
+                            fontWeight: 'bold',
+                            ':hover': { borderColor: '#7b8f99', color: '#5a676e', outline: 'none' },
+                            '&:focus': { outline: 'none' },
+                            '&:active': { outline: 'none' },
+                            minWidth: 'auto',
                         }}
-                        startIcon={<EditIcon sx={{ fontSize: '0.9rem', ml: 1 }} />}
+                        startIcon={<EditIcon sx={{ fontSize: '0.9rem', ml: 0.5, mr: -1 }} />}
                     >
                         ערוך
                     </Button>
@@ -152,21 +157,21 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                         color="error"
                         variant="outlined"
                         size="small"
-                        sx={{ 
-                            minWidth: '50px',
-                            height: '25px',
-                            fontSize: '0.8rem',
-                            padding: '4px 8px'
-                            
+                        sx={{
+                            fontWeight: 'bold',
+                            ':hover': { borderColor: '#7b8f99', color: '#5a676e', outline: 'none' },
+                            '&:focus': { outline: 'none' },
+                            '&:active': { outline: 'none' },
+                            minWidth: 'auto',
                         }}
                     >
                         מחק
                     </Button>
                 </Box>
-                <Typography 
-                    variant="h4" 
-                    component="div" 
-                    sx={{ 
+                <Typography
+                    variant="h4"
+                    component="div"
+                    sx={{
                         flexGrow: 1,
                         fontWeight: 'bold',
                         fontSize: '2rem',
@@ -179,8 +184,8 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                 <Avatar
                     alt={profile.name}
                     src={profile.profileImage || ""}
-                    sx={{ 
-                        width: 170, 
+                    sx={{
+                        width: 170,
                         height: 170,
                         mt: 4
                     }}
@@ -195,6 +200,13 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                         left: 8,
                         top: 8,
                         color: (theme) => theme.palette.grey[500],
+                        border: 'none',
+                        outline: 'none',
+                        boxShadow: 'none',
+                        '&:hover': { backgroundColor: 'transparent', border: 'none', outline: 'none',
+                            boxShadow: 'none', },
+                        '&:focus': { border: 'none', outline: 'none', boxShadow: 'none', },
+                        '&:active': { border: 'none', outline: 'none',  boxShadow: 'none', },
                     }}
                 >
                     <CloseIcon />
@@ -245,7 +257,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                                 <Box component="span" fontWeight="bold" fontSize="1.1rem">ימי הגעה: </Box>
                                 <Box component="span">{sortedArrivalDays.map(day => dayMap[day] || day).join(", ")}</Box>
                             </Typography>
-                            
+
                             <Typography sx={{ my: 0 }}>
                                 <Box component="span" fontWeight="bold" fontSize="1.1rem">הסעה: </Box>
                                 <Box component="span">{profile.transport}</Box>
@@ -266,7 +278,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                                             : "נדרש לשבץ להסעה")}
                                 </Box>
                             </Typography>
-                            
+
                             <Typography sx={{ my: 0 }}>
                                 <Box component="span" fontWeight="bold" fontSize="1.1rem">מטפל: </Box>
                                 <Box component="span">{profile.hasCaregiver ? "כן" : "לא"}</Box>
@@ -279,8 +291,8 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
                                 <Box component="span" fontWeight="bold" fontSize="1.1rem">רמת תפקוד: </Box>
                                 <Box component="span">{profile.functionLevel}</Box>
                             </Typography>
-                            
-                            
+
+
                             <Typography sx={{ my: 0 }}>
                                 <Box component="span" fontWeight="bold" fontSize="1.1rem">זכאות: </Box>
                                 <Box component="span">{profile.eligibility}</Box>
@@ -310,52 +322,52 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
 
             {/* Delete Confirmation Dialog */}
             <CustomDialog
-              open={deleteDialogOpen}
-              onClose={() => setDeleteDialogOpen(false)}
-              title="אישור מחיקה"
-              dialogContentSx={{ mt: 2 }}
-              actions={[
-                <Button
-                  key="cancel"
-                  onClick={() => setDeleteDialogOpen(false)}
-                  variant="outlined"
-                  sx={{
-                    borderColor: 'white',
-                    color: 'black',
-                    '&:hover': {
-                      borderColor: 'black',
-                      color: 'black'
-                    },
-                    minWidth: '100px'
-                  }}
-                >
-                  ביטול
-                </Button>,
-                <Button
-                  key="confirm"
-                  onClick={confirmDelete}
-                  variant="contained"
-                  sx={{
-                    backgroundColor: '#d32f2f',
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: '#aa2424'
-                    },
-                    minWidth: '100px'
-                  }}
-                >
-                  אישור
-                </Button>
-              ]}
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                title="אישור מחיקה"
+                dialogContentSx={{ mt: 2 }}
+                actions={[
+                    <Button
+                        key="cancel"
+                        onClick={() => setDeleteDialogOpen(false)}
+                        variant="outlined"
+                        sx={{
+                            borderColor: 'white',
+                            color: 'black',
+                            '&:hover': {
+                                borderColor: 'black',
+                                color: 'black'
+                            },
+                            minWidth: '100px'
+                        }}
+                    >
+                        ביטול
+                    </Button>,
+                    <Button
+                        key="confirm"
+                        onClick={confirmDelete}
+                        variant="contained"
+                        sx={{
+                            backgroundColor: '#d32f2f',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: '#aa2424'
+                            },
+                            minWidth: '100px'
+                        }}
+                    >
+                        אישור
+                    </Button>
+                ]}
             >
-              <Typography variant="body1" sx={{
-                textAlign: 'right',
-                color: 'black',
-                fontSize: '1.1rem',
-                fontWeight: 500
-              }}>
-                האם אתה בטוח שברצונך למחוק את {profile.name}?
-              </Typography>
+                <Typography variant="body1" sx={{
+                    textAlign: 'right',
+                    color: 'black',
+                    fontSize: '1.1rem',
+                    fontWeight: 500
+                }}>
+                    האם אתה בטוח שברצונך למחוק את {profile.name}?
+                </Typography>
             </CustomDialog>
         </Dialog>
     );

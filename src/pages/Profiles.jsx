@@ -108,7 +108,7 @@ function Profiles() {
         color="default"
         elevation={0}
         sx={{
-          top: '90px', // גובה ה-ToolBarMUI הראשי
+          top: '84px', // גובה ה-ToolBarMUI הראשי
           zIndex: 1200,
           backgroundColor: '#ebf1f5', // צבע רקע זהה לרקע העמוד
         }}

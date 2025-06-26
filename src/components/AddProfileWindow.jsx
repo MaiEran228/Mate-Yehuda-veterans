@@ -8,10 +8,12 @@ import { db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import ProfileFormFields from './ProfileFormFields';
 import CustomDialog from './CustomDialog';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 
 function AddProfileWindow({ open, onClose, onSave }) {
     const initialFormData = {
-        name: "", age: "", id: "", address: "", city: "", birthDate: "", phone: "", phone2:"", email: "",
+        name: "", age: "", id: "", address: "", city: "", birthDate: "", phone: "", phone2: "", email: "",
         transport: "", functionLevel: "", gender: "", arrivalDays: [], eligibility: "", isHolocaustSurvivor: false,
         hasCaregiver: false, membership: "", nursingCompany: "", profileImage: "",
     };
@@ -42,7 +44,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
         try {
             const profileRef = doc(db, 'profiles', id);
             const profileSnap = await getDoc(profileRef);
-            
+
             if (profileSnap.exists()) {
                 setErrors(prev => ({
                     ...prev,
@@ -137,7 +139,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
         }
         const requiredFields = ["name", "id", "city", "birthDate", "phone", "transport", "arrivalDays"];
         const newErrors = {};
-        
+
         // בדיקת שדות חובה
         requiredFields.forEach((field) => {
             if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
@@ -245,7 +247,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
 
             const successMessage = `${formData.name} שובץ להסעה מספר ${transport.serialNumber} - ${transport.cities.join(' -> ')}`;
             setSuccessDialog({ open: true, message: successMessage });
-            
+
             await onSave(formData);
             setFormData(initialFormData);
             setErrors({});
@@ -285,9 +287,36 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 <DialogTitle sx={{
                     backgroundColor: '#f5f5f5',
                     borderBottom: '1px solid #e0e0e0',
-                    mb: 1
+                    mb: 1,
+                    position: 'relative',
                 }}>
                     הוספת פרופיל חדש
+                    <IconButton
+                        aria-label="close"
+                        onClick={onClose}
+                        sx={{
+                            position: 'absolute',
+                            left: 8,
+                            top: 8,
+                            right: 'unset',
+                            color: (theme) => theme.palette.grey[600],
+                            border: 'none',
+                            outline: 'none',
+                            boxShadow: 'none',
+                            '&:hover': {
+                                backgroundColor: 'transparent', border: 'none', outline: 'none',
+                                boxShadow: 'none',
+                            },
+                            '&:focus': {
+                                border: 'none', outline: 'none', boxShadow: 'none',
+                            },
+                            '&:active': {
+                                border: 'none', outline: 'none', boxShadow: 'none',
+                            },
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
                 </DialogTitle>
                 <DialogContent dir="ltr">
                     <Box sx={{ direction: 'rtl' }}>
@@ -296,7 +325,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                                 {transportMessage.text}
                             </Alert>
                         )}
-                    
+
                         {/* שדות טקסט */}
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                             <ProfileFormFields
@@ -311,8 +340,39 @@ function AddProfileWindow({ open, onClose, onSave }) {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose}>ביטול</Button>
-                    <Button onClick={handleSubmit} variant="contained" color="primary">
+                    <Button
+                        onClick={onClose}
+                        variant="outlined"
+                        sx={{
+                            border: '1.7px solid rgba(64, 99, 112, 0.72)',
+                            color: 'rgba(64, 99, 112, 0.72)',
+                            fontWeight: 'bold',
+                            ':hover': { borderColor: '#7b8f99', color: '#5a676e', outline: 'none' },
+                            '&:focus': { outline: 'none' },
+                            '&:active': { outline: 'none' },
+                            minWidth: 'auto', ml: 2,
+                        }}
+                    >
+                        ביטול
+                    </Button>
+                    <Button onClick={handleSubmit} variant="contained" color="primary"
+                        sx={{
+                            backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                            color: 'black',
+                            fontWeight: 'bold',
+                            border: 'none', outline: 'none', boxShadow: 'none',
+                            '&:hover': {
+                                backgroundColor: 'rgb(185, 205, 220)',
+                                border: 'none', outline: 'none', boxShadow: 'none',
+                            },
+                            '&:focus': {
+                                border: 'none', outline: 'none', boxShadow: 'none',
+                            },
+                            '&:active': {
+                                border: 'none', outline: 'none', boxShadow: 'none',
+                            },
+                        }}
+                    >
                         שמור
                     </Button>
                 </DialogActions>
@@ -320,84 +380,101 @@ function AddProfileWindow({ open, onClose, onSave }) {
 
             {/* דיאלוג בחירת הסעה */}
             <CustomDialog
-              open={showTransportDialog}
-              onClose={() => setShowTransportDialog(false)}
-              title="בחירת הסעה"
-              actions={
-                <Button onClick={() => setShowTransportDialog(false)}>
-                  ביטול
-                </Button>
-              }
+                open={showTransportDialog}
+                onClose={() => setShowTransportDialog(false)}
+                title="בחירת הסעה"
+                actions={
+                    <Button onClick={() => setShowTransportDialog(false)}>
+                        ביטול
+                    </Button>
+                }
             >
-              <Typography variant="body1" sx={{ mb: 2 }}>
-                נמצאו מספר הסעות מתאימות. אנא בחר הסעה:
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {matchingTransports.map((transport, index) => (
-                  <Button
-                    key={transport.id}
-                    variant="outlined"
-                    onClick={() => handleTransportSelect(transport)}
-                    sx={{ justifyContent: 'flex-start', px: 2 }}
-                  >
-                    הסעה {index + 1}: {transport.cities.join(' -> ')}
-                    {transport.passengers ? ` (${transport.passengers.length} נוסעים)` : ' (ריקה)'}
-                  </Button>
-                ))}
-              </Box>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                    נמצאו מספר הסעות מתאימות. אנא בחר הסעה:
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {matchingTransports.map((transport, index) => (
+                        <Button
+                            key={transport.id}
+                            variant="outlined"
+                            onClick={() => handleTransportSelect(transport)}
+                            sx={{ justifyContent: 'flex-start', px: 2 }}
+                        >
+                            הסעה {index + 1}: {transport.cities.join(' -> ')}
+                            {transport.passengers ? ` (${transport.passengers.length} נוסעים)` : ' (ריקה)'}
+                        </Button>
+                    ))}
+                </Box>
             </CustomDialog>
 
             {/* דיאלוג הודעת הצלחה */}
             <CustomDialog
-              open={successDialog.open}
-              onClose={handleCloseSuccessDialog}
-              title="שיבוץ להסעה"
-              dialogContentSx={{ mt: 2 }}
-              actions={
-                <Button onClick={handleCloseSuccessDialog} variant="contained" color="primary">
-                  סגור
-                </Button>
-              }
+                open={successDialog.open}
+                onClose={handleCloseSuccessDialog}
+                title="שיבוץ להסעה"
+                dialogContentSx={{ mt: 2 }}
+                actions={
+                    <Button onClick={handleCloseSuccessDialog} variant="contained" color="primary"
+                        sx={{
+                            backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                            color: 'black',
+                            fontWeight: 'bold',
+                            border: 'none', outline: 'none', boxShadow: 'none',
+                            '&:hover': {
+                                backgroundColor: 'rgb(185, 205, 220)',
+                                border: 'none', outline: 'none', boxShadow: 'none',
+                            },
+                            '&:focus': {
+                                border: 'none', outline: 'none', boxShadow: 'none',
+                            },
+                            '&:active': {
+                                border: 'none', outline: 'none', boxShadow: 'none',
+                            },
+                        }}
+                    >
+                        סגור
+                    </Button>
+                }
             >
-              {successDialog.message}
+                {successDialog.message}
             </CustomDialog>
 
             {/* דיאלוג פרופיל קיים */}
             <CustomDialog
-              open={existingProfileDialog}
-              onClose={() => setExistingProfileDialog(false)}
-              title="שגיאה"
-              actions={
-                <Button onClick={() => setExistingProfileDialog(false)} variant="contained" color="primary">
-                  סגור
-                </Button>
-              }
+                open={existingProfileDialog}
+                onClose={() => setExistingProfileDialog(false)}
+                title="שגיאה"
+                actions={
+                    <Button onClick={() => setExistingProfileDialog(false)} variant="contained" color="primary">
+                        סגור
+                    </Button>
+                }
             >
-              איש זה קיים כבר במערכת
+                איש זה קיים כבר במערכת
             </CustomDialog>
 
             {/* דיאלוג הודעה על חוסר הסעה */}
             <CustomDialog
-              open={noTransportDialogOpen}
-              onClose={() => { setNoTransportDialogOpen(false); onClose(); }}
-              title="לא נמצאה הסעה מתאימה"
-              dialogTitleSx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-              dialogContentSx={{ mt: 2 }}
-              actions={
-                <Button
-                  onClick={() => {
-                    setNoTransportDialogOpen(false);
-                    onClose();
-                    navigate('/Transport');
-                  }}
-                  variant="contained"
-                  color="primary"
-                >
-                  מעבר לדף ההסעות
-                </Button>
-              }
+                open={noTransportDialogOpen}
+                onClose={() => { setNoTransportDialogOpen(false); onClose(); }}
+                title="לא נמצאה הסעה מתאימה"
+                dialogTitleSx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                dialogContentSx={{ mt: 2 }}
+                actions={
+                    <Button
+                        onClick={() => {
+                            setNoTransportDialogOpen(false);
+                            onClose();
+                            navigate('/Transport');
+                        }}
+                        variant="contained"
+                        color="primary"
+                    >
+                        מעבר לדף ההסעות
+                    </Button>
+                }
             >
-              לא נמצאה הסעה מתאימה. יש להוסיף הסעה חדשה.
+                לא נמצאה הסעה מתאימה. יש להוסיף הסעה חדשה.
             </CustomDialog>
         </>
     );

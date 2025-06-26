@@ -9,6 +9,9 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import CustomDialog from './CustomDialog';
+import EditProfileFields from './EditProfileFields';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 
 const GENDERS = ["זכר", "נקבה", "אחר"];
 const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
@@ -344,12 +347,54 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-      handleChange("profileImage")({ target: { value: reader.result } });
-    };
-    reader.readAsDataURL(file);
+    // בדיקות בסיסיות
+    if (file.size > 10 * 1024 * 1024) { // 10MB
+      alert('התמונה גדולה מדי. אנא בחר תמונה קטנה יותר.');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      alert('אנא בחר קובץ תמונה תקין');
+      return;
+    }
+
+    console.log('Original file:', { name: file.name, size: file.size, type: file.type });
+
+    try {
+      // דחוס את התמונה
+      const compressedFile = await compressImage(file);
+      console.log('Compressed file size:', compressedFile.size);
+
+      // קרא את הקובץ המדוחס
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        handleChange("profileImage")({ target: { value: reader.result } });
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('שגיאה בעיבוד התמונה');
+    }
+  };
+
+  const compressImage = (file, maxWidth = 800, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(resolve, 'image/jpeg', quality);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
   };
 
   return (
@@ -371,413 +416,110 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         <DialogTitle sx={{
           backgroundColor: '#f5f5f5',
           borderBottom: '1px solid #e0e0e0',
-          mb: 1
+          mb: 1,
+          position: 'relative',
         }}>
           עריכת פרופיל
+          <IconButton
+            aria-label="close"
+            onClick={handleCancelEdit}
+            sx={{
+              position: 'absolute',
+              left: 8,
+              top: 8,
+              right: 'unset',
+              color: (theme) => theme.palette.grey[600],
+              border: 'none',
+              outline: 'none',
+              boxShadow: 'none',
+              '&:hover': {
+                backgroundColor: 'transparent', border: 'none', outline: 'none',
+                boxShadow: 'none',
+              },
+              '&:focus': {
+                border: 'none', outline: 'none', boxShadow: 'none',
+              },
+              '&:active': {
+                border: 'none', outline: 'none', boxShadow: 'none',
+              },
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative', marginBottom: 16, width: '100%', justifyContent: 'center' }}>
-              <input
-                accept="image/*"
-                style={{ display: 'none' }}
-                id="profile-image-upload"
-                type="file"
-                onChange={handleImageUpload}
-                disabled={isUploading}
-              />
-              <label htmlFor="profile-image-upload">
-                <div
-                  style={{
-                    width: 120,
-                    height: 120,
-                    borderRadius: '50%',
-                    backgroundColor: '#f5f5f5',
-                    cursor: isUploading ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden',
-                    transition: 'opacity 0.2s'
-                  }}
-                  onMouseEnter={(e) => !isUploading && (e.target.style.opacity = '0.8')}
-                  onMouseLeave={(e) => !isUploading && (e.target.style.opacity = '1')}
-                >
-                  {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt="תמונת פרופיל"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover'
-                      }}
-                    />
-                  ) : initialProfile.profileImage ? (
-                    <img src={initialProfile.profileImage} alt="תמונת פרופיל" style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }} />
-                  ) : (
-                    <AddPhotoAlternateIcon sx={{ fontSize: 40, color: '#999' }} />
-                  )}
-                </div>
-              </label>
-              {isUploading && (
-                <Typography variant="body2" color="text.secondary">
-                  מעלה תמונה...
-                </Typography>
-              )}
-              {!imagePreview && !initialProfile.profileImage && !isUploading && (
-                <Typography variant="body2" color="text.secondary">
-                  העלאת תמונת פרופיל
-                </Typography>
-              )}
-            </div>
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-              <TextField
-                fullWidth
-                label="שם"
-                value={initialProfile.name || ''}
-                required
-                onChange={handleFieldChange("name")}
-                sx={{ maxWidth: "170px" }}
-                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
-                InputProps={{ notched: false }}
-                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
-              />
-              <TextField
-                fullWidth
-                label="תעודת זהות"
-                value={initialProfile.id || ''}
-                onChange={handleFieldChange("id")}
-                required
-                error={!!errors.id}
-                helperText={errors.id}
-                sx={{ maxWidth: "170px" }}
-                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
-                InputProps={{ notched: false }}
-                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
-              />
-
-              <TextField
-                fullWidth
-                label="תאריך לידה"
-                type="date"
-                name="birthDate"
-                required
-                value={initialProfile.birthDate || ''}
-                onChange={handleFieldChange("birthDate")}
-                error={!!errors?.birthDate}
-                helperText={errors?.birthDate && "שדה חובה"}
-                InputLabelProps={{
-                  shrink: true,
-                  sx: {
-                    right: 24,
-                    left: 'unset',
-                    textAlign: 'right',
-                    transformOrigin: 'top right',
-                    direction: 'rtl',
-                    backgroundColor: 'white',
-                    px: 0.5
-                  }
+          <EditProfileFields
+            profile={initialProfile}
+            errors={errors}
+            handleFieldChange={handleFieldChange}
+            handleChange={handleChange}
+            imagePreview={imagePreview}
+            isUploading={isUploading}
+            handleImageUpload={handleImageUpload}
+            sortedArrivalDays={sortedArrivalDays}
+          />
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            mt: 2
+          }}>
+            <Box>
+              <Button
+                onClick={handleAssignTransport}
+                variant="outlined"
+                disabled={loading || isUploading}
+                sx={{
+                  border: '1.7px solid rgba(64, 99, 112, 0.72)',
+                  color: 'rgba(64, 99, 112, 0.72)',
+                  fontWeight: 'bold',
+                  ':hover': { borderColor: '#7b8f99', color: '#5a676e', outline: 'none' },
+                  '&:focus': { outline: 'none' },
+                  '&:active': { outline: 'none' },
+                  minWidth: 'auto',
                 }}
-                sx={{ maxWidth: "170px" }}
-                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
-                InputProps={{ notched: false }}
-              />
-
-              <FormControl fullWidth sx={{ maxWidth: '170px' }}>
-                <Select
-                  name="gender"
-                  value={initialProfile.gender || ''}
-                  onChange={handleFieldChange("gender")}
-                  displayEmpty
-                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'מין' }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { textAlign: 'right', direction: 'rtl' }
-                    }
-                  }}
-                >
-                  <MenuItem value="" disabled hidden>
-                    מין
-                  </MenuItem>
-                  <MenuItem value="זכר">זכר</MenuItem>
-                  <MenuItem value="נקבה">נקבה</MenuItem>
-                  <MenuItem value="אחר">אחר</MenuItem>
-                </Select>
-              </FormControl>
-
-              <TextField
-                fullWidth
-                label="טלפון"
-                value={initialProfile.phone || ''}
-                onChange={handleFieldChange("phone")}
-                required
-                error={!!errors.phone}
-                helperText={errors.phone}
-                sx={{ maxWidth: "170px" }}
-                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
-                InputProps={{ notched: false }}
-                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
-              />
-              <TextField
-                fullWidth
-                label="טלפון נוסף"
-                value={initialProfile.phone2 || ''}
-                onChange={handleFieldChange("phone2")}
-                error={!!errors.phone2}
-                helperText={errors.phone2}
-                sx={{ maxWidth: "170px" }}
-                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
-                InputProps={{ notched: false }}
-                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
-              />
-
-              <TextField
-                fullWidth
-                label="מייל"
-                value={initialProfile.email || ''}
-                onChange={handleFieldChange("email")}
-                sx={{ maxWidth: "170px" }}
-                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
-                InputProps={{ notched: false }}
-                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
-              />
-
-              <TextField
-                fullWidth
-                label="כתובת"
-                value={initialProfile.address || ''}
-                onChange={handleFieldChange("address")}
-                sx={{ maxWidth: "170px" }}
-                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
-                InputProps={{ notched: false }}
-                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
-              />
-              <TextField
-                fullWidth
-                label="יישוב"
-                value={initialProfile.city || ''}
-                onChange={handleFieldChange("city")}
-                required
-                sx={{ maxWidth: "170px" }}
-                inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
-                InputProps={{ notched: false }}
-                InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
-              />
-
-              <TextField
-                select
-                fullWidth
-                placeholder="סוג הסעה"
-                value={initialProfile.transport || ''}
-                onChange={handleFieldChange("transport")}
-                name="transport"
-                error={!!errors.transport}
-                helperText={errors.transport}
-                sx={{ maxWidth: "170px" }}
-
               >
-                <MenuItem value="מונית">מונית</MenuItem>
-                <MenuItem value="מיניבוס">מיניבוס</MenuItem>
-                <MenuItem value="פרטי">פרטי</MenuItem>
-                <MenuItem value="אחר">אחר</MenuItem>
-              </TextField>
+                {loading ? 'מעדכן...' : 'עדכון הסעה'}
+              </Button>
             </Box>
-
-            <Box sx={{ mt: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', color: errors.arrivalDays ? 'error.main' : undefined }}>ימי הגעה:</Typography>
-                {[
-                  { label: 'א', value: 'ראשון' },
-                  { label: 'ב', value: 'שני' },
-                  { label: 'ג', value: 'שלישי' },
-                  { label: 'ד', value: 'רביעי' },
-                  { label: 'ה', value: 'חמישי' }
-                ].map(({ label, value }) => (
-                  <FormControlLabel
-                    key={value}
-                    control={
-                      <Checkbox
-                        checked={sortedArrivalDays.includes(value)}
-                        onChange={() => {
-                          const isSelected = sortedArrivalDays.includes(value);
-                          const updatedDays = isSelected
-                            ? sortedArrivalDays.filter((d) => d !== value)
-                            : [...sortedArrivalDays, value];
-                          handleChange("arrivalDays")({ target: { value: updatedDays } });
-                        }}
-                        sx={errors.arrivalDays ? { color: 'error.main' } : {}}
-                      />
-                    }
-                    label={label}
-                  />
-                ))}
-              </Box>
-              {errors.arrivalDays && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
-            </Box>
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-              {/* רמת תפקוד */}
-              <FormControl fullWidth sx={{ maxWidth: '170px' }}>
-                <Select
-                  name="functionLevel"
-                  value={initialProfile.functionLevel || ''}
-                  onChange={handleFieldChange("functionLevel")}
-                  displayEmpty
-                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'רמת תפקוד' }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { textAlign: 'right', direction: 'rtl' }
-                    }
-                  }}
-                >
-                  <MenuItem value="" disabled hidden>
-                    רמת תפקוד
-                  </MenuItem>
-                  {[1, 2, 3, 4, 5, 6].map((level) => (
-                    <MenuItem key={level} value={level}>{level}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {/* זכאות */}
-              <FormControl fullWidth sx={{ maxWidth: '170px' }}>
-                <Select
-                  name="eligibility"
-                  value={initialProfile.eligibility || ''}
-                  onChange={handleFieldChange("eligibility")}
-                  displayEmpty
-                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'זכאות' }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { textAlign: 'right', direction: 'rtl' }
-                    }
-                  }}
-                >
-                  <MenuItem value="" disabled hidden>
-                    זכאות
-                  </MenuItem>
-                  <MenuItem value="רווחה">רווחה</MenuItem>
-                  <MenuItem value="סיעוד">סיעוד</MenuItem>
-                  <MenuItem value="אחר">אחר</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* חברת סיעוד */}
-              <FormControl fullWidth sx={{ maxWidth: '170px' }} disabled={initialProfile.eligibility !== "סיעוד"}>
-                <Select
-                  name="nursingCompany"
-                  value={initialProfile.nursingCompany || ''}
-                  onChange={handleFieldChange("nursingCompany")}
-                  displayEmpty
-                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חברת סיעוד' }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { textAlign: 'right', direction: 'rtl' }
-                    }
-                  }}
-                >
-                  <MenuItem value="" disabled hidden>
-                    חברת סיעוד
-                  </MenuItem>
-                  <MenuItem value="מטב">מט"ב</MenuItem>
-                  <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
-                  <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
-                  <MenuItem value="א.ש ירושלים">א.ש ירושלים</MenuItem>
-                  <MenuItem value="ראנד">ראנד</MenuItem>
-                  <MenuItem value="תגבור">תגבור</MenuItem>
-                  <MenuItem value="נתן">נתן</MenuItem>
-                  <MenuItem value="עמל- בית שמש">עמל- בית שמש</MenuItem>
-                  <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
-                  <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
-                  <MenuItem value="אחר">אחר</MenuItem>
-                </Select>
-              </FormControl>
-
-              {/* חבר ב- */}
-              <FormControl fullWidth sx={{ maxWidth: '170px' }}>
-                <Select
-                  name="membership"
-                  value={initialProfile.membership || ''}
-                  onChange={handleFieldChange("membership")}
-                  displayEmpty
-                  inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חבר ב־' }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { textAlign: 'right', direction: 'rtl' }
-                    }
-                  }}
-                >
-                  <MenuItem value="" disabled hidden>
-                    חבר ב־
-                  </MenuItem>
-                  <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
-                  <MenuItem value="מרכז יום">מרכז יום</MenuItem>
-                  <MenuItem value="אחר">אחר</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={initialProfile.isHolocaustSurvivor || false}
-                    onChange={handleFieldChange("isHolocaustSurvivor")}
-                  />
-                }
-                label="ניצול שואה"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={initialProfile.hasCaregiver || false}
-                    onChange={handleFieldChange("hasCaregiver")}
-                  />
-                }
-                label="מטפל"
-              />
-            </Box>
-            <Box sx={{
-              display: 'flex',
-              justifyContent: 'space-between',  // מפריד בין הכפתורים לשני הצדדים
-              mt: 2
-            }}>
-              {/* כפתור עדכון הסעה בצד ימין */}
-              <Box>
-                <Button
-                  onClick={handleAssignTransport}
-                  variant="outlined"
-                  color="primary"
-                  disabled={loading || isUploading}
-                >
-                  {loading ? 'מעדכן...' : 'עדכון הסעה'}
-                </Button>
-              </Box>
-
-              {/* כפתורי שמירה וביטול בצד שמאל */}
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  onClick={handleCancelEdit}
-                  variant="outlined"
-                  color="error"
-                >
-                  ביטול
-                </Button>
-
-                <Button
-                  onClick={() => validateAndSave(initialProfile)}
-                  variant="contained"
-                  color="primary"
-                >
-                  שמור
-                </Button>
-              </Box>
+              <Button
+                onClick={handleCancelEdit}
+                variant="outlined"
+                sx={{
+                  border: '1.7px solid rgba(64, 99, 112, 0.72)',
+                  color: 'rgba(64, 99, 112, 0.72)',
+                  fontWeight: 'bold',
+                  ':hover': { borderColor: '#7b8f99', color: '#5a676e', outline: 'none' },
+                  '&:focus': { outline: 'none' },
+                  '&:active': { outline: 'none' },
+                  minWidth: 'auto',
+                }}
+              >
+                ביטול
+              </Button>
+              <Button
+                onClick={() => validateAndSave(initialProfile)}
+                variant="contained"
+                color="primary"
+                sx={{
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  color: 'black',
+                  fontWeight: 'bold',
+                  border: 'none', outline: 'none', boxShadow: 'none',
+                  '&:hover': {
+                    backgroundColor: 'rgb(185, 205, 220)',
+                    border: 'none', outline: 'none', boxShadow: 'none',
+                  },
+                  '&:focus': {
+                    border: 'none', outline: 'none', boxShadow: 'none',
+                  },
+                  '&:active': {
+                    border: 'none', outline: 'none', boxShadow: 'none',
+                  },
+                }}
+              >
+                שמור
+              </Button>
             </Box>
           </Box>
         </DialogContent>
@@ -818,12 +560,33 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       </Dialog>
 
       <CustomDialog
-        open={assignDialog.open}
-        onClose={() => setAssignDialog({ ...assignDialog, open: false })}
-        title={assignDialog.type === 'error' ? 'שגיאה' : 'הצלחה'}
-        actions={<Button onClick={() => setAssignDialog({ ...assignDialog, open: false })} variant="contained">סגור</Button>}
+        open={successDialog.open}
+        onClose={() => setSuccessDialog({ open: false, message: '' })}
+        title="שיבוץ להסעה"
+        dialogContentSx={{ mt: 2 }}
+        actions={<Button onClick={() => setSuccessDialog({ open: false, message: '' })}
+          variant="contained"
+          sx={{
+            backgroundColor: 'rgba(142, 172, 183, 0.72)',
+            color: 'black',
+            fontWeight: 'bold',
+            border: 'none', outline: 'none', boxShadow: 'none',
+            '&:hover': {
+              backgroundColor: 'rgb(185, 205, 220)',
+              border: 'none', outline: 'none', boxShadow: 'none',
+            },
+            '&:focus': {
+              border: 'none', outline: 'none', boxShadow: 'none',
+            },
+            '&:active': {
+              border: 'none', outline: 'none', boxShadow: 'none',
+            },
+          }}
+        >
+          סגור
+        </Button>}
       >
-        {assignDialog.message}
+        {successDialog.message}
       </CustomDialog>
 
       {/* דיאלוג הודעה על חוסר הסעה */}

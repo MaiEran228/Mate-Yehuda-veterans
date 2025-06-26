@@ -1,68 +1,21 @@
-import { Box, Typography, FormControl, Select, MenuItem, Checkbox, FormControlLabel,
-  TextField } from '@mui/material';
+import { TextField, MenuItem, Checkbox, FormControlLabel, Typography, Box, Select, FormControl } from "@mui/material";
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 
-export default function ProfileFormFields({ values, errors, onChange, onImageChange, isUploading }) {
+const GENDERS = ["זכר", "נקבה", "אחר"];
+const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי"];
 
-  const compressImage = (file, maxWidth = 800, quality = 0.7) => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-  
-      img.onload = () => {
-        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
-  
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(resolve, 'image/jpeg', quality);
-      };
-  
-      img.src = URL.createObjectURL(file);
-    });
-  };
-  
-  // החלף את הפונקציה handleImageUpload הקיימת בזו:
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-  
-    // בדיקות בסיסיות
-    if (file.size > 10 * 1024 * 1024) { // 10MB
-      alert('התמונה גדולה מדי. אנא בחר תמונה קטנה יותר.');
-      return;
-    }
-  
-    if (!file.type.startsWith('image/')) {
-      alert('אנא בחר קובץ תמונה תקין');
-      return;
-    }
-  
-    console.log('Original file:', { name: file.name, size: file.size, type: file.type });
-  
-    try {
-      // דחוס את התמונה
-      const compressedFile = await compressImage(file);
-      console.log('Compressed file size:', compressedFile.size);
-  
-      // קרא את הקובץ המדוחס
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onImageChange(reader.result); // שימוש בפונקציה שמועברת כ-prop
-      };
-      reader.readAsDataURL(compressedFile);
-    } catch (error) {
-      console.error('Error compressing image:', error);
-      alert('שגיאה בעיבוד התמונה');
-    }
-  };
-
-  const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
-
+function EditProfileFields({
+  profile,
+  errors,
+  handleFieldChange,
+  handleChange,
+  imagePreview,
+  isUploading,
+  handleImageUpload,
+  sortedArrivalDays
+}) {
   return (
-    <>
-      {/* העלאת תמונה */}
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative', marginBottom: 16, width: '100%', justifyContent: 'center' }}>
         <input
           accept="image/*"
@@ -89,9 +42,9 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             onMouseEnter={(e) => !isUploading && (e.target.style.opacity = '0.8')}
             onMouseLeave={(e) => !isUploading && (e.target.style.opacity = '1')}
           >
-            {values.profileImage ? (
+            {imagePreview ? (
               <img
-                src={values.profileImage}
+                src={imagePreview}
                 alt="תמונת פרופיל"
                 style={{
                   width: '100%',
@@ -99,6 +52,12 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
                   objectFit: 'cover'
                 }}
               />
+            ) : profile.profileImage ? (
+              <img src={profile.profileImage} alt="תמונת פרופיל" style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }} />
             ) : (
               <AddPhotoAlternateIcon sx={{ fontSize: 40, color: '#999' }} />
             )}
@@ -109,24 +68,20 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             מעלה תמונה...
           </Typography>
         )}
-        {!values.profileImage && !isUploading && (
+        {!imagePreview && !profile.profileImage && !isUploading && (
           <Typography variant="body2" color="text.secondary">
             העלאת תמונת פרופיל
           </Typography>
         )}
       </div>
 
-      {/* שדות טקסט */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         <TextField
           fullWidth
           label="שם"
-          name="name"
-          value={values.name}
-          onChange={onChange}
+          value={profile.name || ''}
           required
-          error={!!errors.name}
-          helperText={errors.name && "שדה חובה"}
+          onChange={handleFieldChange("name")}
           sx={{ maxWidth: "170px" }}
           inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
@@ -135,9 +90,8 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
         <TextField
           fullWidth
           label="תעודת זהות"
-          name="id"
-          value={values.id}
-          onChange={onChange}
+          value={profile.id || ''}
+          onChange={handleFieldChange("id")}
           required
           error={!!errors.id}
           helperText={errors.id}
@@ -149,11 +103,11 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
         <TextField
           fullWidth
           label="תאריך לידה"
-          name="birthDate"
           type="date"
-          value={values.birthDate}
-          onChange={onChange}
+          name="birthDate"
           required
+          value={profile.birthDate || ''}
+          onChange={handleFieldChange("birthDate")}
           error={!!errors?.birthDate}
           helperText={errors?.birthDate && "שדה חובה"}
           InputLabelProps={{
@@ -172,13 +126,11 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
           inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
         />
-
-        {/* Select: מין */}
         <FormControl fullWidth sx={{ maxWidth: '170px' }}>
           <Select
             name="gender"
-            value={values.gender}
-            onChange={onChange}
+            value={profile.gender || ''}
+            onChange={handleFieldChange("gender")}
             displayEmpty
             inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'מין' }}
             MenuProps={{
@@ -195,16 +147,14 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
-
         <TextField
           fullWidth
           label="טלפון"
-          name="phone"
-          value={values.phone}
-          onChange={onChange}
+          value={profile.phone || ''}
+          onChange={handleFieldChange("phone")}
           required
           error={!!errors.phone}
-          helperText={errors.phone === true ? "שדה חובה" : errors.phone}
+          helperText={errors.phone}
           sx={{ maxWidth: "170px" }}
           inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
@@ -213,9 +163,8 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
         <TextField
           fullWidth
           label="טלפון נוסף"
-          name="phone2"
-          value={values.phone2}
-          onChange={onChange}
+          value={profile.phone2 || ''}
+          onChange={handleFieldChange("phone2")}
           error={!!errors.phone2}
           helperText={errors.phone2}
           sx={{ maxWidth: "170px" }}
@@ -226,9 +175,8 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
         <TextField
           fullWidth
           label="מייל"
-          name="email"
-          value={values.email || ''}
-          onChange={onChange}
+          value={profile.email || ''}
+          onChange={handleFieldChange("email")}
           sx={{ maxWidth: "170px" }}
           inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
@@ -237,9 +185,8 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
         <TextField
           fullWidth
           label="כתובת"
-          name="address"
-          value={values.address}
-          onChange={onChange}
+          value={profile.address || ''}
+          onChange={handleFieldChange("address")}
           sx={{ maxWidth: "170px" }}
           inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
@@ -248,45 +195,31 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
         <TextField
           fullWidth
           label="יישוב"
-          name="city"
-          value={values.city}
-          onChange={onChange}
+          value={profile.city || ''}
+          onChange={handleFieldChange("city")}
           required
-          error={!!errors.city}
-          helperText={errors.city && "שדה חובה"}
           sx={{ maxWidth: "170px" }}
           inputProps={{ style: { direction: 'rtl', textAlign: 'right' } }}
           InputProps={{ notched: false }}
           InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
         />
-
-        {/* Select: סוג הסעה */}
-        <FormControl fullWidth sx={{ maxWidth: '170px' }} error={!!errors.transport}>
-          <Select
-            name="transport"
-            value={values.transport}
-            onChange={onChange}
-            displayEmpty
-            inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'הסעה' }}
-            MenuProps={{
-              PaperProps: {
-                sx: { textAlign: 'right', direction: 'rtl' }
-              }
-            }}
-          >
-            <MenuItem value="" disabled hidden>
-              הסעה
-            </MenuItem>
-            <MenuItem value="מונית">מונית</MenuItem>
-            <MenuItem value="מיניבוס">מיניבוס</MenuItem>
-            <MenuItem value="פרטי">פרטי</MenuItem>
-            <MenuItem value="אחר">אחר</MenuItem>
-          </Select>
-          {errors.transport && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
-        </FormControl>
+        <TextField
+          select
+          fullWidth
+          placeholder="סוג הסעה"
+          value={profile.transport || ''}
+          onChange={handleFieldChange("transport")}
+          name="transport"
+          error={!!errors.transport}
+          helperText={errors.transport}
+          sx={{ maxWidth: "170px" }}
+        >
+          <MenuItem value="מונית">מונית</MenuItem>
+          <MenuItem value="מיניבוס">מיניבוס</MenuItem>
+          <MenuItem value="פרטי">פרטי</MenuItem>
+          <MenuItem value="אחר">אחר</MenuItem>
+        </TextField>
       </Box>
-
-      {/* ימי הגעה */}
       <Box sx={{ mt: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', color: errors.arrivalDays ? 'error.main' : undefined }}>ימי הגעה:</Typography>
@@ -301,15 +234,13 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
               key={value}
               control={
                 <Checkbox
-                  checked={values.arrivalDays.includes(value)}
+                  checked={sortedArrivalDays.includes(value)}
                   onChange={() => {
-                    const isSelected = values.arrivalDays.includes(value);
-                    let newDays = isSelected
-                      ? values.arrivalDays.filter((d) => d !== value)
-                      : [...values.arrivalDays, value];
-                    // Sort according to arrivalDaysOrder
-                    newDays = newDays.sort((a, b) => arrivalDaysOrder.indexOf(a) - arrivalDaysOrder.indexOf(b));
-                    onChange({ target: { name: 'arrivalDays', value: newDays } });
+                    const isSelected = sortedArrivalDays.includes(value);
+                    const updatedDays = isSelected
+                      ? sortedArrivalDays.filter((d) => d !== value)
+                      : [...sortedArrivalDays, value];
+                    handleChange("arrivalDays")({ target: { value: updatedDays } });
                   }}
                   sx={errors.arrivalDays ? { color: 'error.main' } : {}}
                 />
@@ -320,14 +251,35 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
         </Box>
         {errors.arrivalDays && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
       </Box>
-
-      {/* Selectים נוספים */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+        {/* רמת תפקוד */}
+        <FormControl fullWidth sx={{ maxWidth: '170px' }}>
+          <Select
+            name="functionLevel"
+            value={profile.functionLevel || ''}
+            onChange={handleFieldChange("functionLevel")}
+            displayEmpty
+            inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'רמת תפקוד' }}
+            MenuProps={{
+              PaperProps: {
+                sx: { textAlign: 'right', direction: 'rtl' }
+              }
+            }}
+          >
+            <MenuItem value="" disabled hidden>
+              רמת תפקוד
+            </MenuItem>
+            {[1, 2, 3, 4, 5, 6].map((level) => (
+              <MenuItem key={level} value={level}>{level}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {/* זכאות */}
         <FormControl fullWidth sx={{ maxWidth: '170px' }}>
           <Select
             name="eligibility"
-            value={values.eligibility}
-            onChange={onChange}
+            value={profile.eligibility || ''}
+            onChange={handleFieldChange("eligibility")}
             displayEmpty
             inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'זכאות' }}
             MenuProps={{
@@ -344,16 +296,12 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
-
-        <FormControl
-          fullWidth
-          sx={{ maxWidth: '170px' }}
-          disabled={values.eligibility !== "סיעוד"}
-        >
+        {/* חברת סיעוד */}
+        <FormControl fullWidth sx={{ maxWidth: '170px' }} disabled={profile.eligibility !== "סיעוד"}>
           <Select
             name="nursingCompany"
-            value={values.nursingCompany}
-            onChange={onChange}
+            value={profile.nursingCompany || ''}
+            onChange={handleFieldChange("nursingCompany")}
             displayEmpty
             inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חברת סיעוד' }}
             MenuProps={{
@@ -378,34 +326,12 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
-
-        <FormControl fullWidth sx={{ maxWidth: '170px' }}>
-          <Select
-            name="functionLevel"
-            value={values.functionLevel}
-            onChange={onChange}
-            displayEmpty
-            inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'רמת תפקוד' }}
-            MenuProps={{
-              PaperProps: {
-                sx: { textAlign: 'right', direction: 'rtl' }
-              }
-            }}
-          >
-            <MenuItem value="" disabled hidden>
-              רמת תפקוד
-            </MenuItem>
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <MenuItem key={n} value={n}>{n}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
+        {/* חבר ב- */}
         <FormControl fullWidth sx={{ maxWidth: '170px' }}>
           <Select
             name="membership"
-            value={values.membership}
-            onChange={onChange}
+            value={profile.membership || ''}
+            onChange={handleFieldChange("membership")}
             displayEmpty
             inputProps={{ style: { textAlign: 'right' }, 'aria-label': 'חבר ב־' }}
             MenuProps={{
@@ -423,15 +349,12 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
           </Select>
         </FormControl>
       </Box>
-
-      {/* צ'קבוקסים */}
       <Box sx={{ display: 'flex', gap: 2 }}>
         <FormControlLabel
           control={
             <Checkbox
-              checked={values.isHolocaustSurvivor}
-              onChange={onChange}
-              name="isHolocaustSurvivor"
+              checked={profile.isHolocaustSurvivor || false}
+              onChange={handleFieldChange("isHolocaustSurvivor")}
             />
           }
           label="ניצול שואה"
@@ -439,14 +362,15 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
         <FormControlLabel
           control={
             <Checkbox
-              checked={values.hasCaregiver}
-              onChange={onChange}
-              name="hasCaregiver"
+              checked={profile.hasCaregiver || false}
+              onChange={handleFieldChange("hasCaregiver")}
             />
           }
           label="מטפל"
         />
       </Box>
-    </>
+    </Box>
   );
 }
+
+export default EditProfileFields; 

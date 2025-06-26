@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Table, TableHead, TableRow, TableCell, TableBody, Button, IconButton,
-  Tooltip, Chip, Typography, Paper, TableSortLabel
+  Tooltip, Chip, Typography, Paper, TableSortLabel, TableContainer
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
@@ -272,30 +272,30 @@ function TransportTable({
     }
   };
 
-  const addTempReservationForDate = async (transport, reservation, dateStr) => {  
+  const addTempReservationForDate = async (transport, reservation, dateStr) => {
     // בדיקת תקינות transport
     if (!transport) {
       throw new Error('Transport is undefined or null');
     }
-  
+
     // מצא מזהה הסעה תקין
     const transportIdRaw = transport.id ?? transport.transportId ?? null;
     if (transportIdRaw === null || transportIdRaw === undefined) {
       throw new Error('Transport id is missing');
     }
     const transportId = transportIdRaw.toString();
-  
+
     let dateDoc = await fetchTransportsByDate(dateStr);
     let transportsList = dateDoc?.transports || [];
     console.log('transportsList before:', transportsList);
-  
+
     const idx = transportsList.findIndex(t => {
       const tIdRaw = t.id ?? t.transportId ?? null;
       if (tIdRaw === null || tIdRaw === undefined) return false;
       const tId = tIdRaw.toString();
       return tId === transportId;
     });
-    
+
     if (idx === -1) {
       // יצירת אובייקט הסעה חדש לשמירה
       const newTransport = {
@@ -305,30 +305,30 @@ function TransportTable({
       if (typeof transport.type === 'string') newTransport.type = transport.type;
       if (Array.isArray(transport.days)) newTransport.days = transport.days;
       if (Array.isArray(transport.cities)) newTransport.cities = transport.cities;
-  
+
       console.log('newTransport:', JSON.stringify(newTransport));
       transportsList.push(newTransport);
     } else {
       // עדכון הסעה קיימת
       const t = transportsList[idx];
       if (!Array.isArray(t.tempReservations)) t.tempReservations = [];
-  
+
       // הסר שיריון קיים עם אותו id אם קיים
       t.tempReservations = t.tempReservations.filter(r => r.id !== reservation.id);
-  
+
       // הוסף שיריון חדש
       t.tempReservations.push(reservation);
-  
+
       transportsList[idx] = t;
     }
-  
+
     // בדיקה שאין ערכים undefined ב-reservation
     Object.entries(reservation).forEach(([k, v]) => {
       if (v === undefined) {
         console.error('reservation has undefined field:', k);
       }
     });
-  
+
     // בדיקה שאין ערכים undefined ב-transportsList
     transportsList.forEach(t => {
       Object.entries(t).forEach(([key, val]) => {
@@ -344,7 +344,7 @@ function TransportTable({
         });
       });
     });
-  
+
     try {
       await saveTransportDate(dateStr, transportsList);
     } catch (error) {
@@ -352,7 +352,7 @@ function TransportTable({
       throw error;
     }
   };
-  
+
   // הוספת פונקציה חדשה להסרת שיריון זמני
   const removeTempReservationForDate = async (transport, reservation, dateStr) => {
     // בדומה ל-addTempReservationForDate, אך מסיר את השיריון
@@ -395,6 +395,7 @@ function TransportTable({
 
   return (
     <Box sx={{ width: '100%' }}>
+
       <Paper
         sx={{
           width: '100%',
@@ -406,191 +407,374 @@ function TransportTable({
           flexDirection: 'column',
         }}
       >
-        <Table
-          size="small"
+        {/* Table Headers - Sticky */}
+        <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Table
+            size="small"
+            sx={{
+              direction: 'rtl',
+              borderCollapse: 'separate',
+              borderSpacing: 0,
+              width: '100%',
+              tableLayout: 'fixed',
+              '& th': {
+                py: 0.5,
+                px: 1,
+                fontSize: '1rem',
+                borderRight: '1px solid #e0e0e0',
+                '&:last-child': {
+                  borderRight: 'none',
+                },
+              },
+            }}
+          >
+            <TableHead
+              sx={{
+                backgroundColor: 'rgba(142, 172, 183, 0.72)',
+              }}
+            >
+              <TableRow>
+                <TableCell sx={{
+                  textAlign: 'center',
+                  verticalAlign: 'middle',
+                  width: '5%',
+                  minWidth: 70,
+                  p: 0.5,
+                  fontSize: '1.15rem',
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  height: '52px',
+                  fontWeight: 'bold',
+                }}>מס׳</TableCell>
+                <TableCell sx={{
+                  textAlign: 'center',
+                  width: '10%',
+                  minWidth: 90,
+                  p: 0.5,
+                  fontSize: '1.15rem',
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  height: '52px',
+                  fontWeight: 'bold',
+                }}>ימים</TableCell>
+                <TableCell sx={{
+                  textAlign: 'center',
+                  width: '18%',
+                  minWidth: 160,
+                  p: 0.5,
+                  fontSize: '1.15rem',
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  height: '52px',
+                  fontWeight: 'bold',
+                }}>
+                  <TableSortLabel
+                    active={orderBy === 'cities'}
+                    direction={orderBy === 'cities' ? order : 'asc'}
+                    onClick={() => handleSort('cities')}
+                    sx={{ '& .MuiTableSortLabel-icon': { opacity: 1 }, flexDirection: 'row-reverse' }}
+                  >
+                    יישובים
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{
+                  textAlign: 'center',
+                  width: '13%',
+                  minWidth: 120,
+                  p: 0.5,
+                  fontSize: '1.15rem',
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  height: '52px',
+                  fontWeight: 'bold',
+                }}>מקומות פנויים</TableCell>
+                <TableCell sx={{
+                  textAlign: 'center',
+                  width: '10%',
+                  minWidth: 90,
+                  p: 0.5,
+                  fontSize: '1.15rem',
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  height: '52px',
+                  fontWeight: 'bold',
+                }}>שיריון זמני</TableCell>
+                <TableCell sx={{
+                  textAlign: 'center',
+                  width: '10%',
+                  minWidth: 90,
+                  p: 0.5,
+                  fontSize: '1.15rem',
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  height: '52px',
+                  fontWeight: 'bold',
+                }}>
+                  <TableSortLabel
+                    active={orderBy === 'type'}
+                    direction={orderBy === 'type' ? order : 'asc'}
+                    onClick={() => handleSort('type')}
+                    sx={{ '& .MuiTableSortLabel-icon': { opacity: 1 }, flexDirection: 'row-reverse' }}
+                  >
+                    סוג הסעה
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{
+                  textAlign: 'center',
+                  width: '13%',
+                  minWidth: 120,
+                  p: 0.5,
+                  fontSize: '1.15rem',
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  height: '52px',
+                  fontWeight: 'bold',
+                }}>רשימת נוסעים</TableCell>
+                <TableCell sx={{
+                  textAlign: 'center',
+                  width: '11%',
+                  minWidth: 90,
+                  p: 0.5,
+                  fontSize: '1.15rem',
+                  backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                  height: '52px',
+                  fontWeight: 'bold',
+                }}>פעולה</TableCell>
+              </TableRow>
+            </TableHead>
+          </Table>
+        </Box>
+
+        {/* Table Body - Scrollable */}
+        <TableContainer
           sx={{
-            direction: 'rtl',
-            borderCollapse: 'collapse',
-            width: '100%',
-            tableLayout: 'fixed',
-            fontSize: '1.1rem',
-            '& th, & td': {
-              py: 0.5,
-              px: 1,
-              fontSize: '1rem',
+            flexGrow: 1,
+            overflowY: 'auto',
+            direction: 'ltr',
+            maxHeight: 'calc(100vh - 340px)',
+            // הסרת הגבול העליון כדי להתחבר חזותית לכותרות
+            marginTop: '-1px',
+            '&::-webkit-scrollbar': {
+              width: '8px',
             },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: '#ffffff',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#b7c9d6',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              backgroundColor: '#8eaebf',
+            },
+            scrollbarColor: '#b7c9d6 #fff',
+            scrollbarWidth: 'thin',
           }}
         >
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', width: '60px', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>מס׳</TableCell>
-              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>ימים</TableCell>
-              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>
-                <TableSortLabel
-                  active={orderBy === 'cities'}
-                  direction={orderBy === 'cities' ? order : 'asc'}
-                  onClick={() => handleSort('cities')}
-                  // showSortIcon
-                  sx={{ '& .MuiTableSortLabel-icon': { opacity: 1 }, flexDirection: 'row-reverse' }}
-                >
-                  יישובים
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>מקומות פנויים</TableCell>
-              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>שיריון זמני</TableCell>
-              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>
-                <TableSortLabel
-                  active={orderBy === 'type'}
-                  direction={orderBy === 'type' ? order : 'asc'}
-                  onClick={() => handleSort('type')}
-                  sx={{ '& .MuiTableSortLabel-icon': { opacity: 1 }, flexDirection: 'row-reverse' }}
-                >
-                  סוג הסעה
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>רשימת נוסעים</TableCell>
-              <TableCell sx={{ textAlign: 'center', fontSize: '1.15rem', borderRight: '1px solid #e0e0e0', backgroundColor: 'rgba(142, 172, 183, 0.72)', height: '52px', fontWeight: 'bold', position: 'sticky', top: 0, zIndex: 1 }}>פעולה</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredData.map((row, index) => {
-              // Calculate available seats for selected day only (merged)
-              let availableSeats = '-';
-              if (selectedHebDay && (row.days || []).includes(selectedHebDay)) {
-                availableSeats = getAvailableSeats(row, selectedHebDay, selectedDateStr);
-              } else if (selectedHebDay) {
-                availableSeats = 0;
-              }
+          <Table
+            size="small"
+            sx={{
+              direction: 'rtl',
+              borderCollapse: 'separate',
+              borderSpacing: 0,
+              width: '100%',
+              tableLayout: 'fixed',
+              '& td': {
+                py: 0,
+                px: 1,
+                fontSize: '1rem',
+                height: '40px',
+                borderRight: '1px solid #e0e0e0',
+                '&:last-child': {
+                  borderRight: 'none',
+                },
+                borderTop: '1px solid #e0e0e0',
+              },
+            }}
+          >
+            <TableBody>
+              {filteredData.map((row, index) => {
+                // Calculate available seats for selected day only (merged)
+                let availableSeats = '-';
+                if (selectedHebDay && (row.days || []).includes(selectedHebDay)) {
+                  availableSeats = getAvailableSeats(row, selectedHebDay, selectedDateStr);
+                } else if (selectedHebDay) {
+                  availableSeats = 0;
+                }
 
-              // Passengers for selected day only (merged)
-              let passengersForDay = row.passengers || [];
-              if (selectedHebDay) {
-                passengersForDay = getPassengersForDay(row, selectedHebDay, selectedDateStr);
-              }
+                // Passengers for selected day only (merged)
+                let passengersForDay = row.passengers || [];
+                if (selectedHebDay) {
+                  passengersForDay = getPassengersForDay(row, selectedHebDay, selectedDateStr);
+                }
 
-              return (
-                <TableRow key={row.id || index} sx={{ fontSize: '1.1rem', borderBottom: 'none', borderTop: 'none' }}>
-                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>{index + 1}</TableCell>
-                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'nowrap' }}>
-                      {row.days?.slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b)).map(day => (
-                        <Box
-                          key={day}
-                          sx={{
-                            width: 26,
-                            height: 26,
-                            borderRadius: '50%',
-                            backgroundColor: '#f1f1f1',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 500,
-                            fontSize: '0.95rem',
-                            color: '#222',
-                          }}
-                        >
-                          {dayShortMap[day] || day}
-                        </Box>
-                      ))}
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
-                      {(row.cities || []).map((city, i) => (
-                        <Chip
-                          key={i}
-                          label={city}
-                          size="small"
-                          sx={{
-                            minWidth: 70,
-                            minHeight: 26,
-                            borderRadius: '13px',
-                            fontSize: '0.95rem',
-                            fontWeight: 500,
-                            backgroundColor: '#f1f1f1',
-                            mx: 0.5
-                          }}
-                        />
-                      ))}
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                      {selectedHebDay && (row.days || []).includes(selectedHebDay) ? (
-                        <Tooltip title={`מקומות פנויים: ${availableSeats}`}>
-                          <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            backgroundColor: availableSeats > 0 ? '#4caf50' : '#f44336',
-                            color: 'white',
-                            padding: '4px 12px',
-                            borderRadius: '16px',
-                            minWidth: '80px',
-                            justifyContent: 'center'
-                          }}>
-                            <EventSeatIcon sx={{ fontSize: 20 }} />
-                            <Typography variant="body2" sx={{ fontSize: '1rem', fontWeight: 500 }}>
-                              {availableSeats}
-                            </Typography>
+                return (
+                  <TableRow key={row.id || index} sx={{ fontSize: '1.1rem' }}>
+                    <TableCell sx={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      width: '5%',
+                      minWidth: 70,
+                    }}>{index + 1}</TableCell>
+                    <TableCell sx={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      width: '10%',
+                      minWidth: 90,
+                    }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'nowrap' }}>
+                        {row.days?.slice().sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b)).map(day => (
+                          <Box
+                            key={day}
+                            sx={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: '50%',
+                              backgroundColor: '#f1f1f1',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 500,
+                              fontSize: '0.95rem',
+                              color: '#222',
+                              m: 0,
+                              p: 0
+                            }}
+                          >
+                            {dayShortMap[day] || day}
                           </Box>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip title="אין הסעה ביום זה">
-                          <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            backgroundColor: '#9e9e9e',
-                            color: 'white',
-                            padding: '4px 12px',
-                            borderRadius: '16px',
-                            minWidth: '80px',
-                            justifyContent: 'center'
-                          }}>
-                            <EventSeatIcon sx={{ fontSize: 20 }} />
-                            <Typography variant="body2" sx={{ fontSize: '1rem', fontWeight: 500 }}>
-                              —
-                            </Typography>
-                          </Box>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                    <Tooltip title="שיריון זמני">
-                      <IconButton onClick={() => handleTempReservationClick(row)} sx={{ p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
-                        <AccessTimeIcon sx={{ fontSize: 25, color: 'primary.main' }} />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0', fontSize: '1.08rem', fontWeight: 500 }}>{row.type}</TableCell>
-                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                    <Tooltip title="צפייה באנשים">
-                      <IconButton onClick={() => onViewPassengers(passengersForDay, [selectedHebDay])}>
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', borderRight: '1px solid #e0e0e0' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                      <Tooltip title="עריכה">
-                        <IconButton onClick={() => onEditClick(index)}>
-                          <EditIcon color="primary" />
+                        ))}
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      width: '18%',
+                      minWidth: 160,
+                    }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
+                        {(row.cities || []).map((city, i) => (
+                          <Chip
+                            key={i}
+                            label={city}
+                            size="small"
+                            sx={{
+                              minWidth: 70,
+                              minHeight: 26,
+                              borderRadius: '13px',
+                              fontSize: '0.95rem',
+                              fontWeight: 500,
+                              backgroundColor: '#f1f1f1',
+                              mx: 0.5,
+                              p: 0,
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      width: '13%',
+                      minWidth: 120,
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                        {selectedHebDay && (row.days || []).includes(selectedHebDay) ? (
+                          <Tooltip title={`מקומות פנויים: ${availableSeats}`}>
+                            <Box sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              backgroundColor: availableSeats > 0 ? '#4caf50' : '#f44336',
+                              color: 'white',
+                              padding: '4px 12px',
+                              borderRadius: '16px',
+                              minWidth: '80px',
+                              justifyContent: 'center',
+                              m: 0,
+                              p: 0
+                            }}>
+                              <EventSeatIcon sx={{ fontSize: 20 }} />
+                              <Typography variant="body2" sx={{ fontSize: '1rem', fontWeight: 500 }}>
+                                {availableSeats}
+                              </Typography>
+                            </Box>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip title="אין הסעה ביום זה">
+                            <Box sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              backgroundColor: '#9e9e9e',
+                              color: 'white',
+                              padding: '4px 12px',
+                              borderRadius: '16px',
+                              minWidth: '80px',
+                              justifyContent: 'center',
+                              m: 0,
+                              p: 0
+                            }}>
+                              <EventSeatIcon sx={{ fontSize: 20 }} />
+                              <Typography variant="body2" sx={{ fontSize: '1rem', fontWeight: 500 }}>
+                                —
+                              </Typography>
+                            </Box>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      width: '10%',
+                      minWidth: 90,
+                    }}>
+                      <Tooltip title="שיריון זמני">
+                        <IconButton onClick={() => handleTempReservationClick(row)} sx={{ width: 32, height: 32, p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
+                          <AccessTimeIcon sx={{ fontSize: 25, color: 'primary.main' }} />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="מחק">
-                        <IconButton onClick={() => onDeleteClick(index)}>
-                          <DeleteIcon color="error" />
+                    </TableCell>
+                    <TableCell sx={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      width: '10%',
+                      minWidth: 90,
+                      fontSize: '1.08rem',
+                      fontWeight: 500,
+                    }}>{row.type}</TableCell>
+                    <TableCell sx={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      width: '13%',
+                      minWidth: 120,
+                    }}>
+                      <Tooltip title="צפייה באנשים">
+                        <IconButton onClick={() => onViewPassengers(passengersForDay, [selectedHebDay])} sx={{ width: 32, height: 32, p: 0 }}>
+                          <VisibilityIcon />
                         </IconButton>
                       </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    </TableCell>
+                    <TableCell sx={{
+                      textAlign: 'center',
+                      verticalAlign: 'middle',
+                      width: '11%',
+                      minWidth: 90,
+                    }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                        <Tooltip title="עריכה">
+                          <IconButton onClick={() => onEditClick(index)} sx={{ width: 32, height: 32, p: 0 }}>
+                            <EditIcon color="primary" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="מחק">
+                          <IconButton onClick={() => onDeleteClick(index)} sx={{ width: 32, height: 32, p: 0 }}>
+                            <DeleteIcon color="error" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
         {/* דיאלוג שיריון זמני */}
         <TempReservationDialog
@@ -648,10 +832,10 @@ function TransportTable({
           >
             ביטול
           </Button>,
-            <Button
+          <Button
             key="confirm"
             onClick={handleDelete}
-              variant="contained"
+            variant="contained"
             sx={{
               backgroundColor: '#d32f2f',
               color: 'white',
@@ -662,7 +846,7 @@ function TransportTable({
             }}
           >
             אישור
-            </Button>
+          </Button>
         ]}
       >
         <Typography variant="body1" sx={{
