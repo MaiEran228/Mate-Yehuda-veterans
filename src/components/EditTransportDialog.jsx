@@ -139,7 +139,7 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
               value={formData?.cities || []}
               onChange={handleChange('cities')}
               input={<OutlinedInput label="יישובים" />}
-              renderValue={(selected) => selected.join(', ')}
+              renderValue={(selected) => selected.slice().sort((a, b) => a.localeCompare(b, 'he')).join(', ')}
             >
               {cities.map((city) => (
                 <MenuItem key={city} value={city}>

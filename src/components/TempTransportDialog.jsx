@@ -43,12 +43,12 @@ const TempReservationDialog = ({
       setAvailableProfilesForRemove([]);
       return;
     }
-
+  
     const fetchAndCalculateProfiles = async () => {
       const dateStr = reservationDate.toISOString().slice(0, 10);
       const reservationDayIdx = reservationDate.getDay();
       const reservationHebDay = daysMap[reservationDayIdx];
-
+  
       try {
         // שלוף נתונים עבור התאריך
         const dateDoc = await fetchTransportsByDate(dateStr);
@@ -60,53 +60,52 @@ const TempReservationDialog = ({
           }
         }
         setTempReservationsForDialogDate(map);
-
-        // חשב נוסעים זמינים להוספה
+  
+        // חשב את הנוסעים הנוכחיים בהסעה (עם הגיון כמו ב-TransportTable)
         const regular = (transport.passengers || []).filter(p => 
           (p.arrivalDays || []).includes(reservationHebDay)
         );
         const tempList = (map[transport.id?.toString()] || []).filter(r => r.date === dateStr);
         
-        // איחוד כל המשוריינים (ללא כפילויות)
-        const assignedIds = new Set([
-          ...regular.map(p => String(p.id)),
-          ...tempList.map(t => String(t.id))
-        ]);
+        const tempAdditions = tempList.filter(t => t.type !== 'removal');
+        const tempRemovals = tempList.filter(t => t.type === 'removal');
         
-        // זמינים להוספה: כל הפרופילים מינוס המשוריינים
-        const forAdd = [...profiles]
-          .filter(p => !assignedIds.has(String(p.id)))
+        // הסר נוסעים קבועים שמופיעים ברשימת ההוצאות הזמניות
+        const removalIds = new Set(tempRemovals.map(r => r.id));
+        const filteredRegular = regular.filter(p => !removalIds.has(p.id));
+        
+        // הוסף נוסעים זמניים (רק הוספות) שלא קיימים כבר
+        const regularIds = new Set(filteredRegular.map(p => p.id));
+        const newTempPassengers = tempAdditions.filter(t => !regularIds.has(t.id));
+        
+        const currentPassengers = [...filteredRegular, ...newTempPassengers];
+        
+        // זמינים להוספה: כל הפרופילים מינוס הנוסעים הנוכחיים
+        const currentPassengerIds = new Set(currentPassengers.map(p => String(p.id)));
+        const forAdd = profiles
+          .filter(p => !currentPassengerIds.has(String(p.id)))
           .sort((a, b) => a.name.localeCompare(b.name, 'he'));
         
-        // זמינים להורדה: רק המשוריינים
-        const ids = new Set();
-        const forRemove = [];
-        for (const p of regular) {
-          if (!ids.has(p.id)) {
-            forRemove.push(p);
-            ids.add(p.id);
-          }
-        }
-        for (const t of tempList) {
-          if (!ids.has(t.id)) {
-            forRemove.push(t);
-            ids.add(t.id);
-          }
-        }
-        forRemove.sort((a, b) => a.name.localeCompare(b.name, 'he'));
-
+        // זמינים להורדה: רק הנוסעים הנוכחיים
+        const forRemove = currentPassengers
+          .sort((a, b) => a.name.localeCompare(b.name, 'he'));
+  
         setAvailableProfilesForAdd(forAdd);
         setAvailableProfilesForRemove(forRemove);
-
+  
       } catch (error) {
         console.error('Error fetching transport data:', error);
         setAvailableProfilesForAdd([]);
         setAvailableProfilesForRemove([]);
       }
     };
-
+  
     fetchAndCalculateProfiles();
   }, [open, reservationDate, transport, profiles, fetchTransportsByDate]);
+
+  useEffect(() => {
+    setSelectedProfile(null);
+  }, [reservationType, reservationDate, availableProfilesForAdd, availableProfilesForRemove]);
 
   // 4. החלף את החלק של ה-Autocomplete ב-JSX:
   return (

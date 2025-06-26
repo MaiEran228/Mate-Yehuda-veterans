@@ -6,7 +6,7 @@ import { findMatchingTransports, addPassengerToTransport } from '../utils/transp
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
-import ProfileFormFields from './ProfileFormFields';
+import AddProfileFields from './AddProfileFields';
 import CustomDialog from './CustomDialog';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
@@ -328,7 +328,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
 
                         {/* שדות טקסט */}
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                            <ProfileFormFields
+                            <AddProfileFields
                                 values={formData}
                                 errors={errors}
                                 onChange={handleChange}

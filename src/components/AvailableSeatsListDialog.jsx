@@ -71,13 +71,8 @@ const AvailableSeatsListDialog = ({ open, onClose, data, calculateAvailableSeats
                           <Box
                             key={day}
                             sx={{
-                              border: '2px solid #ccc',
-                              borderRadius: '16px',
-                              padding: '6px 12px',
-                              minWidth: '120px',
                               textAlign: 'right',
                               fontWeight: 'bold',
-                              backgroundColor: '#f5f5f5',
                             }}
                           >
                             {day}: {availableSeatsByDay[day]}
@@ -86,7 +81,7 @@ const AvailableSeatsListDialog = ({ open, onClose, data, calculateAvailableSeats
                       </Box>
                     </TableCell>
                     <TableCell sx={{ textAlign: 'right' }}>{(row.days || []).slice().sort((a, b) => arrivalDaysOrder.indexOf(a) - arrivalDaysOrder.indexOf(b)).join(', ')}</TableCell>
-                    <TableCell sx={{ textAlign: 'right' }}>{(row.cities || []).join(', ')}</TableCell>
+                    <TableCell sx={{ textAlign: 'right' }}>{(row.cities || []).slice().sort((a, b) => a.localeCompare(b, 'he')).join(', ')}</TableCell>
                     <TableCell sx={{ textAlign: 'right' }}>{row.type}</TableCell>
                     <TableCell sx={{ textAlign: 'right' }}>{idx + 1}</TableCell>
                   </TableRow>

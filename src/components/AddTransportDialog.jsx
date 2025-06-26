@@ -183,7 +183,7 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
                 value={formData.cities || []}
                 onChange={handleChange('cities')}
                 input={<OutlinedInput label="יישובים" />}
-                renderValue={(selected) => selected.join(', ')}
+                renderValue={(selected) => selected.slice().sort((a, b) => a.localeCompare(b, 'he')).join(', ')}
               >
                 {citiesList.slice().sort((a, b) => a.localeCompare(b, 'he')).map((city) => (
                   <MenuItem key={city} value={city} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

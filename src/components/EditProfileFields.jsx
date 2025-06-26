@@ -291,8 +291,9 @@ function EditProfileFields({
             <MenuItem value="" disabled hidden>
               זכאות
             </MenuItem>
-            <MenuItem value="רווחה">רווחה</MenuItem>
             <MenuItem value="סיעוד">סיעוד</MenuItem>
+            <MenuItem value="פרטי">פרטי</MenuItem>
+            <MenuItem value="רווחה">רווחה</MenuItem>
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
@@ -313,16 +314,20 @@ function EditProfileFields({
             <MenuItem value="" disabled hidden>
               חברת סיעוד
             </MenuItem>
-            <MenuItem value="מטב">מט"ב</MenuItem>
-            <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
-            <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
             <MenuItem value="א.ש ירושלים">א.ש ירושלים</MenuItem>
-            <MenuItem value="ראנד">ראנד</MenuItem>
-            <MenuItem value="תגבור">תגבור</MenuItem>
+            <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
+            <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
+            <MenuItem value="דנאל- ירושלים">דנאל- ירושלים</MenuItem>
+            <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
+            <MenuItem value="מטב">מט"ב</MenuItem>
             <MenuItem value="נתן">נתן</MenuItem>
             <MenuItem value="עמל- בית שמש">עמל- בית שמש</MenuItem>
+            <MenuItem value="עמל- לוד">עמל- לוד</MenuItem>
             <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
-            <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
+            <MenuItem value="ראנד">ראנד</MenuItem>
+            <MenuItem value="תגבור">תגבור</MenuItem>
+            <MenuItem value="תגבור- ירושלים">תגבור- ירושלים</MenuItem>
+            <MenuItem value="ללא חברה">ללא חברה</MenuItem>
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
@@ -344,7 +349,7 @@ function EditProfileFields({
               חבר ב־
             </MenuItem>
             <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
-            <MenuItem value="מרכז יום">מרכז יום</MenuItem>
+            <MenuItem value="לא קהילה תומכת">לא קהילה תומכת</MenuItem>
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>

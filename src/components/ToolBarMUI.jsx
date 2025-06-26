@@ -1,7 +1,7 @@
 // src/components/ToolbarMUI.jsx
 import { AppBar, Toolbar, Button, Box, Divider, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import logoMateYehuda from '../assets/Logo.png';
+import logoMateYehuda from '../assets/Logo.jpg';
 import Tooltip from '@mui/material/Tooltip';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import EditIcon from '@mui/icons-material/Edit';

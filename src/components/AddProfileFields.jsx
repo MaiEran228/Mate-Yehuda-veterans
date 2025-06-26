@@ -1,51 +1,53 @@
-import { Box, Typography, FormControl, Select, MenuItem, Checkbox, FormControlLabel,
-  TextField } from '@mui/material';
+import {
+  Box, Typography, FormControl, Select, MenuItem, Checkbox, FormControlLabel,
+  TextField
+} from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 
-export default function ProfileFormFields({ values, errors, onChange, onImageChange, isUploading }) {
+export default function AddProfileFields({ values, errors, onChange, onImageChange, isUploading }) {
 
   const compressImage = (file, maxWidth = 800, quality = 0.7) => {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
-  
+
       img.onload = () => {
         const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
         canvas.width = img.width * ratio;
         canvas.height = img.height * ratio;
-  
+
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(resolve, 'image/jpeg', quality);
       };
-  
+
       img.src = URL.createObjectURL(file);
     });
   };
-  
+
   // החלף את הפונקציה handleImageUpload הקיימת בזו:
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-  
+
     // בדיקות בסיסיות
     if (file.size > 10 * 1024 * 1024) { // 10MB
       alert('התמונה גדולה מדי. אנא בחר תמונה קטנה יותר.');
       return;
     }
-  
+
     if (!file.type.startsWith('image/')) {
       alert('אנא בחר קובץ תמונה תקין');
       return;
     }
-  
+
     console.log('Original file:', { name: file.name, size: file.size, type: file.type });
-  
+
     try {
       // דחוס את התמונה
       const compressedFile = await compressImage(file);
       console.log('Compressed file size:', compressedFile.size);
-  
+
       // קרא את הקובץ המדוחס
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -339,8 +341,9 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             <MenuItem value="" disabled hidden>
               זכאות
             </MenuItem>
-            <MenuItem value="רווחה">רווחה</MenuItem>
             <MenuItem value="סיעוד">סיעוד</MenuItem>
+            <MenuItem value="פרטי">פרטי</MenuItem>
+            <MenuItem value="רווחה">רווחה</MenuItem>
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
@@ -365,16 +368,20 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
             <MenuItem value="" disabled hidden>
               חברת סיעוד
             </MenuItem>
-            <MenuItem value="מטב">מט"ב</MenuItem>
-            <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
-            <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
             <MenuItem value="א.ש ירושלים">א.ש ירושלים</MenuItem>
-            <MenuItem value="ראנד">ראנד</MenuItem>
-            <MenuItem value="תגבור">תגבור</MenuItem>
+            <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
+            <MenuItem value="דנאל- בית שמש">דנאל- בית שמש</MenuItem>
+            <MenuItem value="דנאל- ירושלים">דנאל- ירושלים</MenuItem>
+            <MenuItem value="דנאל- רמלה">דנאל- רמלה</MenuItem>
+            <MenuItem value="מטב">מט"ב</MenuItem>
             <MenuItem value="נתן">נתן</MenuItem>
             <MenuItem value="עמל- בית שמש">עמל- בית שמש</MenuItem>
+            <MenuItem value="עמל- לוד">עמל- לוד</MenuItem>
             <MenuItem value="עמל- ירושלים">עמל- ירושלים</MenuItem>
-            <MenuItem value="ביטוח לאומי">ביטוח לאומי</MenuItem>
+            <MenuItem value="ראנד">ראנד</MenuItem>
+            <MenuItem value="תגבור">תגבור</MenuItem>
+            <MenuItem value="תגבור- ירושלים">תגבור- ירושלים</MenuItem>
+            <MenuItem value="ללא חברה">ללא חברה</MenuItem>
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
@@ -418,7 +425,7 @@ export default function ProfileFormFields({ values, errors, onChange, onImageCha
               חבר ב־
             </MenuItem>
             <MenuItem value="קהילה תומכת">קהילה תומכת</MenuItem>
-            <MenuItem value="מרכז יום">מרכז יום</MenuItem>
+            <MenuItem value="לא קהילה תומכת">לא קהילה תומכת</MenuItem>
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>

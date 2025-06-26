@@ -66,13 +66,18 @@ function TransportTable({
   React.useEffect(() => {
     if (tempReservationDialog.open) {
       const fetchProfiles = async () => {
-        const profilesRef = collection(db, 'profiles');
-        const snapshot = await getDocs(profilesRef);
-        const profilesList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setProfiles(profilesList);
+        try {
+          const profilesRef = collection(db, 'profiles');
+          const snapshot = await getDocs(profilesRef);
+          const profilesList = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setProfiles(profilesList);
+        } catch (error) {
+          console.error('Error fetching profiles:', error);
+          setDialog({ open: true, message: 'שגיאה בטעינת הפרופילים', type: 'error' });
+        }
       };
       fetchProfiles();
     }
@@ -84,17 +89,23 @@ function TransportTable({
       setTempReservationsByTransport({});
       return;
     }
-    const dateStr = selectedDate.format ? selectedDate.format('YYYY-MM-DD') : selectedDate.toISOString().slice(0, 10);
-    const dateDoc = await fetchTransportsByDate(dateStr);
-    const transportsList = dateDoc?.transports || [];
-    const map = {};
-    for (const t of transportsList) {
-      if (t.tempReservations && t.tempReservations.length > 0) {
-        map[t.id.toString()] = t.tempReservations;
-      }
-    }
 
-    setTempReservationsByTransport(map);
+    try {
+      const dateStr = selectedDate.format ? selectedDate.format('YYYY-MM-DD') : selectedDate.toISOString().slice(0, 10);
+      const dateDoc = await fetchTransportsByDate(dateStr);
+      const transportsList = dateDoc?.transports || [];
+      const map = {};
+
+      for (const t of transportsList) {
+        if (t.tempReservations && t.tempReservations.length > 0) {
+          map[t.id.toString()] = t.tempReservations;
+        }
+      }
+
+      setTempReservationsByTransport(map);
+    } catch (error) {
+      console.error('Error fetching temp reservations:', error);
+    }
   };
 
   useEffect(() => {
@@ -163,26 +174,34 @@ function TransportTable({
   function getPassengersForDay(row, selectedHebDay, dateStr) {
     let regular = (row.passengers || []).filter(p => (p.arrivalDays || []).includes(selectedHebDay));
     let temp = tempReservationsByTransport[row.id.toString()] || [];
-    // Only for this date
+
+    // סנן רק לתאריך הנוכחי
     temp = temp.filter(r => r.date === dateStr);
-    // Avoid duplicates (by id)
-    const ids = new Set(regular.map(p => p.id));
-    const merged = [...regular, ...temp.filter(t => !ids.has(t.id))];
-    return merged;
+
+    // הפרד בין הוספות להוצאות זמניות
+    const tempAdditions = temp.filter(t => t.type !== 'removal');
+    const tempRemovals = temp.filter(t => t.type === 'removal');
+
+    // הסר נוסעים קבועים שמופיעים ברשימת ההוצאות הזמניות
+    const removalIds = new Set(tempRemovals.map(r => r.id));
+    const filteredRegular = regular.filter(p => !removalIds.has(p.id));
+
+    // הוסף נוסעים זמניים (רק הוספות)
+    const regularIds = new Set(filteredRegular.map(p => p.id));
+    const newTempPassengers = tempAdditions.filter(t => !regularIds.has(t.id));
+
+    return [...filteredRegular, ...newTempPassengers];
   }
 
   // Helper: get available seats for selected day (regular + temp)
   function getAvailableSeats(row, selectedHebDay, dateStr) {
-    // Count regular + temp for this date
-    const regular = (row.passengers || []).filter(p => (p.arrivalDays || []).includes(selectedHebDay));
-    const temp = (tempReservationsByTransport[row.id.toString()] || []).filter(r => r.date === dateStr);
-    const all = [...regular, ...temp];
+    const passengers = getPassengersForDay(row, selectedHebDay, dateStr);
     const totalSeats = row.type === 'מונית' ? 4 : 14;
-    // ודא שכל נוסע זמני עם hasCaregiver=true תופס 2 מקומות
-    const seatsNeeded = all.reduce((total, p) => total + (p.hasCaregiver ? 2 : 1), 0);
+    const seatsNeeded = passengers.reduce((total, p) => total + (p.hasCaregiver ? 2 : 1), 0);
     return totalSeats - seatsNeeded;
   }
 
+  // החלף את הפונקציה handleTempReservationSave הקיימת בזו:
   const handleTempReservationSave = async () => {
     if (!selectedProfile || !reservationDate) {
       setDialog({ open: true, message: 'יש למלא את כל השדות', type: 'error' });
@@ -192,6 +211,7 @@ function TransportTable({
     const dateStr = reservationDate.toISOString().slice(0, 10);
     const transport = selectedTransport;
     const totalSeats = transport.type === 'מונית' ? 4 : 14;
+
     // קביעת היום בשבוע של התאריך שנבחר להזמנה
     const daysMap = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
     const reservationDayIdx = reservationDate.getDay();
@@ -203,32 +223,47 @@ function TransportTable({
       return;
     }
 
-    if (tempReservationDialog.reservationType === 'remove') {
-      // הורדת נוסע זמני
-      const tempList = (tempReservationsByTransport[transport.id?.toString()] || []);
-      const exists = tempList.some(r => r.id === selectedProfile.id && r.date === dateStr);
+    if (reservationType === 'remove') {
+      // הורדת נוסע - בדיקה אם זה נוסע קבוע או זמני
       try {
-        // ניצור אובייקט שיריון להסרה (לפי id ותאריך)
-        const tempReservation = {
-          id: selectedProfile.id,
-          date: dateStr
-        };
-        await removeTempReservationForDate(transport, tempReservation, dateStr);
+        const regularPassengers = (transport.passengers || []).filter(p =>
+          (p.arrivalDays || []).includes(reservationHebDay)
+        );
+        const isRegularPassenger = regularPassengers.some(p => p.id === selectedProfile.id);
+
+        if (isRegularPassenger) {
+          // זה נוסע קבוע - צריך להוסיף אותו לרשימת ההוצאות הזמניות
+          const tempRemoval = {
+            id: selectedProfile.id,
+            name: selectedProfile.name,
+            hasCaregiver: selectedProfile.hasCaregiver || false,
+            date: dateStr,
+            type: 'removal' // סימון שזו הוצאה זמנית של נוסע קבוע
+          };
+          await addTempReservationForDate(transport, tempRemoval, dateStr);
+        } else {
+          // זה נוסע זמני - הסר אותו מהרשימה
+          const tempReservation = {
+            id: selectedProfile.id,
+            date: dateStr
+          };
+          await removeTempReservationForDate(transport, tempReservation, dateStr);
+        }
+
         await fetchTempReservations();
         handleTempReservationClose();
         setDialog({ open: true, message: 'הנוסע הוסר בהצלחה מהשיריון הזמני', type: 'success' });
       } catch (error) {
-        console.error('Error removing temporary reservation:', error && error.message, error);
+        console.error('Error removing reservation:', error);
         setDialog({ open: true, message: 'אירעה שגיאה בהסרת הנוסע', type: 'error' });
       }
       return;
     }
 
-    // בדיקת מקומות פנויים לפני שמירה
-    // נוסעים קבועים שמגיעים ביום הזה
+    // שאר הקוד נשאר כמו שהיה (הוספת נוסע זמני)...
     const regular = (transport.passengers || []).filter(p => (p.arrivalDays || []).includes(reservationHebDay));
-    // נוסעים זמניים עם שיריון לאותו תאריך (מהסטייט החדש)
-    const tempList = (tempReservationsForDialogDate[transport.id?.toString()] || []).filter(r => r.date === dateStr);
+    const tempList = (tempReservationsByTransport[transport.id?.toString()] || []).filter(r => r.date === dateStr);
+
     // מיזוג כל הנוסעים (ללא כפילויות)
     const ids = new Set();
     const all = [];
@@ -244,9 +279,11 @@ function TransportTable({
         ids.add(t.id);
       }
     }
+
     // חישוב מקומות
     const usedSeats = all.reduce((total, p) => total + (p.hasCaregiver ? 2 : 1), 0);
     const availableSeats = totalSeats - usedSeats;
+
     if (availableSeats < (selectedProfile.hasCaregiver ? 2 : 1)) {
       setDialog({ open: true, message: 'אין מקום פנוי בהסעה!', type: 'error' });
       return;
@@ -260,125 +297,161 @@ function TransportTable({
         name: selectedProfile.name,
         hasCaregiver: selectedProfile.hasCaregiver || false,
         date: dateStr,
+        type: 'addition' // סימון שזו הוספה זמנית
       };
+
       // שמירה ל-transport_dates
       await addTempReservationForDate(updatedTransport, tempReservation, dateStr);
-      await fetchTempReservations(); // רענון מיידי אחרי שמירה
+      await fetchTempReservations();
       handleTempReservationClose();
       setDialog({ open: true, message: 'שיריון זמני נשמר בהצלחה', type: 'success' });
     } catch (error) {
-      console.error('Error saving temporary reservation:', error && error.message, error);
+      console.error('Error saving temporary reservation:', error);
       setDialog({ open: true, message: 'אירעה שגיאה בשמירת השינויים', type: 'error' });
     }
   };
 
   const addTempReservationForDate = async (transport, reservation, dateStr) => {
-    // בדיקת תקינות transport
-    if (!transport) {
-      throw new Error('Transport is undefined or null');
-    }
-
-    // מצא מזהה הסעה תקין
-    const transportIdRaw = transport.id ?? transport.transportId ?? null;
-    if (transportIdRaw === null || transportIdRaw === undefined) {
-      throw new Error('Transport id is missing');
-    }
-    const transportId = transportIdRaw.toString();
-
-    let dateDoc = await fetchTransportsByDate(dateStr);
-    let transportsList = dateDoc?.transports || [];
-    console.log('transportsList before:', transportsList);
-
-    const idx = transportsList.findIndex(t => {
-      const tIdRaw = t.id ?? t.transportId ?? null;
-      if (tIdRaw === null || tIdRaw === undefined) return false;
-      const tId = tIdRaw.toString();
-      return tId === transportId;
-    });
-
-    if (idx === -1) {
-      // יצירת אובייקט הסעה חדש לשמירה
-      const newTransport = {
-        id: transportId,
-        tempReservations: [reservation],
-      };
-      if (typeof transport.type === 'string') newTransport.type = transport.type;
-      if (Array.isArray(transport.days)) newTransport.days = transport.days;
-      if (Array.isArray(transport.cities)) newTransport.cities = transport.cities;
-
-      console.log('newTransport:', JSON.stringify(newTransport));
-      transportsList.push(newTransport);
-    } else {
-      // עדכון הסעה קיימת
-      const t = transportsList[idx];
-      if (!Array.isArray(t.tempReservations)) t.tempReservations = [];
-
-      // הסר שיריון קיים עם אותו id אם קיים
-      t.tempReservations = t.tempReservations.filter(r => r.id !== reservation.id);
-
-      // הוסף שיריון חדש
-      t.tempReservations.push(reservation);
-
-      transportsList[idx] = t;
-    }
-
-    // בדיקה שאין ערכים undefined ב-reservation
-    Object.entries(reservation).forEach(([k, v]) => {
-      if (v === undefined) {
-        console.error('reservation has undefined field:', k);
+    try {
+      // בדיקת תקינות transport
+      if (!transport) {
+        throw new Error('Transport is undefined or null');
       }
-    });
 
-    // בדיקה שאין ערכים undefined ב-transportsList
-    transportsList.forEach(t => {
-      Object.entries(t).forEach(([key, val]) => {
-        if (val === undefined) {
-          console.error(`🚨 הסעה עם id ${t.id} מכילה undefined בשדה:`, key);
+      // מצא מזהה הסעה תקין
+      const transportIdRaw = transport.id ?? transport.transportId ?? null;
+      if (transportIdRaw === null || transportIdRaw === undefined) {
+        throw new Error('Transport id is missing');
+      }
+      const transportId = transportIdRaw.toString();
+
+      let dateDoc = await fetchTransportsByDate(dateStr);
+      let transportsList = dateDoc?.transports || [];
+      console.log('transportsList before:', transportsList);
+
+      const idx = transportsList.findIndex(t => {
+        const tIdRaw = t.id ?? t.transportId ?? null;
+        if (tIdRaw === null || tIdRaw === undefined) return false;
+        const tId = tIdRaw.toString();
+        return tId === transportId;
+      });
+
+      if (idx === -1) {
+        // יצירת אובייקט הסעה חדש לשמירה
+        const newTransport = {
+          id: transportId,
+          tempReservations: [reservation],
+        };
+        if (typeof transport.type === 'string') newTransport.type = transport.type;
+        if (Array.isArray(transport.days)) newTransport.days = transport.days;
+        if (Array.isArray(transport.cities)) newTransport.cities = transport.cities;
+
+        console.log('newTransport:', JSON.stringify(newTransport));
+        transportsList.push(newTransport);
+      } else {
+        // עדכון הסעה קיימת
+        const t = transportsList[idx];
+        if (!Array.isArray(t.tempReservations)) t.tempReservations = [];
+
+        // הסר שיריון קיים עם אותו id אם קיים
+        t.tempReservations = t.tempReservations.filter(r => r.id !== reservation.id);
+
+        // הוסף שיריון חדש
+        t.tempReservations.push(reservation);
+
+        transportsList[idx] = t;
+      }
+
+      // בדיקה שאין ערכים undefined ב-reservation
+      Object.entries(reservation).forEach(([k, v]) => {
+        if (v === undefined) {
+          console.error('reservation has undefined field:', k);
         }
       });
-      (t.tempReservations || []).forEach((r, idx) => {
-        Object.entries(r).forEach(([key, val]) => {
+
+      // בדיקה שאין ערכים undefined ב-transportsList
+      transportsList.forEach(t => {
+        Object.entries(t).forEach(([key, val]) => {
           if (val === undefined) {
-            console.error(`🚨 שיריון זמני ${idx} בהסעה ${t.id} מכיל undefined בשדה:`, key);
+            console.error(`🚨 הסעה עם id ${t.id} מכילה undefined בשדה:`, key);
           }
         });
+        (t.tempReservations || []).forEach((r, idx) => {
+          Object.entries(r).forEach(([key, val]) => {
+            if (val === undefined) {
+              console.error(`🚨 שיריון זמני ${idx} בהסעה ${t.id} מכיל undefined בשדה:`, key);
+            }
+          });
+        });
       });
-    });
 
-    try {
       await saveTransportDate(dateStr, transportsList);
+      console.log('Temporary reservation saved successfully');
     } catch (error) {
-      console.error('Error saving temporary reservation:', error && error.message, error);
+      console.error('Error saving temporary reservation:', error);
       throw error;
     }
   };
 
   // הוספת פונקציה חדשה להסרת שיריון זמני
+  // תחליפי את הפונקציה removeTempReservationForDate הקיימת בזו:
   const removeTempReservationForDate = async (transport, reservation, dateStr) => {
-    // בדומה ל-addTempReservationForDate, אך מסיר את השיריון
-    const transportIdRaw = transport.id ?? transport.transportId ?? null;
-    if (transportIdRaw === null || transportIdRaw === undefined) {
-      throw new Error('Transport id is missing');
+    try {
+      console.log('🔄 מתחיל הסרת שיריון זמני:', {
+        transportId: transport.id,
+        reservationId: reservation.id,
+        date: dateStr
+      });
+
+      const transportIdRaw = transport.id ?? transport.transportId ?? null;
+      if (transportIdRaw === null || transportIdRaw === undefined) {
+        throw new Error('Transport id is missing');
+      }
+      const transportId = transportIdRaw.toString();
+
+      let dateDoc = await fetchTransportsByDate(dateStr);
+      let transportsList = dateDoc?.transports || [];
+
+      console.log('📋 רשימת הסעות לפני הסרה:', transportsList.map(t => ({
+        id: t.id,
+        tempReservations: t.tempReservations?.length || 0
+      })));
+
+      const idx = transportsList.findIndex(t => {
+        const tIdRaw = t.id ?? t.transportId ?? null;
+        if (tIdRaw === null || tIdRaw === undefined) return false;
+        const tId = tIdRaw.toString();
+        return tId === transportId;
+      });
+
+      if (idx === -1) {
+        console.warn('⚠️ הסעה לא נמצאה לתאריך זה');
+        throw new Error('Transport not found for this date');
+      }
+
+      const t = transportsList[idx];
+      if (!Array.isArray(t.tempReservations)) {
+        console.warn('⚠️ אין שירויים זמניים בהסעה זו');
+        t.tempReservations = [];
+      }
+
+      console.log('📝 שירויים זמניים לפני הסרה:', t.tempReservations);
+
+      // 🔧 התיקון העיקרי - הסרה לפי id בלבד (ללא תאריך)
+      const originalLength = t.tempReservations.length;
+      t.tempReservations = t.tempReservations.filter(r => r.id !== reservation.id);
+
+      console.log('📝 שירויים זמניים אחרי הסרה:', t.tempReservations);
+      console.log(`✅ הוסרו ${originalLength - t.tempReservations.length} שירויים`);
+
+      transportsList[idx] = t;
+
+      await saveTransportDate(dateStr, transportsList);
+      console.log('💾 הסרת שיריון זמני הושלמה בהצלחה');
+    } catch (error) {
+      console.error('❌ שגיאה בהסרת שיריון זמני:', error);
+      throw error;
     }
-    const transportId = transportIdRaw.toString();
-    let dateDoc = await fetchTransportsByDate(dateStr);
-    let transportsList = dateDoc?.transports || [];
-    const idx = transportsList.findIndex(t => {
-      const tIdRaw = t.id ?? t.transportId ?? null;
-      if (tIdRaw === null || tIdRaw === undefined) return false;
-      const tId = tIdRaw.toString();
-      return tId === transportId;
-    });
-    if (idx === -1) {
-      // אין הסעה כזו בתאריך הזה
-      throw new Error('Transport not found for this date');
-    }
-    const t = transportsList[idx];
-    if (!Array.isArray(t.tempReservations)) t.tempReservations = [];
-    // הסר את השיריון לפי id ותאריך
-    t.tempReservations = t.tempReservations.filter(r => !(r.id === reservation.id && r.date === dateStr));
-    transportsList[idx] = t;
-    await saveTransportDate(dateStr, transportsList);
   };
 
   // אפס את הנוסע הנבחר בכל שינוי תאריך/הסעה/סוג פעולה
@@ -395,7 +468,6 @@ function TransportTable({
 
   return (
     <Box sx={{ width: '100%' }}>
-
       <Paper
         sx={{
           width: '100%',
@@ -545,7 +617,6 @@ function TransportTable({
             overflowY: 'auto',
             direction: 'ltr',
             maxHeight: 'calc(100vh - 340px)',
-            // הסרת הגבול העליון כדי להתחבר חזותית לכותרות
             marginTop: '-1px',
             '&::-webkit-scrollbar': {
               width: '8px',
@@ -647,20 +718,18 @@ function TransportTable({
                       minWidth: 160,
                     }}>
                       <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
-                        {(row.cities || []).map((city, i) => (
+                        {(row.cities || []).slice().sort((a, b) => a.localeCompare(b, 'he')).map((city, i) => (
                           <Chip
                             key={i}
                             label={city}
                             size="small"
                             sx={{
-                              minWidth: 70,
+                              minWidth: 30,
                               minHeight: 26,
                               borderRadius: '13px',
                               fontSize: '0.95rem',
                               fontWeight: 500,
                               backgroundColor: '#f1f1f1',
-                              mx: 0.5,
-                              p: 0,
                             }}
                           />
                         ))}
@@ -863,4 +932,4 @@ function TransportTable({
   );
 }
 
-export default TransportTable; 
+export default TransportTable;
