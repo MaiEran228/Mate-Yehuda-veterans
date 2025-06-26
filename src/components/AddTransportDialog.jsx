@@ -1,20 +1,30 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Select, MenuItem, InputLabel,
   FormControl, Checkbox, ListItemText, OutlinedInput, Box, Typography,
+  IconButton, Tooltip,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 const transportTypes = ['מיניבוס', 'מונית'];
 
-const cities = [
-  'ירושלים','אדרת','אביעזר','נחם','אשתאול','תרום','תעוז',
+const initialCities = [
+  "צלפון","בקוע","טל שחר","כפר אוריה","תעוז","תרום","מסילת ציון","אשתאול","זנוח",
+  "מחסיה","נחם","עג'ור"
 ];
 
 const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 
 function AddTransportDialog({ open, onClose, onAdd, initialData }) {
   const [formData, setFormData] = React.useState(initialData);
+  const defaultCities = useRef([...initialCities]);
+  const [citiesList, setCitiesList] = React.useState(defaultCities.current);
+  const [addDialogOpen, setAddDialogOpen] = React.useState(false);
+  const [newCity, setNewCity] = React.useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [cityToDelete, setCityToDelete] = React.useState(null);
 
   React.useEffect(() => {
     if (open) {
@@ -23,6 +33,7 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
         days: [],
         cities: [],
       });
+      setCitiesList(defaultCities.current);
     }
   }, [open, initialData]);
 
@@ -46,6 +57,43 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
   const handleSubmit = () => {
     onAdd(formData);
   };
+
+  function handleAddCity() {
+    const city = newCity.trim();
+    if (city && !citiesList.includes(city)) {
+      setCitiesList(prev => [...prev, city]);
+      defaultCities.current = [...defaultCities.current, city];
+      setNewCity("");
+      setAddDialogOpen(false);
+    }
+  }
+
+  function handleRemoveCity(city) {
+    setCitiesList(prev => prev.filter(c => c !== city));
+    defaultCities.current = defaultCities.current.filter(c => c !== city);
+    setFormData(prev => ({
+      ...prev,
+      cities: (prev.cities || []).filter(c => c !== city)
+    }));
+  }
+
+  function handleTrashClick(city) {
+    setCityToDelete(city);
+    setDeleteDialogOpen(true);
+  }
+
+  function handleConfirmDelete() {
+    if (cityToDelete) {
+      handleRemoveCity(cityToDelete);
+    }
+    setDeleteDialogOpen(false);
+    setCityToDelete(null);
+  }
+
+  function handleCancelDelete() {
+    setDeleteDialogOpen(false);
+    setCityToDelete(null);
+  }
 
   return (
     <Dialog 
@@ -121,24 +169,46 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
             </Box>
           </Box>
 
-          {/* בחירת יישובים מרובה */}
-          <FormControl fullWidth size="small">
-            <InputLabel>יישובים</InputLabel>
-            <Select
-              multiple
-              value={formData.cities || []}
-              onChange={handleChange('cities')}
-              input={<OutlinedInput label="יישובים" />}
-              renderValue={(selected) => selected.join(', ')}
-            >
-              {cities.map((city) => (
-                <MenuItem key={city} value={city}>
-                  <Checkbox checked={(formData.cities || []).indexOf(city) > -1} />
-                  <ListItemText primary={city} />
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {/* שדה יישובים עם כפתור פלוס בצד ימין */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'row-reverse' }}>
+            <Tooltip title="הוספת יישוב" arrow>
+              <IconButton color="primary" size="small" onClick={() => setAddDialogOpen(true)}>
+                <AddIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <FormControl fullWidth size="small">
+              <InputLabel>יישובים</InputLabel>
+              <Select
+                multiple
+                value={formData.cities || []}
+                onChange={handleChange('cities')}
+                input={<OutlinedInput label="יישובים" />}
+                renderValue={(selected) => selected.join(', ')}
+              >
+                {citiesList.slice().sort((a, b) => a.localeCompare(b, 'he')).map((city) => (
+                  <MenuItem key={city} value={city} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                      <Checkbox checked={(formData.cities || []).indexOf(city) > -1} />
+                      <ListItemText primary={city} />
+                    </Box>
+                    <Tooltip title="הסרת יישוב" arrow>
+                      <IconButton
+                        size="small"
+                        color="default"
+                        sx={{ ml: 1 }}
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleTrashClick(city);
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
 
           {/* מקומות פנויים - כטקסט */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -165,6 +235,43 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
           הוסף
         </Button>
       </DialogActions>
+      {/* דיאלוג הוספת יישוב */}
+      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>הוספת יישוב חדש</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 1 }}>
+            <OutlinedInput
+              autoFocus
+              fullWidth
+              placeholder="הקלד שם יישוב"
+              value={newCity}
+              onChange={e => setNewCity(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleAddCity(); }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddDialogOpen(false)}>ביטול</Button>
+          <Button
+            onClick={handleAddCity}
+            variant="contained"
+            disabled={!newCity.trim() || citiesList.includes(newCity.trim())}
+          >
+            הוסף
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* דיאלוג אישור מחיקת יישוב */}
+      <Dialog open={deleteDialogOpen} onClose={handleCancelDelete} maxWidth="xs">
+        <DialogTitle>אישור מחיקת יישוב</DialogTitle>
+        <DialogContent>
+          האם אתה בטוח שברצונך למחוק את היישוב <b>{cityToDelete}</b>?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete}>ביטול</Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">אישור</Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }
