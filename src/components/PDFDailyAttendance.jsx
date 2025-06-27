@@ -1,5 +1,5 @@
 import React from 'react';
-import ExportPDFButton from './ExportPDFButton';
+import PDFAbsencePeople from './PDFAbsencePeople';
 import dayjs from 'dayjs';
 
 const DailyAttendancePDF = ({ attendanceData, profiles, reportDate: reportDateProp }) => {
@@ -113,7 +113,7 @@ const DailyAttendancePDF = ({ attendanceData, profiles, reportDate: reportDatePr
   };
 
   return (
-    <ExportPDFButton
+    <PDFAbsencePeople
       tables={[
         {
           title: `רשימת נוכחים: ${presentExpected.length}`,

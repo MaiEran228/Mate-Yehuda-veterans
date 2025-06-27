@@ -1,5 +1,5 @@
 import React from 'react';
-import ExportPDFButton from './ExportPDFButton';
+import PDFAbsencePeople from './PDFAbsencePeople';
 import dayjs from 'dayjs';
 
 const PDFDaysLeft = ({ people, selectedMonth }) => {
@@ -57,7 +57,7 @@ const PDFDaysLeft = ({ people, selectedMonth }) => {
   };
 
   return (
-    <ExportPDFButton
+    <PDFAbsencePeople
       data={pdfData}
       columns={pdfColumns}
       fileName={`דוח_יתרת_ימי_זכאות_${monthFormatted}.pdf`}
