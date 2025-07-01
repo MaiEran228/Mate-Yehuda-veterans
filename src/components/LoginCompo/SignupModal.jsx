@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, db } from '../../firebase';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';

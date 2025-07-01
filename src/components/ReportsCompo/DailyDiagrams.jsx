@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { PieChart } from '@mui/x-charts/PieChart';
 import dayjs from 'dayjs';
 import 'dayjs/locale/he';

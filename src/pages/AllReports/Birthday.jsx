@@ -4,7 +4,7 @@ import { Typography, CircularProgress, Box, Paper, Button, Container, Select, Me
 import dayjs from 'dayjs';
 import 'dayjs/locale/he';
 import { useLocation, useNavigate } from 'react-router-dom';
-import PDFBirthday from '../../components/PDFBirthday';
+import PDFBirthday from '../../components/ReportsCompo/PDFBirthday';
 import * as XLSX from 'xlsx';
 import OutlinedInput from '@mui/material/OutlinedInput';
 

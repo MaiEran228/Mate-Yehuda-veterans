@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
-import MonthlyAttendanceTable from '../../components/MonthlyAttendanceTable';
+import MonthlyAttendanceTable from '../../components/ReportsCompo/MonthlyAttendanceTable';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';

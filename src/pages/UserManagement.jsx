@@ -6,7 +6,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { auth, db } from '../firebase';
 import { reauthenticateWithCredential, EmailAuthProvider, updatePassword, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import ForgotPasswordModal from '../components/ForgotPassword';
+import ForgotPasswordModal from '../components/LoginCompo/ForgotPassword';
 
 function TabPanel({ children, value, index }) {
   return (

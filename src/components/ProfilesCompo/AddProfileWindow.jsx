@@ -2,12 +2,12 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, Alert
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import { findMatchingTransports, addPassengerToTransport } from '../utils/transportUtils';
+import { findMatchingTransports, addPassengerToTransport } from '../../utils/transportUtils';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { useNavigate } from 'react-router-dom';
 import AddProfileFields from './AddProfileFields';
-import CustomDialog from './CustomDialog';
+import CustomDialog from '../CustomDialog';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 

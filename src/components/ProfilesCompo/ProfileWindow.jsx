@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { removePassengerFromTransports, getPassengerTransport } from "../utils/transportUtils";
+import { removePassengerFromTransports, getPassengerTransport } from "../../utils/transportUtils";
 import {
     Dialog, DialogTitle, DialogContent, Typography, Button, Box, Avatar,
 } from "@mui/material";
@@ -8,7 +8,7 @@ import IconButton from "@mui/material/IconButton";
 import EditIcon from '@mui/icons-material/Edit';
 import EditProfileWindow from "./EditProfileWindow";
 import dayjs from "dayjs";
-import CustomDialog from './CustomDialog';
+import CustomDialog from '../CustomDialog';
 
 const dayMap = {
     'ראשון': 'א',

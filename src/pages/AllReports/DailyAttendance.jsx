@@ -4,7 +4,7 @@ import { Typography, CircularProgress, Box, Paper, Button, Container, TextField,
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
-import DailyAttendancePDF from '../../components/PDFDailyAttendance.jsx';
+import DailyAttendancePDF from '../../components/ReportsCompo/PDFDailyAttendance.jsx';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';

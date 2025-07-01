@@ -6,7 +6,7 @@ import { heIL } from '@mui/x-date-pickers/locales';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
-import PDFAbsencePeople from '../../components/PDFAbsencePeople';
+import PDFAbsencePeople from '../../components/ReportsCompo/PDFAbsencePeople';
 import * as XLSX from 'xlsx';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchAttendanceByDate, fetchAllProfiles } from '../../firebase';
 import { Typography, CircularProgress, Box, Paper, Button, Container, TextField, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Divider } from '@mui/material';
 import dayjs from 'dayjs';
-import PDFDaysLeft from '../../components/PDFDaysLeft';
+import PDFDaysLeft from '../../components/ReportsCompo/PDFDaysLeft';
 import { useNavigate } from 'react-router-dom';
 import CloseIcon from '@mui/icons-material/Close';
 

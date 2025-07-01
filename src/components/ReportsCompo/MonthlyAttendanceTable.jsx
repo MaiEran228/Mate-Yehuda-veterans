@@ -5,9 +5,9 @@ import CheckIcon from '@mui/icons-material/Check';
 import ClearIcon from '@mui/icons-material/Clear';
 import EditIcon from '@mui/icons-material/Edit';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import dayjs from 'dayjs';
-import ErrorDialog from './ErrorDialog';
+import ErrorDialog from '../ErrorDialog';
 
 const typeColors = {
   regular: '#43a047', // ירוק

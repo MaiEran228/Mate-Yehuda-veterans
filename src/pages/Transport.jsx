@@ -4,10 +4,10 @@ import { Box, Typography, CircularProgress, Dialog, DialogTitle, DialogContent, 
  } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
-import TransportTable from '../components/TransportTable';
-import AddTransportDialog from '../components/AddTransportDialog';
-import EditTransportDialog from '../components/EditTransportDialog';
-import ViewPassengersDialog from '../components/ViewPassengersDialog';
+import TransportTable from '../components/TransportCompo/TransportTable';
+import AddTransportDialog from '../components/TransportCompo/AddTransportDialog';
+import EditTransportDialog from '../components/TransportCompo/EditTransportDialog';
+import ViewPassengersDialog from '../components/TransportCompo/ViewPassengersDialog';
 import { transportService, fetchTransportsByDate, fetchAllProfiles, updateProfile } from '../firebase';
 import { calculateAvailableSeatsByDay } from '../utils/transportUtils';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -15,7 +15,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import AddIcon from '@mui/icons-material/Add';
 import dayjs from 'dayjs';
-import AvailableSeatsListDialog from '../components/AvailableSeatsListDialog';
+import AvailableSeatsListDialog from '../components/TransportCompo/AvailableSeatsListDialog';
 
 // מיפוי ימים לעברית
 const daysMap = {

@@ -1,9 +1,9 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Checkbox, TextField, Paper, MenuItem, Box, Skeleton, CircularProgress, TableSortLabel, Tooltip, InputAdornment, IconButton } from '@mui/material';
 import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { fetchAllProfiles, fetchAttendanceByDate } from '../firebase';
+import { fetchAllProfiles, fetchAttendanceByDate } from '../../firebase';
 import { collection, onSnapshot, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import dayjs from 'dayjs';
 
 const reasonOptions = ['מחלה', 'אשפוז', 'בדיקות', 'סידורים', 'נפל/ה', 'אבל', 'הסעה לא הגיעה', 'טיול', 'הודיע/ה', 'שמחה', 'אחר'];

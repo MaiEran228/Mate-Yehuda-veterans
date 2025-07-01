@@ -9,8 +9,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EventSeatIcon from '@mui/icons-material/EventSeat';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { collection, getDocs } from 'firebase/firestore';
-import { db, saveTransportDate, fetchTransportsByDate } from '../firebase';
-import CustomDialog from './CustomDialog';
+import { db, saveTransportDate, fetchTransportsByDate } from '../../firebase';
+import CustomDialog from '../CustomDialog';
 import TempReservationDialog from './TempTransportDialog';
 
 const dayOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];

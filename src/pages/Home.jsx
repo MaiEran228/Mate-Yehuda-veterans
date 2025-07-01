@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Container, Typography, Box, Button, TextField, Modal, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import Header from '../components/ToolBarMUI'; // סרגל כלים קבוע
-import AttendanceTable from '../components/AttendanceTable'; // הטבלה
-import PDFAbsencePeople from '../components/PDFAbsencePeople'; // קומפוננטת ייצוא PDF
+import AttendanceTable from '../components/HomeCompo/AttendanceTable'; // הטבלה
+import PDFAbsencePeople from '../components/ReportsCompo/PDFAbsencePeople'; // קומפוננטת ייצוא PDF
 import dayjs from 'dayjs';
 import DailyAttendance from "./AllReports/DailyAttendance";
 import { useNavigate } from 'react-router-dom';

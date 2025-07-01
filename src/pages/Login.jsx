@@ -11,8 +11,8 @@ import {
     signInWithEmailAndPassword,
     onAuthStateChanged,
 } from 'firebase/auth';
-import SignupModal from '../components/SignupModal';
-import ForgotPassword from '../components/ForgotPassword';
+import SignupModal from '../components/LoginCompo/SignupModal';
+import ForgotPassword from '../components/LoginCompo/ForgotPassword';
 
 
 export default function Login({ onLogin }) {

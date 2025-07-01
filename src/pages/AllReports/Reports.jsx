@@ -10,7 +10,7 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { BarChart } from '@mui/x-charts/BarChart';
-import DailyDiagrams from '../../components/DailyDiagrams';
+import DailyDiagrams from '../../components/ReportsCompo/DailyDiagrams';
 import Tooltip from '@mui/material/Tooltip';
 
 const reports = [

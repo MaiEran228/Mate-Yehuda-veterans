@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@mui/material';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { font, fontBold } from '../fonts/AlefHebrew';
+import { font, fontBold } from '../../fonts/AlefHebrew';
 import dayjs from 'dayjs';
 
 const ExportPDFButton = ({ 

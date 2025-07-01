@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAllProfiles, addProfile, deleteProfile, updateProfile } from '../firebase';
 import { transportService } from '../firebase';
-import ProfileCard from '../components/ProfileCard';
-import ProfileWindow from '../components/ProfileWindow';
-import AddProfileWindow from '../components/AddProfileWindow';
+import ProfileCard from '../components/ProfilesCompo/ProfileCard';
+import ProfileWindow from '../components/ProfilesCompo/ProfileWindow';
+import AddProfileWindow from '../components/ProfilesCompo/AddProfileWindow';
 import { Grid, Typography, Button, TextField, Box, AppBar, Toolbar, IconButton } from '@mui/material';
 import InputAdornment from '@mui/material/InputAdornment';
 import SearchIcon from '@mui/icons-material/Search';

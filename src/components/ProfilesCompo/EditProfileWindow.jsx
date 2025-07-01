@@ -3,12 +3,12 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Select, FormControl,
 } from "@mui/material";
 import { useState } from "react";
-import { findMatchingTransports, addPassengerToTransport, getPassengerTransport, removePassengerFromTransports } from '../utils/transportUtils';
+import { findMatchingTransports, addPassengerToTransport, getPassengerTransport, removePassengerFromTransports } from '../../utils/transportUtils';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
+import { storage } from '../../firebase';
 import { useNavigate } from 'react-router-dom';
-import CustomDialog from './CustomDialog';
+import CustomDialog from '../CustomDialog';
 import EditProfileFields from './EditProfileFields';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
