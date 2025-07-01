@@ -10,10 +10,10 @@ const PDFDaysLeft = ({ people, selectedMonth }) => {
 
   // עמודות PDF
   const pdfColumns = [
-    { key: 'missedAfterPenalty', header: 'היעדרויות מהימים הצפויים', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
-    { key: 'remaining', header: 'יתרת ימי זכאות החודש', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
-    { key: 'attendedCount', header: 'מספר הגעות בפועל', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
-    { key: 'eligible', header: 'סה"כ ימי זכאות החודש', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
+    { key: 'missedAfterPenalty', header: 'מימי הגעה היעדרות', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
+    { key: 'remaining', header: 'החודש יתרת ימי זכאות', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
+    { key: 'attendedCount', header: 'שנוצלו ימים', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
+    { key: 'eligible', header: 'החודש סה"כ ימי זכאות', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
     { key: 'name', header: 'שם', defaultValue: '' },
   ];
 

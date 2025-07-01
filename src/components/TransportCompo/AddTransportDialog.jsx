@@ -25,6 +25,8 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
   const [newCity, setNewCity] = React.useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [cityToDelete, setCityToDelete] = React.useState(null);
+  const [addCityError, setAddCityError] = React.useState("");
+  const [addCityTouched, setAddCityTouched] = React.useState(false);
 
   React.useEffect(() => {
     if (open) {
@@ -59,13 +61,19 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
   };
 
   function handleAddCity() {
+    setAddCityTouched(true);
     const city = newCity.trim();
-    if (city && !citiesList.includes(city)) {
-      setCitiesList(prev => [...prev, city]);
-      defaultCities.current = [...defaultCities.current, city];
-      setNewCity("");
-      setAddDialogOpen(false);
+    if (!city) return;
+    if (citiesList.includes(city)) {
+      setAddCityError('היישוב מופיע ברשימת היישובים');
+      return;
     }
+    setCitiesList(prev => [...prev, city]);
+    defaultCities.current = [...defaultCities.current, city];
+    setNewCity("");
+    setAddDialogOpen(false);
+    setAddCityError("");
+    setAddCityTouched(false);
   }
 
   function handleRemoveCity(city) {
@@ -236,26 +244,35 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
         </Button>
       </DialogActions>
       {/* דיאלוג הוספת יישוב */}
-      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog open={addDialogOpen} onClose={() => { setAddDialogOpen(false); setAddCityError(""); setAddCityTouched(false); }} maxWidth="xs" fullWidth>
         <DialogTitle>הוספת יישוב חדש</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 1 }}>
-            <OutlinedInput
-              autoFocus
-              fullWidth
-              placeholder="הקלד שם יישוב"
-              value={newCity}
-              onChange={e => setNewCity(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleAddCity(); }}
-            />
+            <FormControl fullWidth error={!!addCityError && addCityTouched}>
+              <OutlinedInput
+                autoFocus
+                fullWidth
+                placeholder="הקלד שם יישוב"
+                value={newCity}
+                error={!!addCityError && addCityTouched}
+                onChange={e => { setNewCity(e.target.value); setAddCityError(""); setAddCityTouched(false); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleAddCity(); }}
+                sx={addCityError && addCityTouched ? { '& .MuiOutlinedInput-notchedOutline': { borderColor: 'error.main' } } : {}}
+              />
+              {addCityError && addCityTouched && (
+                <Typography color="error" variant="body2" sx={{ mt: 1, textAlign: 'right' }}>
+                  {addCityError}
+                </Typography>
+              )}
+            </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAddDialogOpen(false)}>ביטול</Button>
+          <Button onClick={() => { setAddDialogOpen(false); setAddCityError(""); setAddCityTouched(false); }}>ביטול</Button>
           <Button
             onClick={handleAddCity}
             variant="contained"
-            disabled={!newCity.trim() || citiesList.includes(newCity.trim())}
+            disabled={!newCity.trim()}
           >
             הוסף
           </Button>
