@@ -60,21 +60,34 @@ function Profiles() {
   // פונקציה חדשה לעדכון פרופיל
   const handleUpdateProfile = async (updatedProfile) => {
     try {
-      // מעדכן את הפרופיל
-      await updateProfile(updatedProfile.id, updatedProfile);
-      
-      // מעדכן את פרטי הנוסע בהסעות
-      await transportService.updatePassengerInTransports(updatedProfile.id, {
-        name: updatedProfile.name,
-        city: updatedProfile.city,
-        hasCaregiver: updatedProfile.hasCaregiver,
-        arrivalDays: updatedProfile.arrivalDays
-      });
+      // בדוק אם ה-ID השתנה
+      const oldProfile = profiles.find(p => p.id === selectedProfile.id);
+      const idChanged = oldProfile && oldProfile.id !== updatedProfile.id;
 
-      // מעדכן את הרשימה המקומית
+      if (idChanged) {
+        // 1. צור מסמך חדש עם ה-ID החדש
+        await addProfile({ ...updatedProfile });
+        // 2. מחק את המסמך הישן
+        await deleteProfile(oldProfile.id);
+        // 3. עדכן הפניות להסעות
+        await transportService.updatePassengerInTransports(
+          oldProfile.id,
+          { ...updatedProfile, id: updatedProfile.id }
+        );
+      } else {
+        // עדכון רגיל
+        await updateProfile(updatedProfile.id, updatedProfile);
+        await transportService.updatePassengerInTransports(updatedProfile.id, {
+          name: updatedProfile.name,
+          city: updatedProfile.city,
+          hasCaregiver: updatedProfile.hasCaregiver,
+          arrivalDays: updatedProfile.arrivalDays
+        });
+      }
+
+      // עדכון הרשימה המקומית
       const data = await fetchAllProfiles();
       setProfiles(data);
-      // סגירת החלון
       setSelectedProfile(null);
     } catch (error) {
       console.error('Error updating profile:', error);
