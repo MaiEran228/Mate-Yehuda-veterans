@@ -8,17 +8,19 @@ The system we developed is a web-based management platform for the day center "V
 The association strives to improve the quality of life of the elderly and to expand the variety of services and activities available to them.
 Until now, the center's operations were managed manually, making daily management, documentation, and organization more difficult.
 To address this need, we developed a dedicated, interactive web-based system for the center’s staff.
+
 #### The system includes:
-• Management of individual profiles for each participant
-• Daily attendance tracking
-• Transportation scheduling
-• Report generation
-• Additional tools for managing day-to-day operations
+1. Management of individual profiles for each participant
+2. Daily attendance tracking
+3.  Transportation scheduling
+4. Report generation
+5.  Additional tools for managing day-to-day operations
 
 #### Technologies Used:
-• React for building the user interface
-• Firebase for authentication, file storage, and database management
-• Material UI for designing a responsive and accessible UI
+
+1. React for building the user interface
+2.  Firebase for authentication, file storage, and database management
+3.  Material UI for designing a responsive and accessible UI
 The system was built with an emphasis on usability and efficiency, enabling the staff to focus on their mission of serving the elderly community — with the help of smart and streamlined management tools.
 
 
@@ -52,3 +54,4 @@ Mai Eran
 Hodaya Nisan
 Talya Eliyahu
 Neta Dor
+
