@@ -113,20 +113,61 @@ const TempReservationDialog = ({
       open={open}
       onClose={onClose}
       title="שיריון מקום זמני"
-      dialogContentSx={{ mt: 2 }}
+      maxWidth="xs"
+      PaperProps={{ sx: { minWidth: 400, maxWidth: 400 } }}
+      dialogContentSx={{ mt: 4 }}
       actions={[
-        <Button key="cancel" onClick={onClose}>ביטול</Button>,
+        <Button
+          key="cancel"
+          variant="outlined"
+          onClick={onClose}
+          sx={{
+            color: 'rgba(64, 99, 112, 0.72)',
+            border: '1.7px solid rgba(64, 99, 112, 0.72)',
+            '&:focus': { outline: 'none', border: 'none' },
+            '&:active': { outline: 'none', border: 'none' },
+            ':hover': {
+              borderColor: '#7b8f99',
+              color: '#5a676e',
+              outline: 'none'
+            },
+            gap: 2,
+            ml: 1
+          }}
+        >
+          ביטול
+        </Button>,
         <Button
           key="save"
           onClick={onSave}
           variant="contained"
           disabled={!selectedProfile || !reservationDate || loading}
+          sx={{
+            backgroundColor: 'rgba(142, 172, 183, 0.72)',
+            border: 'none',
+            outline: 'none',
+            ':hover': {
+              backgroundColor: 'rgb(185, 205, 220)',
+              border: 'none',
+              outline: 'none'
+            },
+            fontWeight: 'bold',
+            color: 'black',
+            '&:focus': {
+              border: 'none',
+              outline: 'none'
+            },
+            '&:active': {
+              border: 'none',
+              outline: 'none'
+            },
+          }}
         >
           שמור
         </Button>
       ]}
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2,  }}>
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={he}>
           <DatePicker
             label="בחר תאריך"
@@ -141,9 +182,64 @@ const TempReservationDialog = ({
             minDate={new Date()}
             slotProps={{
               textField: {
-                fullWidth: true,
+                sx: {
+                  width: 220,
+                  mr: 0,
+                  ml: 'auto',
+                  '& .MuiInputAdornment-root .MuiIconButton-root': {
+                    outline: 'none',
+                    border: 'none',
+                    boxShadow: 'none',
+                  },
+                  '& .MuiInputAdornment-root .MuiIconButton-root:focus': {
+                    outline: 'none',
+                    border: 'none',
+                    boxShadow: 'none',
+                  },
+                  '& .MuiInputAdornment-root .MuiIconButton-root:active': {
+                    outline: 'none',
+                    border: 'none',
+                    boxShadow: 'none',
+                  },
+                  '& .MuiInputAdornment-root .MuiIconButton-root:hover': {
+                    outline: 'none',
+                    border: 'none',
+                    boxShadow: 'none',
+                  },
+                },
                 InputLabelProps: {
-                  shrink: true,
+                  sx: {
+                    overflow: 'visible',
+                    maxWidth: 'unset',
+                    textAlign: 'right',
+                    minWidth: 80,
+                    pr: 0.5,
+                    minHeight: 24,
+                    pt: 0.5,
+                  }
+                }
+              },
+              actionBar: {
+                actions: ['accept'],
+                sx: {
+                  padding: '0px 8px',
+                  margin: '-70px 0 0 0',
+                  minHeight: '22px',
+                  '& .MuiButton-root': {
+                    minWidth: 40,
+                    padding: '0px 8px',
+                    margin: '0 2px',
+                    mb: 1,
+                    ml: 2,
+                    fontSize: '0.875rem',
+                    backgroundColor: '#1976d2',
+                    color: 'white',
+                    height: '28px',
+                    borderRadius: '3px',
+                    '&:hover': {
+                      backgroundColor: '#1565c0',
+                    },
+                  }
                 }
               }
             }}
@@ -159,6 +255,35 @@ const TempReservationDialog = ({
             }
           }}
           fullWidth
+          sx={{
+            '& .MuiToggleButton-root': {
+              minWidth: 0,
+              width: 180,
+              px: 0,
+              justifyContent: 'center',
+              textAlign: 'center',
+              marginLeft: 1,
+              borderRadius: '8px !important',
+              boxShadow: 'none',
+              mb:1
+            },
+            '& .MuiToggleButton-root:focus': {
+              outline: 'none',
+              border: 'none',
+              boxShadow: 'none',
+            },
+            '& .MuiToggleButton-root:active': {
+              outline: 'none',
+              border: 'none',
+              boxShadow: 'none',
+            },
+            '& .MuiToggleButton-root:hover': {
+              outline: 'none',
+              border: 'none',
+              boxShadow: 'none',
+            },
+        
+          }}
         >
           <ToggleButton value="add">
             הוספת נוסע
@@ -175,11 +300,23 @@ const TempReservationDialog = ({
             getOptionLabel={(option) => option.name}
             value={selectedProfile}
             onChange={(event, newValue) => setSelectedProfile(newValue)}
+            sx={{ width: 220, mr: 0, ml: 'auto' }}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="בחר נוסע"
+                label={selectedProfile ? "" : "בחר נוסע"}
                 placeholder="הקלד שם לחיפוש"
+                sx={{ width: 220, mr: 0, ml: 'auto' }}
+                InputLabelProps={{
+                  sx: {
+                    right: 37,
+                    left: 'unset',
+                    transformOrigin: 'top right',
+                    direction: 'rtl',
+                    px: 0.5,
+                    backgroundColor: 'white',
+                  }
+                }}
               />
             )}
           />
@@ -189,11 +326,23 @@ const TempReservationDialog = ({
             getOptionLabel={(option) => option.name}
             value={selectedProfile}
             onChange={(event, newValue) => setSelectedProfile(newValue)}
+            sx={{ width: 220, mr: 0, ml: 'auto' }}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="בחר נוסע להורדה"
+                label={selectedProfile ? "" : "בחר נוסע להורדה"}
                 placeholder="הקלד שם לחיפוש"
+                sx={{ width: 220, mr: 0, ml: 'auto' }}
+                InputLabelProps={{
+                  sx: {
+                    right: 37,
+                    left: 'unset',
+                    transformOrigin: 'top right',
+                    direction: 'rtl',
+                    px: 0.5,
+                    backgroundColor: 'white',
+                  }
+                }}
               />
             )}
           />

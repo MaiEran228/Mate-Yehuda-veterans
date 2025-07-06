@@ -3,10 +3,12 @@ import { Box, Tabs, Tab, Typography, TextField, Button, Paper, Dialog, DialogTit
 import EditIcon from '@mui/icons-material/Edit';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { auth, db } from '../firebase';
 import { reauthenticateWithCredential, EmailAuthProvider, updatePassword, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import ForgotPasswordModal from '../components/LoginCompo/ForgotPassword';
+import ErrorDialog from '../components/ErrorDialog';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -27,6 +29,7 @@ export default function UserManagement() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [errorDialog, setErrorDialog] = useState({ open: false, message: '' });
 
   const handleTabChange = (e, newValue) => setTab(newValue);
 
@@ -126,7 +129,7 @@ export default function UserManagement() {
       } else if (err.code === 'auth/weak-password') {
         errorMessage = 'הסיסמא החדשה חלשה מדי';
       }
-      alert(errorMessage);
+      setErrorDialog({ open: true, message: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -192,7 +195,7 @@ export default function UserManagement() {
               backgroundColor: 'transparent',
             },
             '& .Mui-selected': {
-              color: 'black',
+              color: 'black !important',
               backgroundColor: 'transparent',
             },
             '& .MuiTabs-indicator': {
@@ -256,6 +259,19 @@ export default function UserManagement() {
               fontWeight: 'bold',
               '&:hover': {
                 backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:focus': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:active': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
               },
             }}
           >
@@ -382,6 +398,19 @@ export default function UserManagement() {
               fontWeight: 'bold',
               '&:hover': {
                 backgroundColor: 'rgb(185, 205, 220)',
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:focus': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:active': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
               },
             }}
           >
@@ -399,6 +428,23 @@ export default function UserManagement() {
             color="error" 
             fullWidth 
             onClick={() => setDeleteDialogOpen(true)}
+            sx={{
+              '&:hover': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:focus': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:active': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+            }}
           >
             מחק משתמש
           </Button>
@@ -412,8 +458,44 @@ export default function UserManagement() {
           <Typography>האם אתה בטוח שברצונך למחוק את המשתמש? פעולה זו אינה הפיכה.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>ביטול</Button>
-          <Button color="error" variant="contained" onClick={() => setDeleteDialogOpen(false)}>מחק</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}
+            sx={{
+              '&:hover': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:focus': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:active': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+            }}
+          >ביטול</Button>
+          <Button color="error" variant="contained" onClick={() => setDeleteDialogOpen(false)}
+            sx={{
+              '&:hover': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:focus': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:active': {
+                border: 'none',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+            }}
+          >מחק</Button>
         </DialogActions>
       </Dialog>
 
@@ -421,6 +503,25 @@ export default function UserManagement() {
       {showForgotPassword && (
         <ForgotPasswordModal onClose={() => setShowForgotPassword(false)} />
       )}
+
+      {/* דיאלוג שגיאה */}
+      <ErrorDialog
+        open={errorDialog.open}
+        onClose={() => setErrorDialog({ open: false, message: '' })}
+        title={"שגיאה"}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, minHeight: 150 }}>
+          <ErrorOutlineIcon sx={{ color: 'rgb(105, 148, 179)', fontSize: 48, mb: 1 }} />
+          <Typography sx={{ color: 'rgb(105, 148, 179)' }} fontWeight={700} fontSize={18} align="center">
+            {errorDialog.message === 'הסיסמא הנוכחית שגויה' ? 'הסיסמא הנוכחית שגויה' : 'שגיאה בשינוי הסיסמא'}
+          </Typography>
+          <Typography color="text.secondary" fontSize={15} align="center">
+            {errorDialog.message === 'הסיסמא הנוכחית שגויה'
+              ? 'אנא בדוק את הסיסמא הנוכחית ונסה שוב.'
+              : errorDialog.message || 'אירעה שגיאה לא צפויה. נסה שוב.'}
+          </Typography>
+        </Box>
+      </ErrorDialog>
     </Box>
   );
 }

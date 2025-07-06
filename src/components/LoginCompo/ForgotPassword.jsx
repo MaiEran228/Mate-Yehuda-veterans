@@ -2,53 +2,77 @@ import { useState } from 'react';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../firebase';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import ErrorDialog from '../ErrorDialog';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 function ForgotPassword({ onClose }) {
   const [email, setEmail] = useState('');
+  const [errorDialog, setErrorDialog] = useState({ open: false, message: '' });
 
   const handleReset = async () => {
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      setErrorDialog({ open: true, message: 'אנא הזן כתובת אימייל תקינה' });
+      return;
+    }
     try {
       await sendPasswordResetEmail(auth, email);
       alert('קישור לאיפוס הסיסמא נשלח למייל שלך');
       onClose();
     } catch (error) {
-      alert('שגיאה בשליחת האיפוס: ' + error.message);
+      setErrorDialog({ open: true, message: 'שגיאה בשליחת האיפוס: ' + (error.message || '') });
     }
   };
 
   return (
-    <div style={styles.modalContent}>
-      <h3 style={{ display: 'flex', alignItems: 'center', color: 'rgb(105, 148, 179)', fontWeight: 700, fontSize: '2rem', marginBottom: 16 }}>
-        <LockResetIcon style={{ fontSize: 32, marginLeft: 8, color: 'rgb(114, 152, 179)' }} />
-        איפוס סיסמא
-      </h3>
-      <input
-        type="email"
-        placeholder="הכנס מייל"
-        borderColor='rgb(82, 106, 109)'
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        style={styles.input}
-      />
-      <div style={styles.buttons}>
-        <button
-          onClick={onClose}
-          style={{ ...styles.button, background: 'transparent', color: 'rgb(105, 148, 179)', border: '1px solid rgb(114, 152, 179)', outline: 'none' }}
-          onFocus={e => e.target.style.outline = 'none'}
-          onMouseDown={e => e.target.style.outline = 'none'}
-        >
-          ביטול
-        </button>
-        <button
-          onClick={handleReset}
-          style={{ ...styles.button, outline: 'none' }}
-          onFocus={e => e.target.style.outline = 'none'}
-          onMouseDown={e => e.target.style.outline = 'none'}
-        >
-          שליחה
-        </button>
+    <>
+      <ErrorDialog
+        open={errorDialog.open}
+        onClose={() => setErrorDialog({ open: false, message: '' })}
+        title="שגיאה"
+      >
+        {errorDialog.message === 'אנא הזן כתובת אימייל תקינה' ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 140 }}>
+            <ErrorOutlineIcon style={{ color: 'rgb(105, 148, 179)', fontSize: 48, marginBottom: 8 }} />
+            <span style={{ color: 'rgb(105, 148, 179)', fontWeight: 700, fontSize: 18, textAlign: 'center' }}>אנא הזן כתובת אימייל תקינה</span>
+            <span style={{ color: '#555', fontSize: 15, textAlign: 'center', marginTop: 4 }}>יש להקליד כתובת אימייל תקינה בפורמט: example@email.com</span>
+          </div>
+        ) : (
+          errorDialog.message
+        )}
+      </ErrorDialog>
+      <div style={styles.modalContent}>
+        <h3 style={{ display: 'flex', alignItems: 'center', color: 'rgb(105, 148, 179)', fontWeight: 700, fontSize: '2rem', marginBottom: 16 }}>
+          <LockResetIcon style={{ fontSize: 32, marginLeft: 8, color: 'rgb(114, 152, 179)' }} />
+          איפוס סיסמא
+        </h3>
+        <input
+          type="email"
+          placeholder="הכנס מייל"
+          borderColor='rgb(82, 106, 109)'
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          style={styles.input}
+        />
+        <div style={styles.buttons}>
+          <button
+            onClick={onClose}
+            style={{ ...styles.button, background: 'transparent', color: 'rgb(105, 148, 179)', border: '1px solid rgb(114, 152, 179)', outline: 'none' }}
+            onFocus={e => e.target.style.outline = 'none'}
+            onMouseDown={e => e.target.style.outline = 'none'}
+          >
+            ביטול
+          </button>
+          <button
+            onClick={handleReset}
+            style={{ ...styles.button, outline: 'none' }}
+            onFocus={e => e.target.style.outline = 'none'}
+            onMouseDown={e => e.target.style.outline = 'none'}
+          >
+            שליחה
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

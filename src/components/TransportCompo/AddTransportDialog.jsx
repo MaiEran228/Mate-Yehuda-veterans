@@ -111,6 +111,8 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
       PaperProps={{
         sx: {
           borderRadius: 2,
+          minWidth: 350,
+          maxWidth: 450,
         }
       }}
     >
@@ -137,14 +139,15 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
           }}>
             {/* בחירת ימים מרובה */}
             <Box>
-              <FormControl sx={{ width: '170px' }} size="small">
-                <InputLabel>ימים</InputLabel>
+              <FormControl sx={{ width: '170px', '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' } }} size="small">
+                <InputLabel sx={{ right: 37, left: 'unset', transformOrigin: 'top right', direction: 'rtl', px: 0.5, backgroundColor: 'white' }}>ימים</InputLabel>
                 <Select
                   multiple
                   value={formData.days || []}
                   onChange={handleChange('days')}
                   input={<OutlinedInput label="ימים" />}
                   renderValue={(selected) => selected.slice().sort((a, b) => arrivalDaysOrder.indexOf(a) - arrivalDaysOrder.indexOf(b)).join(', ')}
+                  
                 >
                   {daysOfWeek.map((day) => (
                     <MenuItem key={day} value={day}>
@@ -158,8 +161,8 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
 
             {/* סוג הסעה */}
             <Box>
-              <FormControl sx={{ width: '170px' }} size="small">
-                <InputLabel>סוג הסעה</InputLabel>
+              <FormControl sx={{ width: '170px', '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' } }} size="small">
+                <InputLabel sx={{ right: 37, left: 'unset', transformOrigin: 'top right', direction: 'rtl', px: 0.5, backgroundColor: 'white' }}>סוג הסעה</InputLabel>
                 <Select
                   value={formData.type || ''}
                   label="סוג הסעה"
@@ -175,15 +178,16 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
             </Box>
           </Box>
 
-          {/* שדה יישובים עם כפתור פלוס בצד ימין */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'row-reverse' }}>
+          {/* שדה יישובים עם כפתור פלוס - מתחת לשדה ימים, מיושר לימין */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'row-reverse', justifyContent: 'flex-start', mt: 0.5, alignSelf: 'flex-start', mr: 0 }}>
             <Tooltip title="הוספת יישוב" arrow>
-              <IconButton color="primary" size="small" onClick={() => setAddDialogOpen(true)}>
-                <AddIcon fontSize="small" />
+              <IconButton color="primary" size="small" onClick={() => setAddDialogOpen(true)}
+                sx={{ '&:focus': { outline: 'none', border: 'none' }, '&:active': { outline: 'none', border: 'none' }, '&:hover': { outline: 'none', border: 'none' } }}>
+                <AddIcon fontSize="medium" sx={{ color: 'rgba(64, 99, 112, 0.72)', fontWeight: 'bold' }} />
               </IconButton>
             </Tooltip>
-            <FormControl fullWidth size="small">
-              <InputLabel>יישובים</InputLabel>
+            <FormControl sx={{ width: '170px', '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' } }} size="small">
+              <InputLabel sx={{ right: 37, left: 'unset', transformOrigin: 'top right', direction: 'rtl', px: 0.5, backgroundColor: 'white' }}>יישובים</InputLabel>
               <Select
                 multiple
                 value={formData.cities || []}
@@ -198,15 +202,7 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
                       <ListItemText primary={city} />
                     </Box>
                     <Tooltip title="הסרת יישוב" arrow>
-                      <IconButton
-                        size="small"
-                        color="default"
-                        sx={{ ml: 1 }}
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleTrashClick(city);
-                        }}
-                      >
+                      <IconButton color="error" size="small" onClick={() => handleTrashClick(city)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -231,19 +227,53 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
         borderTop: '1px solid #e0e0e0',
         p: 2
       }}>
-        <Button onClick={onClose}>ביטול</Button>
+        <Button variant="outlined" onClick={onClose} sx={{
+          color: 'rgba(64, 99, 112, 0.72)',
+          border: '1.7px solid rgba(64, 99, 112, 0.72)',
+          '&:focus': { outline: 'none' },
+          ':hover': {
+            borderColor: '#7b8f99',
+            color: '#5a676e',
+            outline: 'none'
+          },
+          '&:focus': { outline: 'none' },
+          '&:active': { outline: 'none' },
+          gap: 2,
+          ml: 1
+        }}>ביטול</Button>
         <Button 
           onClick={handleSubmit} 
           variant="contained" 
           color="primary"
           disabled={!formData.type || !formData.days?.length || !formData.cities?.length}
+          sx={{
+            backgroundColor: 'rgba(142, 172, 183, 0.72)',
+            border: 'none',
+            outline: 'none',
+            ':hover': {
+              backgroundColor: 'rgb(185, 205, 220)',
+              border: 'none',
+              outline: 'none'
+            },
+            fontWeight: 'bold',
+            color: 'black',
+            '&:focus': {
+              border: 'none',
+              outline: 'none'
+            },
+            '&:active': {
+              border: 'none',
+              outline: 'none'
+            },
+            
+          }}
         >
           הוסף
         </Button>
       </DialogActions>
       {/* דיאלוג הוספת יישוב */}
-      <Dialog open={addDialogOpen} onClose={() => { setAddDialogOpen(false); setAddCityError(""); setAddCityTouched(false); }} maxWidth="xs" fullWidth>
-        <DialogTitle>הוספת יישוב חדש</DialogTitle>
+      <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, color: 'rgb(64, 99, 112, 0.72)' }}>הוספת יישוב חדש</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 1 }}>
             <FormControl fullWidth error={!!addCityError && addCityTouched}>
@@ -266,14 +296,39 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setAddDialogOpen(false); setAddCityError(""); setAddCityTouched(false); }}>ביטול</Button>
-          <Button
-            onClick={handleAddCity}
-            variant="contained"
-            disabled={!newCity.trim()}
-          >
-            הוסף
-          </Button>
+          <Button variant="outlined" onClick={() => setAddDialogOpen(false)} sx={{
+            color: 'rgba(64, 99, 112, 0.72)',
+            border: '1.7px solid rgba(64, 99, 112, 0.72)',
+            '&:focus': { outline: 'none', border: 'none' },
+            '&:active': { outline: 'none', border: 'none' },
+            ':hover': {
+              borderColor: '#7b8f99',
+              color: '#5a676e',
+              outline: 'none'
+            },
+            gap: 2,
+            ml: 1
+          }}>ביטול</Button>
+          <Button onClick={handleAddCity} sx={{
+            backgroundColor: 'rgba(142, 172, 183, 0.72)',
+            border: 'none',
+            outline: 'none',
+            ':hover': {
+              backgroundColor: 'rgb(185, 205, 220)',
+              border: 'none',
+              outline: 'none'
+            },
+            fontWeight: 'bold',
+            color: 'black',
+            '&:focus': {
+              border: 'none',
+              outline: 'none'
+            },
+            '&:active': {
+              border: 'none',
+              outline: 'none'
+            },
+          }} variant="contained" color="primary">הוסף</Button>
         </DialogActions>
       </Dialog>
       {/* דיאלוג אישור מחיקת יישוב */}

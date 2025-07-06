@@ -7,6 +7,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useCities } from '../../hooks/useCities';
+import { TextField } from '@mui/material';
 
 const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 const transportTypes = ['מיניבוס', 'מונית'];
@@ -123,14 +124,12 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
         PaperProps={{
           sx: {
             borderRadius: 2,
+            minWidth: 350,
+            maxWidth: 450,
           }
         }}
       >
-      <DialogTitle sx={{ 
-        backgroundColor: '#f5f5f5',
-        borderBottom: '1px solid #e0e0e0',
-        py: 2
-      }}>
+      <DialogTitle sx={{ fontWeight: 700, color: 'rgb(64, 99, 112, 0.72)' }}>
         עריכת הסעה
       </DialogTitle>
       <DialogContent>
@@ -145,12 +144,12 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
             display: 'flex',
             width: '100%',
             justifyContent: 'flex-start',
-            gap: '50px'  // מרווח בין האלמנטים
+            gap: '25px'
           }}>
             {/* בחירת ימים מרובה */}
             <Box>
-              <FormControl sx={{ width: '170px' }} size="small">
-                <InputLabel>ימים</InputLabel>
+              <FormControl sx={{ width: '170px', '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' } }} size="small">
+                <InputLabel sx={{ right: 37, left: 'unset', transformOrigin: 'top right', direction: 'rtl', px: 0.5, backgroundColor: 'white' }}>ימים</InputLabel>
                 <Select
                   multiple
                   value={formData?.days || []}
@@ -170,8 +169,8 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
 
             {/* סוג הסעה */}
             <Box>
-              <FormControl sx={{ width: '170px' }} size="small">
-                <InputLabel>סוג הסעה</InputLabel>
+              <FormControl sx={{ width: '170px', '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' } }} size="small">
+                <InputLabel sx={{ right: 37, left: 'unset', transformOrigin: 'top right', direction: 'rtl', px: 0.5, backgroundColor: 'white' }}>סוג הסעה</InputLabel>
                 <Select
                   value={formData?.type || ''}
                   label="סוג הסעה"
@@ -187,38 +186,37 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
             </Box>
           </Box>
 
-          {/* שדה יישובים עם כפתור פלוס בצד ימין */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'row-reverse' }}>
+          {/* שדה יישובים עם כפתור פלוס - מתחת לשדה ימים, מיושר לימין */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexDirection: 'row-reverse', justifyContent: 'flex-start', mt: 0.5, alignSelf: 'flex-start', mr: 0 }}>
             <Tooltip title="הוספת יישוב" arrow>
-              <IconButton color="primary" size="small" onClick={() => setAddDialogOpen(true)}>
-                <AddIcon fontSize="small" />
+              <IconButton color="primary" size="small" onClick={() => setAddDialogOpen(true)}
+                sx={{ '&:focus': { outline: 'none', border: 'none' }, '&:active': { outline: 'none', border: 'none' }, '&:hover': { outline: 'none', border: 'none' } }}>
+                <AddIcon fontSize="medium" sx={{ color: 'rgba(64, 99, 112, 0.72)', fontWeight: 'bold' }} />
               </IconButton>
             </Tooltip>
-            <FormControl fullWidth size="small">
-              <InputLabel>יישובים</InputLabel>
+            <FormControl sx={{ width: '170px', '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' } }} size="small">
+              <InputLabel sx={{ right: 37, left: 'unset', transformOrigin: 'top right', direction: 'rtl', px: 0.5, backgroundColor: 'white' }}>יישובים</InputLabel>
               <Select
                 multiple
-                value={formData?.cities || []}
+                value={formData.cities || []}
                 onChange={handleChange('cities')}
                 input={<OutlinedInput label="יישובים" />}
                 renderValue={(selected) => selected.slice().sort((a, b) => a.localeCompare(b, 'he')).join(', ')}
+                MenuProps={{
+                  PaperProps: {
+                    dir: 'rtl',
+                    style: { direction: 'rtl' }
+                  }
+                }}
               >
                 {citiesList.slice().sort((a, b) => a.localeCompare(b, 'he')).map((city) => (
                   <MenuItem key={city} value={city} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                      <Checkbox checked={(formData?.cities || []).indexOf(city) > -1} />
+                      <Checkbox checked={(formData.cities || []).indexOf(city) > -1} />
                       <ListItemText primary={city} />
                     </Box>
                     <Tooltip title="הסרת יישוב" arrow>
-                      <IconButton
-                        size="small"
-                        color="default"
-                        sx={{ ml: 1 }}
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleTrashClick(city);
-                        }}
-                      >
+                      <IconButton color="error" size="small" onClick={() => handleTrashClick(city)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -239,55 +237,94 @@ function EditTransportDialog({ open, onClose, onSave, transportData }) {
           </Box>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ 
-        borderTop: '1px solid #e0e0e0',
-        p: 2
-      }}>
-        <Button onClick={onClose}>ביטול</Button>
-        <Button 
-          onClick={handleSubmit} 
-          variant="contained" 
-          color="primary"
-          disabled={!formData?.type || !formData?.days?.length || !formData?.cities?.length}
-        >
-          שמור
-        </Button>
+      <DialogActions sx={{ borderTop: '1px solid #e0e0e0', p: 2 }}>
+        <Button variant="outlined" onClick={onClose} sx={{
+          color: 'rgba(64, 99, 112, 0.72)',
+          border: '1.7px solid rgba(64, 99, 112, 0.72)',
+          '&:focus': { outline: 'none', border: 'none' },
+          '&:active': { outline: 'none', border: 'none' },
+          ':hover': {
+            borderColor: '#7b8f99',
+            color: '#5a676e',
+            outline: 'none'
+          },
+          gap: 2,
+          ml: 1
+        }}>ביטול</Button>
+        <Button onClick={handleSubmit} sx={{
+          backgroundColor: 'rgba(142, 172, 183, 0.72)',
+          border: 'none',
+          outline: 'none',
+          ':hover': {
+            backgroundColor: 'rgb(185, 205, 220)',
+            border: 'none',
+            outline: 'none'
+          },
+          fontWeight: 'bold',
+          color: 'black',
+          '&:focus': {
+            border: 'none',
+            outline: 'none'
+          },
+          '&:active': {
+            border: 'none',
+            outline: 'none'
+          },
+        }} variant="contained" color="primary">שמור</Button>
       </DialogActions>
     </Dialog>
 
     {/* דיאלוג הוספת יישוב */}
-    <Dialog open={addDialogOpen} onClose={() => { setAddDialogOpen(false); setAddCityError(""); setAddCityTouched(false); }} maxWidth="xs" fullWidth>
-      <DialogTitle>הוספת יישוב חדש</DialogTitle>
+    <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ fontWeight: 700, color: 'rgb(64, 99, 112, 0.72)' }}>הוספת יישוב חדש</DialogTitle>
       <DialogContent>
-        <Box sx={{ mt: 1 }}>
-          <FormControl fullWidth error={!!addCityError && addCityTouched}>
-            <OutlinedInput
-              autoFocus
-              fullWidth
-              placeholder="הקלד שם יישוב"
-              value={newCity}
-              error={!!addCityError && addCityTouched}
-              onChange={e => { setNewCity(e.target.value); setAddCityError(""); setAddCityTouched(false); }}
-              onKeyDown={e => { if (e.key === 'Enter') handleAddCity(); }}
-              sx={addCityError && addCityTouched ? { '& .MuiOutlinedInput-notchedOutline': { borderColor: 'error.main' } } : {}}
-            />
-            {addCityError && addCityTouched && (
-              <Typography color="error" variant="body2" sx={{ mt: 1, textAlign: 'right' }}>
-                {addCityError}
-              </Typography>
-            )}
-          </FormControl>
-        </Box>
+        <TextField
+          autoFocus
+          margin="dense"
+          placeholder="הקלד שם יישוב"
+          type="text"
+          fullWidth
+          value={newCity}
+          onChange={e => setNewCity(e.target.value)}
+          error={addCityTouched && !newCity.trim()}
+          helperText={addCityTouched && !newCity.trim() ? 'יש להזין שם יישוב' : ''}
+        />
+        {addCityError && <Typography color="error" fontSize={13}>{addCityError}</Typography>}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => { setAddDialogOpen(false); setAddCityError(""); setAddCityTouched(false); }}>ביטול</Button>
-        <Button
-          onClick={handleAddCity}
-          variant="contained"
-          disabled={!newCity.trim()}
-        >
-          הוסף
-        </Button>
+        <Button variant="outlined" onClick={() => setAddDialogOpen(false)} sx={{
+          color: 'rgba(64, 99, 112, 0.72)',
+          border: '1.7px solid rgba(64, 99, 112, 0.72)',
+          '&:focus': { outline: 'none', border: 'none' },
+          '&:active': { outline: 'none', border: 'none' },
+          ':hover': {
+            borderColor: '#7b8f99',
+            color: '#5a676e',
+            outline: 'none'
+          },
+          gap: 2,
+          ml: 1
+        }}>ביטול</Button>
+        <Button onClick={handleAddCity} sx={{
+          backgroundColor: 'rgba(142, 172, 183, 0.72)',
+          border: 'none',
+          outline: 'none',
+          ':hover': {
+            backgroundColor: 'rgb(185, 205, 220)',
+            border: 'none',
+            outline: 'none'
+          },
+          fontWeight: 'bold',
+          color: 'black',
+          '&:focus': {
+            border: 'none',
+            outline: 'none'
+          },
+          '&:active': {
+            border: 'none',
+            outline: 'none'
+          },
+        }} variant="contained" color="primary">הוסף</Button>
       </DialogActions>
     </Dialog>
 

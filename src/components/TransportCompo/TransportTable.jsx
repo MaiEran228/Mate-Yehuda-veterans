@@ -485,8 +485,7 @@ function TransportTable({
             size="small"
             sx={{
               direction: 'rtl',
-              borderCollapse: 'separate',
-              borderSpacing: 0,
+              borderCollapse: 'collapse',
               width: '100%',
               tableLayout: 'fixed',
               '& th': {
@@ -494,18 +493,19 @@ function TransportTable({
                 px: 1,
                 fontSize: '1rem',
                 borderRight: '1px solid #e0e0e0',
-                '&:last-child': {
+                borderBottom: '1px solid #e0e0e0',
+                backgroundColor: 'rgba(142, 172, 183, 0.72)',
+                '&:first-of-type': {
                   borderRight: 'none',
+                },
+                '&:last-child': {
+                  borderLeft: '1px solid #e0e0e0',
                 },
               },
             }}
           >
-            <TableHead
-              sx={{
-                backgroundColor: 'rgba(142, 172, 183, 0.72)',
-              }}
-            >
-              <TableRow>
+            <TableHead>
+              <TableRow sx={{ borderRight: '8px solid rgba(164, 195, 206, 0.72)' }}>
                 <TableCell sx={{
                   textAlign: 'center',
                   verticalAlign: 'middle',
@@ -516,6 +516,7 @@ function TransportTable({
                   backgroundColor: 'rgba(142, 172, 183, 0.72)',
                   height: '52px',
                   fontWeight: 'bold',
+                  borderBottom: '1px solid #e0e0e0',
                 }}>מס׳</TableCell>
                 <TableCell sx={{
                   textAlign: 'center',
@@ -526,6 +527,7 @@ function TransportTable({
                   backgroundColor: 'rgba(142, 172, 183, 0.72)',
                   height: '52px',
                   fontWeight: 'bold',
+                  borderBottom: '1px solid #e0e0e0',
                 }}>ימים</TableCell>
                 <TableCell sx={{
                   textAlign: 'center',
@@ -536,6 +538,7 @@ function TransportTable({
                   backgroundColor: 'rgba(142, 172, 183, 0.72)',
                   height: '52px',
                   fontWeight: 'bold',
+                  borderBottom: '1px solid #e0e0e0',
                 }}>
                   <TableSortLabel
                     active={orderBy === 'cities'}
@@ -555,6 +558,7 @@ function TransportTable({
                   backgroundColor: 'rgba(142, 172, 183, 0.72)',
                   height: '52px',
                   fontWeight: 'bold',
+                  borderBottom: '1px solid #e0e0e0',
                 }}>מקומות פנויים</TableCell>
                 <TableCell sx={{
                   textAlign: 'center',
@@ -565,6 +569,7 @@ function TransportTable({
                   backgroundColor: 'rgba(142, 172, 183, 0.72)',
                   height: '52px',
                   fontWeight: 'bold',
+                  borderBottom: '1px solid #e0e0e0',
                 }}>שיריון זמני</TableCell>
                 <TableCell sx={{
                   textAlign: 'center',
@@ -575,6 +580,7 @@ function TransportTable({
                   backgroundColor: 'rgba(142, 172, 183, 0.72)',
                   height: '52px',
                   fontWeight: 'bold',
+                  borderBottom: '1px solid #e0e0e0',
                 }}>
                   <TableSortLabel
                     active={orderBy === 'type'}
@@ -594,6 +600,7 @@ function TransportTable({
                   backgroundColor: 'rgba(142, 172, 183, 0.72)',
                   height: '52px',
                   fontWeight: 'bold',
+                  borderBottom: '1px solid #e0e0e0',
                 }}>רשימת נוסעים</TableCell>
                 <TableCell sx={{
                   textAlign: 'center',
@@ -604,6 +611,7 @@ function TransportTable({
                   backgroundColor: 'rgba(142, 172, 183, 0.72)',
                   height: '52px',
                   fontWeight: 'bold',
+                  borderBottom: '1px solid #e0e0e0',
                 }}>פעולה</TableCell>
               </TableRow>
             </TableHead>
@@ -640,8 +648,7 @@ function TransportTable({
             size="small"
             sx={{
               direction: 'rtl',
-              borderCollapse: 'separate',
-              borderSpacing: 0,
+              borderCollapse: 'collapse',
               width: '100%',
               tableLayout: 'fixed',
               '& td': {
@@ -650,10 +657,12 @@ function TransportTable({
                 fontSize: '1rem',
                 height: '40px',
                 borderRight: '1px solid #e0e0e0',
-                '&:last-child': {
+                '&:first-of-type': {
                   borderRight: 'none',
                 },
-                borderTop: '1px solid #e0e0e0',
+                '&:last-child': {
+                  borderLeft: '1px solid #e0e0e0',
+                },
               },
             }}
           >
@@ -661,7 +670,7 @@ function TransportTable({
               {filteredData.map((row, filteredIndex) => {
                 // Find the original index in the data array
                 const originalIndex = data.findIndex(item => item.id === row.id);
-                
+
                 // Calculate available seats for selected day only (merged)
                 let availableSeats = '-';
                 if (selectedHebDay && (row.days || []).includes(selectedHebDay)) {
@@ -797,7 +806,7 @@ function TransportTable({
                       minWidth: 90,
                     }}>
                       <Tooltip title="שיריון זמני">
-                        <IconButton onClick={() => handleTempReservationClick(row)} sx={{ width: 32, height: 32, p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' } }}>
+                        <IconButton onClick={() => handleTempReservationClick(row)} sx={{ width: 32, height: 32, p: 0, background: 'none', boxShadow: 'none', border: 'none', '&:hover': { background: 'none', boxShadow: 'none', border: 'none' }, '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:active': { outline: 'none', border: 'none', boxShadow: 'none' } }}>
                           <AccessTimeIcon sx={{ fontSize: 25, color: 'primary.main' }} />
                         </IconButton>
                       </Tooltip>
@@ -815,9 +824,10 @@ function TransportTable({
                       verticalAlign: 'middle',
                       width: '13%',
                       minWidth: 120,
+
                     }}>
                       <Tooltip title="צפייה באנשים">
-                        <IconButton onClick={() => onViewPassengers(passengersForDay, [selectedHebDay])} sx={{ width: 32, height: 32, p: 0 }}>
+                        <IconButton onClick={() => onViewPassengers(passengersForDay, [selectedHebDay])} sx={{ width: 32, height: 32, p: 0, '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:active': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:hover': { outline: 'none', border: 'none', boxShadow: 'none' } }}>
                           <VisibilityIcon />
                         </IconButton>
                       </Tooltip>
@@ -830,12 +840,12 @@ function TransportTable({
                     }}>
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                         <Tooltip title="עריכה">
-                          <IconButton onClick={() => onEditClick(originalIndex)} sx={{ width: 32, height: 32, p: 0 }}>
+                          <IconButton onClick={() => onEditClick(originalIndex)} sx={{ width: 32, height: 32, p: 0, '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:active': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:hover': { outline: 'none', border: 'none', boxShadow: 'none' } }}>
                             <EditIcon color="primary" />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="מחק">
-                          <IconButton onClick={() => onDeleteClick(originalIndex)} sx={{ width: 32, height: 32, p: 0 }}>
+                          <IconButton onClick={() => onDeleteClick(originalIndex)} sx={{ width: 32, height: 32, p: 0, '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:active': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:hover': { outline: 'none', border: 'none', boxShadow: 'none' } }}>
                             <DeleteIcon color="error" />
                           </IconButton>
                         </Tooltip>
@@ -886,7 +896,7 @@ function TransportTable({
         open={deleteDialog.open}
         onClose={() => setDeleteDialog({ open: false, item: null })}
         title="אישור מחיקה"
-        dialogContentSx={{ mt: 2 }}
+        dialogContentSx={{ mt: 2, direction: 'ltr', maxHeight: 260, overflowY: 'auto', pr: 0 }}
         actions={[
           <Button
             key="cancel"
@@ -921,14 +931,16 @@ function TransportTable({
           </Button>
         ]}
       >
-        <Typography variant="body1" sx={{
-          textAlign: 'right',
-          color: 'black',
-          fontSize: '1.1rem',
-          fontWeight: 500
-        }}>
-          האם אתה בטוח שברצונך למחוק את {deleteDialog.item?.name}?
-        </Typography>
+        <Box sx={{ direction: 'rtl', maxHeight: 200, overflowY: 'auto', pr: 0 }}>
+          <Typography variant="body1" sx={{
+            textAlign: 'right',
+            color: 'black',
+            fontSize: '1.1rem',
+            fontWeight: 500
+          }}>
+            האם אתה בטוח שברצונך למחוק את {deleteDialog.item?.name}?
+          </Typography>
+        </Box>
       </CustomDialog>
 
     </Box>

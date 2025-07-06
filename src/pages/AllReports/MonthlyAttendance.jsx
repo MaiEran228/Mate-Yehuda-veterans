@@ -288,17 +288,17 @@ const MonthlyAttendance = () => {
                       const isRegularDay = profile.arrivalDays && profile.arrivalDays.includes(currentHebrewDay);
                       if (isRegularDay) {
                         value = '✔️'; // ירוק
-                        cellStyles.push({ row: profileIndex + 2, col: columns.indexOf(dayNum) + 1, color: 'FF43A047' });
+                        cellStyles.push({ row: profileIndex + 3, col: columns.indexOf(dayNum) + 1, color: 'FF43A047' });
                       } else {
                         value = '✔️'; // כחול
-                        cellStyles.push({ row: profileIndex + 2, col: columns.indexOf(dayNum) + 1, color: 'FF1976D2' });
+                        cellStyles.push({ row: profileIndex + 3, col: columns.indexOf(dayNum) + 1, color: 'FF1976D2' });
                       }
                       if (person.caregiver) {
                         value += ' +1';
                       }
                     } else if (!person?.attended && person?.reason) {
                       value = person.reason;
-                      cellStyles.push({ row: profileIndex + 2, col: columns.indexOf(dayNum) + 1, color: 'FFD32F2F' });
+                      cellStyles.push({ row: profileIndex + 3, col: columns.indexOf(dayNum) + 1, color: 'FFD32F2F' });
                     }
                   }
                   row[dayNum] = value;

@@ -200,7 +200,11 @@ function ToolbarMUI({ onLogout }) {
         </IconButton>
         
         {/* כפתור התנתקות – בצד שמאל */}
-        <Button color="inherit" onClick={onLogout} sx={{ fontSize: '1.1rem', px: 2 }}>
+        <Button color="inherit" onClick={onLogout} sx={{ fontSize: '1.1rem', px: 2,
+          '&:focus': { outline: 'none', border: 'none' },
+          '&:active': { outline: 'none', border: 'none' },
+          '&:hover': { outline: 'none', border: 'none' }
+        }}>
           התנתק
         </Button>
       </Toolbar>

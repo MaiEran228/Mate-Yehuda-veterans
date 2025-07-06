@@ -14,7 +14,7 @@ const typeColors = {
   makeup: '#1976d2', // כחול
 };
 
-const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל', 'שיפוי', 'טיפול בית'];
+const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל', 'שיפוי', 'טיפול בית', 'הסעה לא הגיעה'];
 
 // סגנון לאייקון עריכה עדין
 const subtleEditIconSx = {

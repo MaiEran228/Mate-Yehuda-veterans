@@ -13,6 +13,8 @@ import {
 } from 'firebase/auth';
 import SignupModal from '../components/LoginCompo/SignupModal';
 import ForgotPassword from '../components/LoginCompo/ForgotPassword';
+import ErrorDialog from '../components/ErrorDialog';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 
 export default function Login({ onLogin }) {
@@ -22,6 +24,7 @@ export default function Login({ onLogin }) {
     const [authOK, setAuthOK] = useState(false);
     const [showSignup, setShowSignup] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [errorDialog, setErrorDialog] = useState({ open: false, message: '' });
 
 
     const handleLogin = async () => {
@@ -30,7 +33,7 @@ export default function Login({ onLogin }) {
             setAuthOK(true);
             setTimeout(onLogin, 800);
         } catch (err) {
-            alert('אימייל או סיסמא שגויים');
+            setErrorDialog({ open: true, message: 'אימייל או סיסמא שגויים' });
         }
     };
 
@@ -52,6 +55,26 @@ export default function Login({ onLogin }) {
                 background: 'rgb(237, 243, 244)',
             }}
         >
+            {/* Error Dialog */}
+            <ErrorDialog
+                open={errorDialog.open}
+                onClose={() => setErrorDialog({ open: false, message: '' })}
+                title="שגיאה"
+            >
+                {errorDialog.message === 'אימייל או סיסמא שגויים' ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, minHeight: 180 }}>
+                    <ErrorOutlineIcon sx={{ color: 'rgb(105, 148, 179)', fontSize: 48, mb: 1 }} />
+                    <Typography sx={{ color: 'rgb(105, 148, 179)' }} fontWeight={700} fontSize={18} align="center">
+                      אימייל או סיסמא שגויים
+                    </Typography>
+                    <Typography color="text.secondary" fontSize={15} align="center">
+                      אנא בדוק את כתובת האימייל והסיסמה ונסה שוב.
+                    </Typography>
+                  </Box>
+                ) : (
+                  errorDialog.message
+                )}
+            </ErrorDialog>
             <Paper
                 elevation={10}
                 sx={{
@@ -139,7 +162,8 @@ export default function Login({ onLogin }) {
                         </Typography>
                         <TextField
                             fullWidth
-                            label="אימייל"
+                            label=""
+                            placeholder="אימייל"
                             value={email}
                             onChange={e => setEmail(e.target.value)}
                             sx={{
@@ -166,10 +190,12 @@ export default function Login({ onLogin }) {
                                     WebkitTextFillColor: '#222',
                                 },
                             }}
+                            InputLabelProps={{}}
                         />
                         <TextField
                             fullWidth
-                            label="סיסמא"
+                            label=""
+                            placeholder="סיסמא"
                             type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={e => setPassword(e.target.value)}
@@ -197,10 +223,18 @@ export default function Login({ onLogin }) {
                                     WebkitTextFillColor: '#222',
                                 },
                             }}
+                            InputLabelProps={{}}
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
-                                        <IconButton onClick={() => setShowPassword(!showPassword)}>
+                                        <IconButton 
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            sx={{
+                                                '&:focus': { outline: 'none', border: 'none' },
+                                                '&:active': { outline: 'none', border: 'none' },
+                                                '&:hover': { outline: 'none', border: 'none' }
+                                            }}
+                                        >
                                             {showPassword ? <VisibilityOff /> : <Visibility />}
                                         </IconButton>
                                     </InputAdornment>
@@ -249,6 +283,8 @@ export default function Login({ onLogin }) {
                                         color: 'rgb(84, 149, 196)',
                                         textDecoration: 'underline',
                                     },
+                                    '&:focus': { outline: 'none', border: 'none' },
+                                    '&:active': { outline: 'none', border: 'none' }
                                 }}
                             >
                                 שכחתי סיסמא
@@ -269,6 +305,8 @@ export default function Login({ onLogin }) {
                                         color: 'rgb(84, 149, 196)',
                                         textDecoration: 'underline',
                                     },
+                                    '&:focus': { outline: 'none', border: 'none' },
+                                    '&:active': { outline: 'none', border: 'none' }
                                 }}
                             >
                                 משתמש חדש

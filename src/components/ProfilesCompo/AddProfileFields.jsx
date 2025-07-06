@@ -325,7 +325,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
 
       {/* Selectים נוספים */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-        <FormControl fullWidth sx={{ maxWidth: '170px' }}>
+        <FormControl fullWidth sx={{ minWidth: '170px', width: '170px' }}>
           <Select
             name="eligibility"
             value={values.eligibility}
@@ -350,7 +350,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
 
         <FormControl
           fullWidth
-          sx={{ maxWidth: '170px' }}
+          sx={{ minWidth: '170px', width: '170px' }}
           disabled={values.eligibility !== "סיעוד"}
         >
           <Select
@@ -386,7 +386,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
           </Select>
         </FormControl>
 
-        <FormControl fullWidth sx={{ maxWidth: '170px' }}>
+        <FormControl fullWidth sx={{ minWidth: '170px', width: '170px' }}>
           <Select
             name="functionLevel"
             value={values.functionLevel}
@@ -408,7 +408,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
           </Select>
         </FormControl>
 
-        <FormControl fullWidth sx={{ maxWidth: '170px' }}>
+        <FormControl fullWidth sx={{ minWidth: '170px', width: '170px' }}>
           <Select
             name="membership"
             value={values.membership}
@@ -429,10 +429,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
-      </Box>
-
-      {/* צ'קבוקסים */}
-      <Box sx={{ display: 'flex', gap: 2 }}>
+        {/* ניצול שואה */}
         <FormControlLabel
           control={
             <Checkbox
@@ -442,7 +439,9 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
             />
           }
           label="ניצול שואה"
+          sx={{ minWidth: '100px', width: '120px', }}
         />
+        {/* מטפל */}
         <FormControlLabel
           control={
             <Checkbox
@@ -452,6 +451,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
             />
           }
           label="מטפל"
+          sx={{ minWidth: '100px', width: '120px' }}
         />
       </Box>
     </>

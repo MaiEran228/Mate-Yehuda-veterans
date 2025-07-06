@@ -44,8 +44,8 @@ export default function CustomDialog({
           ×
         </IconButton>
       </DialogTitle>
-      <DialogContent sx={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', ...dialogContentSx }}>
-        {typeof children === "string" ? <Typography align="right" sx={{ width: '100%' }}>{children}</Typography> : children}
+      <DialogContent sx={{ minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', ...dialogContentSx }}>
+        {typeof children === "string" ? <Typography align="center" sx={{ width: '100%' }}>{children}</Typography> : children}
       </DialogContent>
       {actions && <DialogActions>{actions}</DialogActions>}
     </Dialog>
