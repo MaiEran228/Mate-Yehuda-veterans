@@ -359,3 +359,127 @@ export const saveTransportDate = async (dateStr, transportsList) => {
   }
 };
 
+// פונקציות לניהול יישובים
+export const citiesService = {
+  // הבאת כל היישובים מהדאטהבייס
+  fetchCities: async () => {
+    try {
+      const citiesRef = doc(db, 'settings', 'cities');
+      const citiesSnap = await getDoc(citiesRef);
+      
+      if (citiesSnap.exists()) {
+        return citiesSnap.data().cities || [];
+      } else {
+        // אם אין מסמך, יצירת אחד עם רשימת היישובים הראשונית
+        const initialCities = [
+          "צלפון","בקוע","טל שחר","כפר אוריה","תעוז","תרום","מסילת ציון","אשתאול","זנוח",
+          "מחסיה","נחם","עג'ור"
+        ];
+        await setDoc(citiesRef, { cities: initialCities });
+        return initialCities;
+      }
+    } catch (error) {
+      console.error("שגיאה בשליפת יישובים:", error);
+      return [];
+    }
+  },
+
+  // האזנה לשינויים ברשימת היישובים
+  subscribeToCities: (onUpdate, onError) => {
+    const citiesRef = doc(db, 'settings', 'cities');
+    return onSnapshot(citiesRef, 
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const cities = snapshot.data().cities || [];
+          onUpdate(cities);
+        } else {
+          onUpdate([]);
+        }
+      },
+      (error) => {
+        console.error("Error fetching cities:", error);
+        if (onError) onError(error);
+      }
+    );
+  },
+
+  // הוספת יישוב חדש
+  addCity: async (cityName) => {
+    try {
+      const citiesRef = doc(db, 'settings', 'cities');
+      const citiesSnap = await getDoc(citiesRef);
+      
+      let currentCities = [];
+      if (citiesSnap.exists()) {
+        currentCities = citiesSnap.data().cities || [];
+      }
+      
+      // בדיקה אם היישוב כבר קיים
+      if (currentCities.includes(cityName)) {
+        throw new Error('היישוב כבר קיים ברשימה');
+      }
+      
+      // הוספת היישוב החדש
+      const updatedCities = [...currentCities, cityName];
+      await setDoc(citiesRef, { cities: updatedCities });
+      
+      return updatedCities;
+    } catch (error) {
+      console.error("שגיאה בהוספת יישוב:", error);
+      throw error;
+    }
+  },
+
+  // מחיקת יישוב
+  deleteCity: async (cityName) => {
+    try {
+      const citiesRef = doc(db, 'settings', 'cities');
+      const citiesSnap = await getDoc(citiesRef);
+      
+      if (!citiesSnap.exists()) {
+        throw new Error('לא נמצאו יישובים');
+      }
+      
+      const currentCities = citiesSnap.data().cities || [];
+      const updatedCities = currentCities.filter(city => city !== cityName);
+      
+      await setDoc(citiesRef, { cities: updatedCities });
+      
+      return updatedCities;
+    } catch (error) {
+      console.error("שגיאה במחיקת יישוב:", error);
+      throw error;
+    }
+  },
+
+  // עדכון יישוב
+  updateCity: async (oldCityName, newCityName) => {
+    try {
+      const citiesRef = doc(db, 'settings', 'cities');
+      const citiesSnap = await getDoc(citiesRef);
+      
+      if (!citiesSnap.exists()) {
+        throw new Error('לא נמצאו יישובים');
+      }
+      
+      const currentCities = citiesSnap.data().cities || [];
+      
+      // בדיקה אם השם החדש כבר קיים
+      if (currentCities.includes(newCityName) && oldCityName !== newCityName) {
+        throw new Error('היישוב כבר קיים ברשימה');
+      }
+      
+      const updatedCities = currentCities.map(city => 
+        city === oldCityName ? newCityName : city
+      );
+      
+      await setDoc(citiesRef, { cities: updatedCities });
+      
+      return updatedCities;
+    } catch (error) {
+      console.error("שגיאה בעדכון יישוב:", error);
+      throw error;
+    }
+  }
+};
+

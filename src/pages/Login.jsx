@@ -30,7 +30,7 @@ export default function Login({ onLogin }) {
             setAuthOK(true);
             setTimeout(onLogin, 800);
         } catch (err) {
-            alert('אימייל או סיסמה שגויים');
+            alert('אימייל או סיסמא שגויים');
         }
     };
 

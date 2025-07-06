@@ -6,27 +6,23 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useCities } from '../../hooks/useCities';
 
 const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 const transportTypes = ['מיניבוס', 'מונית'];
-
-const initialCities = [
-  "צלפון","בקוע","טל שחר","כפר אוריה","תעוז","תרום","מסילת ציון","אשתאול","זנוח",
-  "מחסיה","נחם","עג'ור"
-];
 
 const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
 
 function AddTransportDialog({ open, onClose, onAdd, initialData }) {
   const [formData, setFormData] = React.useState(initialData);
-  const defaultCities = useRef([...initialCities]);
-  const [citiesList, setCitiesList] = React.useState(defaultCities.current);
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
   const [newCity, setNewCity] = React.useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [cityToDelete, setCityToDelete] = React.useState(null);
   const [addCityError, setAddCityError] = React.useState("");
   const [addCityTouched, setAddCityTouched] = React.useState(false);
+  
+  const { cities: citiesList, addCity, deleteCity } = useCities();
 
   React.useEffect(() => {
     if (open) {
@@ -35,7 +31,6 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
         days: [],
         cities: [],
       });
-      setCitiesList(defaultCities.current);
     }
   }, [open, initialData]);
 
@@ -60,29 +55,32 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
     onAdd(formData);
   };
 
-  function handleAddCity() {
+  async function handleAddCity() {
     setAddCityTouched(true);
     const city = newCity.trim();
     if (!city) return;
-    if (citiesList.includes(city)) {
-      setAddCityError('היישוב מופיע ברשימת היישובים');
-      return;
+    
+    try {
+      await addCity(city);
+      setNewCity("");
+      setAddDialogOpen(false);
+      setAddCityError("");
+      setAddCityTouched(false);
+    } catch (error) {
+      setAddCityError(error.message);
     }
-    setCitiesList(prev => [...prev, city]);
-    defaultCities.current = [...defaultCities.current, city];
-    setNewCity("");
-    setAddDialogOpen(false);
-    setAddCityError("");
-    setAddCityTouched(false);
   }
 
-  function handleRemoveCity(city) {
-    setCitiesList(prev => prev.filter(c => c !== city));
-    defaultCities.current = defaultCities.current.filter(c => c !== city);
-    setFormData(prev => ({
-      ...prev,
-      cities: (prev.cities || []).filter(c => c !== city)
-    }));
+  async function handleRemoveCity(city) {
+    try {
+      await deleteCity(city);
+      setFormData(prev => ({
+        ...prev,
+        cities: (prev.cities || []).filter(c => c !== city)
+      }));
+    } catch (error) {
+      console.error('שגיאה במחיקת יישוב:', error);
+    }
   }
 
   function handleTrashClick(city) {
@@ -90,9 +88,9 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
     setDeleteDialogOpen(true);
   }
 
-  function handleConfirmDelete() {
+  async function handleConfirmDelete() {
     if (cityToDelete) {
-      handleRemoveCity(cityToDelete);
+      await handleRemoveCity(cityToDelete);
     }
     setDeleteDialogOpen(false);
     setCityToDelete(null);

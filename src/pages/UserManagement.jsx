@@ -94,7 +94,7 @@ export default function UserManagement() {
     }
   };
 
-  // שינוי סיסמה עם אימות
+  // שינוי סיסמא עם אימות
   const handleChangePassword = async () => {
     if (!currentUser || !currentPassword || !password || password !== confirmPassword) {
       alert('נא למלא את כל השדות ולוודא שהסיסמאות תואמות');
@@ -106,25 +106,25 @@ export default function UserManagement() {
       const user = auth.currentUser;
       if (!user || !user.email) throw new Error('משתמש לא מחובר');
       
-      // אימות הסיסמה הנוכחית
+      // אימות הסיסמא הנוכחית
       const credential = EmailAuthProvider.credential(user.email, currentPassword);
       await reauthenticateWithCredential(user, credential);
       
-      // עדכון סיסמה
+      // עדכון סיסמא
       await updatePassword(user, password);
-      alert('הסיסמה עודכנה בהצלחה');
+      alert('הסיסמא עודכנה בהצלחה');
       
       // איפוס השדות
       setCurrentPassword('');
       setPassword('');
       setConfirmPassword('');
     } catch (err) {
-      console.error('שגיאה בשינוי סיסמה:', err);
-      let errorMessage = 'שגיאה בשינוי הסיסמה';
+      console.error('שגיאה בשינוי סיסמא:', err);
+      let errorMessage = 'שגיאה בשינוי הסיסמא';
       if (err.code === 'auth/wrong-password') {
-        errorMessage = 'הסיסמה הנוכחית שגויה';
+        errorMessage = 'הסיסמא הנוכחית שגויה';
       } else if (err.code === 'auth/weak-password') {
-        errorMessage = 'הסיסמה החדשה חלשה מדי';
+        errorMessage = 'הסיסמא החדשה חלשה מדי';
       }
       alert(errorMessage);
     } finally {
@@ -209,7 +209,7 @@ export default function UserManagement() {
           }}
         >
           <Tab icon={<EditIcon />} label="שינוי שם משתמש" />
-          <Tab icon={<LockResetIcon />} label="החלפת סיסמה" />
+          <Tab icon={<LockResetIcon />} label="החלפת סיסמא" />
           <Tab icon={<DeleteIcon />} label="מחיקת משתמש" />
         </Tabs>
         
@@ -264,9 +264,9 @@ export default function UserManagement() {
         </TabPanel>
         
         <TabPanel value={tab} index={1}>
-          <Typography variant="h6" mb={2} textAlign="center">החלפת סיסמה</Typography>
+          <Typography variant="h6" mb={2} textAlign="center">החלפת סיסמא</Typography>
           <TextField
-            label="סיסמה נוכחית"
+            label="סיסמא נוכחית"
             type="password"
             fullWidth
             size="small"
@@ -325,7 +325,7 @@ export default function UserManagement() {
             איפוס סיסמא
           </Typography>
           <TextField
-            label="סיסמה חדשה"
+            label="סיסמא חדשה"
             type="password"
             fullWidth
             size="small"
@@ -348,7 +348,7 @@ export default function UserManagement() {
             }}
           />
           <TextField
-            label="אימות סיסמה"
+            label="אימות סיסמא"
             type="password"
             fullWidth
             size="small"
@@ -385,7 +385,7 @@ export default function UserManagement() {
               },
             }}
           >
-            {loading ? 'מחליף...' : 'החלף סיסמה'}
+            {loading ? 'מחליף...' : 'החלף סיסמא'}
           </Button>
         </TabPanel>
         

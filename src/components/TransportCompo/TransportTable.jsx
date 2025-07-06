@@ -658,7 +658,10 @@ function TransportTable({
             }}
           >
             <TableBody>
-              {filteredData.map((row, index) => {
+              {filteredData.map((row, filteredIndex) => {
+                // Find the original index in the data array
+                const originalIndex = data.findIndex(item => item.id === row.id);
+                
                 // Calculate available seats for selected day only (merged)
                 let availableSeats = '-';
                 if (selectedHebDay && (row.days || []).includes(selectedHebDay)) {
@@ -674,13 +677,13 @@ function TransportTable({
                 }
 
                 return (
-                  <TableRow key={row.id || index} sx={{ fontSize: '1.1rem' }}>
+                  <TableRow key={row.id || filteredIndex} sx={{ fontSize: '1.1rem' }}>
                     <TableCell sx={{
                       textAlign: 'center',
                       verticalAlign: 'middle',
                       width: '5%',
                       minWidth: 70,
-                    }}>{index + 1}</TableCell>
+                    }}>{filteredIndex + 1}</TableCell>
                     <TableCell sx={{
                       textAlign: 'center',
                       verticalAlign: 'middle',
@@ -827,12 +830,12 @@ function TransportTable({
                     }}>
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                         <Tooltip title="עריכה">
-                          <IconButton onClick={() => onEditClick(index)} sx={{ width: 32, height: 32, p: 0 }}>
+                          <IconButton onClick={() => onEditClick(originalIndex)} sx={{ width: 32, height: 32, p: 0 }}>
                             <EditIcon color="primary" />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="מחק">
-                          <IconButton onClick={() => onDeleteClick(index)} sx={{ width: 32, height: 32, p: 0 }}>
+                          <IconButton onClick={() => onDeleteClick(originalIndex)} sx={{ width: 32, height: 32, p: 0 }}>
                             <DeleteIcon color="error" />
                           </IconButton>
                         </Tooltip>
