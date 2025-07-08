@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { Container, Typography, Box, Button, TextField, Modal, Paper, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import Header from '../components/ToolBarMUI'; // סרגל כלים קבוע
-import AttendanceTable from '../components/HomeCompo/AttendanceTable'; // הטבלה
-import PDFAbsencePeople from '../components/ReportsCompo/PDFAbsencePeople'; // קומפוננטת ייצוא PDF
+import Header from '../components/ToolBarMUI'; // Fixed toolbar
+import AttendanceTable from '../components/HomeCompo/AttendanceTable'; // The table
+import PDFAbsencePeople from '../components/ReportsCompo/PDFAbsencePeople'; // PDF export component
 import dayjs from 'dayjs';
 import DailyAttendance from "./AllReports/DailyAttendance";
 import { useNavigate } from 'react-router-dom';
 import CustomDialog from '../components/CustomDialog';
 
-import { saveAttendanceForDate, fetchAllProfiles, fetchAttendanceByDate } from '../firebase'; // יבוא הפונקציה החדשה
+import { saveAttendanceForDate, fetchAllProfiles, fetchAttendanceByDate } from '../firebase'; // Import the new function
 
-// מיפוי ימים לעברית
+// Mapping days to Hebrew
 const daysMap = {
   0: "יום א'",
   1: "יום ב'",
@@ -46,14 +46,14 @@ function Home({ onLogout }) {
         setDialog(prev => ({ ...prev, open: false }));
     };
 
-    // 🚀 PRE-LOADING - טוען את הנתונים מוקדם
+    // 🚀 PRE-LOADING - Load the data quietly in the background
     useEffect(() => {
         const preloadData = async () => {
             try {
-                // טוען את הנתונים בשקט ברקע
+                // Load the data quietly in the background
                 const attendanceData = await fetchAttendanceByDate(today);
                 if (!attendanceData?.attendanceList?.length) {
-                    // אם אין נוכחות שמורה, טוען את הפרופילים
+                    // If there is no saved attendance, load the profiles
                     await fetchAllProfiles();
                 }
             } catch (error) {
@@ -66,11 +66,9 @@ function Home({ onLogout }) {
             }
         };
         preloadData();
-    }, []); // ← רץ פעם אחת כשהקומפוננטה נטענת
+    }, []); // ← Runs once when the component mounts
 
-
-
-    // פונקציה שתקבל את המידע על הנוכחות מהטבלה
+    // Function to receive the attendance info from the table
     const handleAttendanceUpdate = (count) => {
         setAttendanceCount(count);
     };
@@ -116,7 +114,7 @@ function Home({ onLogout }) {
         setShowReport(false);
     };
 
-    // הכנת נתונים לדוח
+    // Prepare data for the report
     const presentMembers = reportData.filter(person => person.attended);
     const absentMembers = reportData.filter(person => !person.attended);
 
@@ -125,7 +123,7 @@ function Home({ onLogout }) {
             height: '100vh',
             display: 'flex',
             flexDirection: 'column', mt:1,
-            overflow: 'hidden' // מונע גלילה בכלל
+            overflow: 'hidden' // Prevents scrolling entirely
         }}>
             <Header onLogout={onLogout} />
            
@@ -135,13 +133,13 @@ function Home({ onLogout }) {
                 display: 'flex',
                 flexDirection: 'column',
                 padding: '16px 0',
-                overflow: 'hidden' // מונע גלילה
+                overflow: 'hidden' // Prevents scrolling
             }}>
                 {/* Header Section with Date and Buttons */}
                 <Box sx={{
                     width: '95%',
                     maxWidth: '1800px',
-                    margin: '0 auto 24px auto', // מרווח קבוע מהטבלה
+                    margin: '0 auto 24px auto', // Fixed margin from the table
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',

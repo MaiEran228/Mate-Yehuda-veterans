@@ -26,7 +26,7 @@ function ToolbarMUI({ onLogout }) {
     navigate(path);
   };
 
-  // מעקב אחר מצב האימות וקריאת שם המשתמש
+  // track the authentication state and read the username
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -37,8 +37,8 @@ function ToolbarMUI({ onLogout }) {
           if (userDoc.exists()) {
             setUsername(userDoc.data().username || 'משתמש');
           } else {
-            // אם אין מסמך, יצירת מסמך חדש עם שם משתמש ברירת מחדל
-            const defaultUsername = user.email.split('@')[0]; // שם משתמש מהמייל
+            // if there is no document, create a new document with a default username
+            const defaultUsername = user.email.split('@')[0]; // username from the email
             await setDoc(userDocRef, {
               username: defaultUsername,
               email: user.email,
@@ -77,7 +77,7 @@ function ToolbarMUI({ onLogout }) {
   return (
     <AppBar position="fixed" color="default" sx={{ direction: 'ltr' }}>
       <Toolbar sx={{ display: 'flex', flexDirection: 'row-reverse' }}>
-        {/* לוגו החברה – בצד ימין */}
+        {/* company logo – on the right */}
         <Tooltip title="מסך הבית" arrow>
           <Box
             component={Link}
@@ -86,7 +86,7 @@ function ToolbarMUI({ onLogout }) {
               display: 'flex',
               alignItems: 'center',
               textDecoration: 'none',
-              mr: 0.5, // מרווח קטן יותר מימין
+              mr: 0.5,
               cursor: 'pointer',
               '&:hover': {
                 opacity: 0.8,
@@ -101,14 +101,14 @@ function ToolbarMUI({ onLogout }) {
                 height: '80px',
                 width: 'auto',
                 maxWidth: '85px',
-                borderRadius: '100%', // עיגול הפינות
+                borderRadius: '100%', 
                 
               }}
             />
           </Box>
         </Tooltip>
 
-        {/* מפריד אחרי הלוגו */}
+        {/* divider after the logo */}
         <Divider
           orientation="vertical"
           flexItem
@@ -120,7 +120,7 @@ function ToolbarMUI({ onLogout }) {
           }}
         />
 
-        {/* כפתורי ניווט */}
+        {/* navigation buttons */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           {navItems.map((item, idx) => (
             <>
@@ -177,10 +177,10 @@ function ToolbarMUI({ onLogout }) {
           ))}
         </Box>
 
-        {/* מרווח גמיש */}
+        {/* flexible space */}
         <Box sx={{ flexGrow: 1 }} />
 
-        {/* הצגת שלום + שם משתמש */}
+        {/* display name + username */}
         {currentUser && username && (
           <Typography
             variant="body1"
@@ -194,12 +194,12 @@ function ToolbarMUI({ onLogout }) {
           </Typography>
         )}
 
-        {/* אייקון משתמש – ניווט לעמוד ניהול משתמש */}
+        {/* user icon – navigate to the user management page */}
         <IconButton color="inherit" onClick={() => navigate('/user-management')} sx={{ ml: 1, '&:focus': { outline: 'none', border: 'none' }, '&:active': { outline: 'none', border: 'none' } }}>
           <AccountCircleIcon sx={{ fontSize: 34 }} />
         </IconButton>
         
-        {/* כפתור התנתקות – בצד שמאל */}
+        {/* logout button – on the left */}
         <Button color="inherit" onClick={onLogout} sx={{ fontSize: '1.1rem', px: 2,
           '&:focus': { outline: 'none', border: 'none' },
           '&:active': { outline: 'none', border: 'none' },

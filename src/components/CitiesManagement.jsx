@@ -78,7 +78,7 @@ function CitiesManagement({ open, onClose }) {
 
   return (
     <>
-      {/* דיאלוג ראשי לניהול יישובים */}
+      {/* main dialog for cities management */}
       <Dialog 
         open={open} 
         onClose={onClose} 
@@ -167,7 +167,7 @@ function CitiesManagement({ open, onClose }) {
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג הוספת יישוב */}
+      {/* add city dialog */}
       <Dialog 
         open={addDialogOpen} 
         onClose={() => { setAddDialogOpen(false); setNewCity(''); setLocalError(''); }}
@@ -204,7 +204,7 @@ function CitiesManagement({ open, onClose }) {
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג עריכת יישוב */}
+      {/* edit city dialog */}
       <Dialog 
         open={editDialogOpen} 
         onClose={() => { setEditDialogOpen(false); setEditingCity({ old: '', new: '' }); setLocalError(''); }}
@@ -241,7 +241,7 @@ function CitiesManagement({ open, onClose }) {
         </DialogActions>
       </Dialog>
 
-      {/* דיאלוג אישור מחיקה */}
+      {/* delete confirmation dialog */}
       <Dialog 
         open={deleteDialogOpen} 
         onClose={() => { setDeleteDialogOpen(false); setCityToDelete(''); }}

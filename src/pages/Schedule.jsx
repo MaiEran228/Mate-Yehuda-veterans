@@ -17,7 +17,7 @@ const CELLS_PER_DAY_ROWS = 10;
 const CELLS_PER_DAY_COLS = 1;
 const CELLS_PER_DAY = CELLS_PER_DAY_ROWS * CELLS_PER_DAY_COLS;
 
-// פונקציה שמחזירה צבע לפי מיקום
+//return color according to location
 const getLocationColor = (location) => {
   const loc = (location || '').trim().replace(/\s+/g, '').toLowerCase();
   if (loc.includes('הרצאות')) return 'rgba(173, 203, 228, 0.88)'; // כחול
@@ -38,7 +38,7 @@ const SchedulePage = () => {
       try {
         const data = await fetchSchedule();
         console.log("Loaded schedule from Firebase:", data);
-        setActivities(data || {});  // למקרה שאין נתונים
+        setActivities(data || {});  // no data
       } catch (err) {
         console.error("Error loading schedule:", err);
       }
@@ -123,7 +123,7 @@ const SchedulePage = () => {
           </Button>
         </Box>
 
-        {/* מקרא צבעים */}
+        {/* color book*/}
         <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 2, mt: 1, flexWrap: 'wrap' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box sx={{ width: 22, height: 22, borderRadius: 1, bgcolor: 'rgba(173, 203, 228, 0.88)', border: '1.5px solid #b0c4de', mr: 1 }} />

@@ -57,25 +57,25 @@ function Profiles() {
     }
   };
 
-  // פונקציה חדשה לעדכון פרופיל
+  // New function for updating a profile
   const handleUpdateProfile = async (updatedProfile) => {
     try {
-      // בדוק אם ה-ID השתנה
+      // Check if the ID has changed
       const oldProfile = profiles.find(p => p.id === selectedProfile.id);
       const idChanged = oldProfile && oldProfile.id !== updatedProfile.id;
 
       if (idChanged) {
-        // 1. צור מסמך חדש עם ה-ID החדש
+        // 1. Create a new document with the new ID
         await addProfile({ ...updatedProfile });
-        // 2. מחק את המסמך הישן
+        // 2. Delete the old document
         await deleteProfile(oldProfile.id);
-        // 3. עדכן הפניות להסעות
+        // 3. Update transport references
         await transportService.updatePassengerInTransports(
           oldProfile.id,
           { ...updatedProfile, id: updatedProfile.id }
         );
       } else {
-        // עדכון רגיל
+        // Regular update
         await updateProfile(updatedProfile.id, updatedProfile);
         await transportService.updatePassengerInTransports(updatedProfile.id, {
           name: updatedProfile.name,
@@ -85,7 +85,7 @@ function Profiles() {
         });
       }
 
-      // עדכון הרשימה המקומית
+      // Update the local list
       const data = await fetchAllProfiles();
       setProfiles(data);
       setSelectedProfile(null);
@@ -94,7 +94,7 @@ function Profiles() {
     }
   };
 
-  // סינון לפי שם או יישוב
+  // Filter by name or city
   const filteredProfiles = profiles
     .filter(profile => {
       const term = searchTerm.toLowerCase();
@@ -104,26 +104,26 @@ function Profiles() {
       );
     })
     .sort((a, b) => {
-      // מיון לפי הא"ב בעברית
+      // Sort by Hebrew alphabet
       return a.name.localeCompare(b.name, 'he');
     });
 
   return (
     <Box sx={{ p: 1.5, mt:2 }}>
-      {/* Spacer ראשון עבור ToolBarMUI הראשי */}
+      {/* First spacer for main ToolBarMUI */}
       <Toolbar sx={{ minHeight: '90px' }} />
-      {/* Spacer שני עבור ה-AppBar של החיפוש */}
+      {/* Second spacer for search AppBar */}
       <Toolbar sx={{ minHeight: '64px' }} />
 
-      {/* AppBar נוסף - חיפוש + הוספה */}
+      {/* Additional AppBar - search + add */}
       <AppBar
         position="fixed"
         color="default"
         elevation={0}
         sx={{
-          top: '84px', // גובה ה-ToolBarMUI הראשי
+          top: '84px', // Height of main ToolBarMUI
           zIndex: 1200,
-          backgroundColor: '#ebf1f5', // צבע רקע זהה לרקע העמוד
+          backgroundColor: '#ebf1f5', // Same background color as the page
         }}
       >
         <Toolbar sx={{
@@ -134,7 +134,7 @@ function Profiles() {
         }}>
           <TextField
             fullWidth
-            placeholder="חיפוש לפי שם או אזור מגורים..."
+            placeholder="Search by name or city..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             variant="outlined"
@@ -208,12 +208,12 @@ function Profiles() {
               },
             }}
           >
-            הוספת פרופיל
+            Add Profile
           </Button>
         </Toolbar>
       </AppBar>
 
-      {/* אזור הפרופילים */}
+      {/* Profile area */}
       <Box sx={{ 
         minHeight: 400,
         '& .MuiGrid-container': {
@@ -243,20 +243,20 @@ function Profiles() {
                 fontSize: '0.9rem'
               }}
             >
-              לא נמצאו פרופילים מתאימים
+              No profiles found
             </Typography>
           )}
         </Grid>
       </Box>
 
-      {/* סכום הפרופילים */}
+      {/* total profiles */}
       <Box sx={{ mt: 3, textAlign: 'center' }}>
         <Typography variant="h6" sx={{ fontWeight: 700, color: 'rgba(64, 99, 112, 0.72)', fontSize: '2rem'}}>
-          סך הכל פרופילים: {filteredProfiles.length}
+          Total profiles: {filteredProfiles.length}
         </Typography>
       </Box>
 
-      {/* חלונות דיאלוג */}
+      {/* dialogs */}
       <ProfileWindow
         open={!!selectedProfile}
         profile={selectedProfile}

@@ -36,7 +36,8 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   const arrivalDaysOrder = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
   const sortedArrivalDays = (initialProfile.arrivalDays || []).slice().sort((a, b) => arrivalDaysOrder.indexOf(a) - arrivalDaysOrder.indexOf(b));
 
-  // בודק אם השדות הרלוונטיים להסעה השתנו
+  // Check if the relevant fields for transport have changed
+  // More precise comparison of arrivalDays arrays
   const hasTransportFieldsChanged = () => {
     // השוואה מדויקת יותר של מערכי ימי הגעה
     const currentDaysSorted = (initialProfile.arrivalDays || []).slice().sort();
@@ -51,7 +52,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   };
 
   const isValidPhoneNumber = (phone) => {
-    if (!phone) return true; // אם השדה ריק, נטפל בזה בנפרד
+    if (!phone) return true; // If the field is empty, handle separately
     if (!/^\d+$/.test(phone)) {
       return false;
     }
@@ -72,7 +73,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   };
 
   const isValidIsraeliID = (id) => {
-    // בדיקה שהקלט מכיל רק ספרות ובאורך 9
+    // Check that the input contains only digits and is 9 characters long
     if (!/^\d{9}$/.test(id)) {
       return false;
     }
@@ -95,7 +96,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         return;
       }
 
-      // וידוא שיש את כל הנתונים הנדרשים
+      // Ensure all required data is present
       if (!initialProfile.arrivalDays || initialProfile.arrivalDays.length === 0) {
         setSuccessDialog({ open: true, message: "נא לבחור ימי הגעה לפני עדכון הסעה" });
         setLoading(false);
@@ -107,11 +108,11 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         return;
       }
 
-      // בדוק אם הנוסע כבר משובץ להסעה
+      // Check if the passenger is already assigned to a transport
       const currentTransport = await getPassengerTransport(initialProfile.id);
       const allDaysIncluded = currentTransport && initialProfile.arrivalDays.every(day => currentTransport.days.includes(day)) && currentTransport.type === initialProfile.transport && currentTransport.cities.includes(initialProfile.city);
       if (currentTransport && allDaysIncluded) {
-        // עדכן את arrivalDays של הנוסע בתוך ההסעה הקיימת
+        // Update the passenger's arrivalDays inside the existing transport
         const updatedPassengers = (currentTransport.passengers || []).map(p =>
           p.id === initialProfile.id ? { ...p, arrivalDays: initialProfile.arrivalDays, hasCaregiver: initialProfile.hasCaregiver } : p
         );
@@ -137,7 +138,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         return;
       }
 
-      // אם אין הסעה קיימת מתאימה, המשך עם הלוגיקה הרגילה
+      // If there is no suitable existing transport, continue with the regular logic
       await removePassengerFromTransports(initialProfile.id);
       let attempts = 0;
       const maxAttempts = 5;
@@ -190,12 +191,12 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
 
   const handleTransportSelect = async (transport) => {
     try {
-      console.log('Selecting transport:', transport.serialNumber); // לוג לדיבוג
+      console.log('Selecting transport:', transport.serialNumber); // Debug log
 
-      // קודם מסיר את הנוסע מההסעה הקודמת (וידוא כפול)
+      // First remove the passenger from the previous transport (double check)
       await removePassengerFromTransports(initialProfile.id);
 
-      // המתנה קצרה
+      // Short wait
       await new Promise(resolve => setTimeout(resolve, 300));
 
       await addPassengerToTransport(transport.id, {
@@ -235,7 +236,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     let hasErrors = false;
     const newErrors = {};
 
-    // בדיקת תעודת זהות
+    // ID validation
     if (!profileData.id) {
       newErrors.id = "שדה חובה";
       hasErrors = true;
@@ -244,7 +245,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       hasErrors = true;
     }
 
-    // בדיקת טלפון ראשי
+    // Main phone validation
     if (!profileData.phone) {
       newErrors.phone = "שדה חובה";
       hasErrors = true;
@@ -253,13 +254,13 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       hasErrors = true;
     }
 
-    // בדיקת טלפון נוסף (אם הוזן)
+    // Additional phone validation (if provided)
     if (profileData.phone2 && !isValidPhoneNumber(profileData.phone2)) {
       newErrors.phone2 = "מספר טלפון לא תקין";
       hasErrors = true;
     }
 
-    // בדיקת שדות חובה נוספים
+    // Check other required fields
     if (!profileData.transport) {
       newErrors.transport = 'סוג הסעה הוא שדה חובה';
       hasErrors = true;
@@ -274,11 +275,11 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     if (!hasErrors) {
       let finalImageUrl = profileData.profileImage;
 
-      // אם יש תמונה חדשה (data URL), העלה אותה לפיירבייס
+      // If there is a new image (data URL), upload it to Firebase
       if (imagePreview && imagePreview !== initialProfile.profileImage) {
         setIsUploading(true);
         try {
-          // המרת data URL לקובץ
+          // Convert data URL to file
           const response = await fetch(imagePreview);
           const blob = await response.blob();
 
@@ -303,11 +304,11 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     }
   };
 
-  // עדכון הפונקציה המקורית של handleChange כדי להוסיף בדיקת טלפון
+  // Update the original handleChange function to add phone validation
   const handleFieldChange = (field) => (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
 
-    // בדיקת תקינות תעודת זהות
+    // ID validation
     if (field === "id") {
       if (!value) {
         setErrors(prev => ({ ...prev, id: "שדה חובה" }));
@@ -318,7 +319,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       }
     }
 
-    // בדיקת תקינות מספר טלפון
+    // Phone number validation
     if (field === "phone") {
       if (!value) {
         setErrors(prev => ({ ...prev, phone: "שדה חובה" }));
@@ -329,10 +330,10 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       }
     }
 
-    // בדיקת תקינות מספר טלפון נוסף
+    // Additional phone number validation
     if (field === "phone2") {
       if (!value) {
-        setErrors(prev => ({ ...prev, phone2: null })); // מאפס את השגיאה אם השדה ריק
+        setErrors(prev => ({ ...prev, phone2: null })); // Reset error if the field is empty
       } else if (!isValidPhoneNumber(value)) {
         setErrors(prev => ({ ...prev, phone2: "מספר טלפון לא תקין" }));
       } else {
@@ -347,7 +348,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     const file = event.target.files[0];
     if (!file) return;
 
-    // בדיקות בסיסיות
+    // Basic checks
     if (file.size > 10 * 1024 * 1024) { // 10MB
       alert('התמונה גדולה מדי. אנא בחר תמונה קטנה יותר.');
       return;
@@ -361,11 +362,11 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
     console.log('Original file:', { name: file.name, size: file.size, type: file.type });
 
     try {
-      // דחוס את התמונה
+      // Compress the image
       const compressedFile = await compressImage(file);
       console.log('Compressed file size:', compressedFile.size);
 
-      // קרא את הקובץ המדוחס
+      // Read the compressed file
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);

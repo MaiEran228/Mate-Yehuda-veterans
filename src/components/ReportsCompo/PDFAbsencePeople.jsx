@@ -6,15 +6,15 @@ import { font, fontBold } from '../../fonts/AlefHebrew';
 import dayjs from 'dayjs';
 
 const ExportPDFButton = ({ 
-  // תמיכה בטבלה אחת (השימוש הקיים)
+  // Support for a single table (current usage)
   data, 
   columns, 
   
-  // תמיכה במספר טבלאות (השימוש החדש)
-  tables, // מערך של { data, columns, title?, customStyles? }
-  betweenTablesContent, // מערך של טקסטים להציג בין הטבלאות
+  // Support for multiple tables (new usage)
+  tables, // Array of { data, columns, title?, customStyles? }
+  betweenTablesContent, // Array of texts to display between tables
   
-  // פרמטרים כלליים
+  // General parameters
   fileName, 
   title, 
   subtitle,
@@ -27,35 +27,35 @@ const ExportPDFButton = ({
   summaryData = null
 }) => {
   
-  // פונקציה להפיכת טקסט עברי למצב RTL נכון
+  // Function to reverse Hebrew text for correct RTL display
   const reverseHebrewText = (text) => {
     if (!text) return text;
     
-    // בדיקה אם יש טקסט עברי
+    // Check if there is Hebrew text
     const hebrewRegex = /[\u0590-\u05FF]/;
     if (!hebrewRegex.test(text)) {
-      return text; // אם אין עברית, החזר כמו שהוא
+      return text; // If no Hebrew, return as is
     }
     
-    // הפיכת הטקסט כדי להציג נכון ב-PDF
+    // Reverse the text for correct PDF display
     return text.split('').reverse().join('');
   };
 
-  // פונקציה לעיבוד טקסט מעורב (עברית + מספרים)
+  // Function to process mixed text (Hebrew + numbers)
   const processHebrewText = (text) => {
     if (!text) return text;
     
     const hebrewRegex = /[\u0590-\u05FF]/;
     if (!hebrewRegex.test(text)) {
-      return text; // אין עברית
+      return text; // No Hebrew
     }
 
-    // אם יש גם מספרים וגם עברית, נטפל בזה בצורה מיוחדת
+    // If there are both numbers and Hebrew, handle specially
     const mixedRegex = /^(\d+\.?\s*)(.+)$/;
     const match = text.match(mixedRegex);
     
     if (match) {
-      // יש מספר בתחילה - נשאיר את המספר במקום ונהפוך רק את החלק העברי
+      // There is a number at the start - keep the number and reverse only the Hebrew part
       const number = match[1];
       const hebrewPart = match[2];
       return number + reverseHebrewText(hebrewPart);
@@ -67,7 +67,7 @@ const ExportPDFButton = ({
   const handleExport = () => {
     const doc = new jsPDF();
     
-    // הוספת הפונטים העבריים
+    // Add Hebrew fonts
     try {
       doc.addFileToVFS('AlefHebrew.ttf', font);
       doc.addFont('AlefHebrew.ttf', 'AlefHebrew', 'normal');
@@ -75,20 +75,20 @@ const ExportPDFButton = ({
       doc.addFileToVFS('AlefHebrew-Bold.ttf', fontBold);
       doc.addFont('AlefHebrew-Bold.ttf', 'AlefHebrew', 'bold');
       
-      // הגדרת הפונט כברירת מחדל
+      // Set the font as default
       doc.setFont('AlefHebrew', 'normal');
     } catch (error) {
       console.error('Error loading fonts:', error);
-      // שימוש בפונט ברירת מחדל
+      // Use default font
       doc.setFont('helvetica', 'normal');
     }
 
-    // פונקציה לכתיבת טקסט עברי מימין לשמאל
+    // Function to write Hebrew text RTL
     const writeHebrewText = (text, x, y, options = {}) => {
       const { fontSize = 12, fontStyle = 'normal', align = 'center' } = options;
       
       try {
-        // הגדרת הפונט
+        // Set the font
         if (fontStyle === 'bold') {
           doc.setFont('AlefHebrew', 'bold');
         } else {
@@ -100,10 +100,10 @@ const ExportPDFButton = ({
       
       doc.setFontSize(fontSize);
       
-      // עיבוד הטקסט לעברית
+      // Process the text for Hebrew
       const processedText = processHebrewText(text);
       
-      // חישוב מיקום בהתאם ליישור
+      // Calculate position according to alignment
       let finalX = x;
       if (align === 'center') {
         const textWidth = doc.getTextWidth(processedText);
@@ -118,9 +118,9 @@ const ExportPDFButton = ({
       doc.text(processedText, finalX, y);
     };
 
-    // פונקציה ליצירת טבלה אחת
+    // Function to create a single table
     const createTable = (tableData, tableColumns, tableCustomStyles, startY) => {
-      // הכנת נתוני הטבלה עם עיבוד עברית
+      // Prepare table data with Hebrew processing
       const tableHeaders = tableColumns.map(col => processHebrewText(col.header || col.key));
       const tableBody = tableData.map(item => 
         tableColumns.map(col => {
@@ -131,12 +131,12 @@ const ExportPDFButton = ({
             value = item[col.key] || col.defaultValue || '';
           }
           
-          // עיבוד הערך לעברית
+          // Process the value for Hebrew
           return processHebrewText(String(value));
         })
       );
 
-      // הגדרות סגנון עם בדיקות בטיחות
+      // Style settings with safety checks
       const safeCustomStyles = tableCustomStyles || customStyles || {};
       const styles = {
         font: 'AlefHebrew',
@@ -160,7 +160,7 @@ const ExportPDFButton = ({
         ...(safeCustomStyles.headStyles || {})
       };
 
-      // יצירת הטבלה עם תמיכה ב-RTL
+      // Create the table with RTL support
       autoTable(doc, {
         head: [tableHeaders],
         body: tableBody,
@@ -173,7 +173,7 @@ const ExportPDFButton = ({
         tableLineColor: [0, 0, 0],
         rowPageBreak: 'avoid',
         
-        // callback functions עם תמיכה בעברית
+        // Callback functions with Hebrew support
         didParseCell: function(data) {
           if (data && data.styles) {
             try {
@@ -184,7 +184,7 @@ const ExportPDFButton = ({
                 data.styles.fontStyle = 'normal';
               }
               
-              // וידוא שהטקסט מעובד נכון
+              // Ensure the text is processed correctly
               if (data.cell && data.cell.text && Array.isArray(data.cell.text)) {
                 data.cell.text = data.cell.text.map(text => processHebrewText(String(text)));
               }
@@ -214,19 +214,19 @@ const ExportPDFButton = ({
 
     let yPosition = 20;
 
-    // כותרת ראשית
+    // Main title
     if (title) {
       writeHebrewText(title, 0, yPosition, { fontSize: 18, fontStyle: 'bold', align: 'center' });
       yPosition += 10;
     }
 
-    // כותרת משנה
+    // Subtitle
     if (subtitle) {
       writeHebrewText(subtitle, 0, yPosition, { fontSize: 14, align: 'center' });
       yPosition += 15;
     }
 
-    // מידע נוסף בכותרת
+    // Additional header info
     if (headerInfo) {
       headerInfo.forEach(info => {
         writeHebrewText(info, 0, yPosition, { fontSize: 12, align: 'center' });
@@ -235,7 +235,7 @@ const ExportPDFButton = ({
       yPosition += 10;
     }
 
-    // נתוני סיכום (אם קיימים)
+    // Summary data (if exists)
     if (summaryData) {
       summaryData.forEach(summary => {
         writeHebrewText(summary, 0, yPosition, { fontSize: 16, fontStyle: 'bold', align: 'center' });
@@ -244,22 +244,22 @@ const ExportPDFButton = ({
       yPosition += 15;
     }
 
-    // יצירת הטבלאות
+    // Create the tables
     if (tables && Array.isArray(tables)) {
-      // מצב חדש - מספר טבלאות
+      // New mode - multiple tables
       tables.forEach((table, index) => {
-        // כותרת לטבלה (אם קיימת)
+        // Table title (if exists)
         if (table.title) {
           writeHebrewText(table.title, 0, yPosition, { fontSize: 14, fontStyle: 'bold', align: 'center' });
           yPosition += 10;
         }
 
-        // יצירת הטבלה
+        // Create the table
         yPosition = createTable(table.data, table.columns, table.customStyles, yPosition);
 
-        // הוספת תוכן בין הטבלאות (אם זה לא הטבלה האחרונה)
+        // Add content between tables (if not the last table)
         if (index < tables.length - 1) {
-          yPosition += 15; // רווח לפני התוכן
+          yPosition += 15; // Space before content
 
           if (betweenTablesContent && Array.isArray(betweenTablesContent)) {
             betweenTablesContent.forEach(content => {
@@ -270,15 +270,15 @@ const ExportPDFButton = ({
             });
           }
 
-          yPosition += 15; // רווח לאחר התוכן
+          yPosition += 15; // Space after content
         }
       });
     } else if (data && columns) {
-      // מצב קיים - טבלה אחת
+      // Existing mode - single table
       yPosition = createTable(data, columns, customStyles, yPosition);
     }
 
-    // מידע בתחתית הדף
+    // Footer info at the bottom of the page
     if (footerInfo && Array.isArray(footerInfo)) {
       const finalY = doc.lastAutoTable?.finalY || yPosition + 50;
       
@@ -293,7 +293,7 @@ const ExportPDFButton = ({
       });
     }
 
-    // שמירת הקובץ
+    // Save the file
     const finalFileName = fileName || `דוח_${dayjs().format('DD-MM-YYYY')}.pdf`;
     doc.save(finalFileName);
   };

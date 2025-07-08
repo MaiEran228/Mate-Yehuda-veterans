@@ -81,7 +81,7 @@ export default function ForgotPasswordModal({ onClose }) {
     <div style={styles.modalOverlay} onClick={onClose}>
       <div
         style={styles.modalWrapper}
-        onClick={e => e.stopPropagation()} // עצור את האירוע כדי לא לסגור כשקולטים קליק בתוך החלון
+        onClick={e => e.stopPropagation()} // Stop the event so it doesn't close when clicking inside the window
       >
         <ForgotPassword onClose={onClose} />
       </div>

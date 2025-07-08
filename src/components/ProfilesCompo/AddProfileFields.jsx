@@ -25,12 +25,12 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
     });
   };
 
-  // החלף את הפונקציה handleImageUpload הקיימת בזו:
+  // Replace the existing handleImageUpload function with this one:
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // בדיקות בסיסיות
+    // Basic checks
     if (file.size > 10 * 1024 * 1024) { // 10MB
       alert('התמונה גדולה מדי. אנא בחר תמונה קטנה יותר.');
       return;
@@ -44,14 +44,14 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
     console.log('Original file:', { name: file.name, size: file.size, type: file.type });
 
     try {
-      // דחוס את התמונה
+      // Compress the image
       const compressedFile = await compressImage(file);
       console.log('Compressed file size:', compressedFile.size);
 
-      // קרא את הקובץ המדוחס
+      // Read the compressed file
       const reader = new FileReader();
       reader.onloadend = () => {
-        onImageChange(reader.result); // שימוש בפונקציה שמועברת כ-prop
+        onImageChange(reader.result); // Use the function passed as a prop
       };
       reader.readAsDataURL(compressedFile);
     } catch (error) {

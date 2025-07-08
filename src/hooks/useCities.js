@@ -6,7 +6,7 @@ export const useCities = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // טעינת רשימת היישובים
+  // Load the list of cities
   const loadCities = async () => {
     try {
       setLoading(true);
@@ -15,18 +15,18 @@ export const useCities = () => {
       setCities(citiesList);
     } catch (err) {
       setError(err.message);
-      console.error('שגיאה בטעינת יישובים:', err);
+      console.error('Error loading cities:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // הוספת יישוב חדש
+  // Add a new city
   const addCity = async (cityName) => {
     try {
       setError(null);
       await citiesService.addCity(cityName);
-      await loadCities(); // רענון הרשימה
+      await loadCities(); // Refresh the list
       return true;
     } catch (err) {
       setError(err.message);
@@ -34,12 +34,12 @@ export const useCities = () => {
     }
   };
 
-  // מחיקת יישוב
+  // Delete a city
   const deleteCity = async (cityName) => {
     try {
       setError(null);
       await citiesService.deleteCity(cityName);
-      await loadCities(); // רענון הרשימה
+      await loadCities(); // Refresh the list
       return true;
     } catch (err) {
       setError(err.message);
@@ -47,12 +47,12 @@ export const useCities = () => {
     }
   };
 
-  // עדכון יישוב
+  // Update a city
   const updateCity = async (oldCityName, newCityName) => {
     try {
       setError(null);
       await citiesService.updateCity(oldCityName, newCityName);
-      await loadCities(); // רענון הרשימה
+      await loadCities(); // Refresh the list
       return true;
     } catch (err) {
       setError(err.message);
@@ -60,7 +60,7 @@ export const useCities = () => {
     }
   };
 
-  // האזנה לשינויים ברשימת היישובים
+  // Listen for changes in the list of cities
   useEffect(() => {
     const unsubscribe = citiesService.subscribeToCities(
       (updatedCities) => {
@@ -69,11 +69,11 @@ export const useCities = () => {
       },
       (err) => {
         setError(err.message);
-        console.error('שגיאה בהאזנה ליישובים:', err);
+        console.error('Error listening to cities:', err);
       }
     );
 
-    // טעינה ראשונית
+    // Initial load
     loadCities();
 
     return unsubscribe;

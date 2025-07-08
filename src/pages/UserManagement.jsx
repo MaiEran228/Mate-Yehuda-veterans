@@ -33,7 +33,7 @@ export default function UserManagement() {
 
   const handleTabChange = (e, newValue) => setTab(newValue);
 
-  // מעקב אחר מצב האימות וקריאת שם המשתמש
+  // Track authentication state and read username
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -46,8 +46,8 @@ export default function UserManagement() {
             setCurrentUsername(userData.username || 'משתמש');
             setUsername(userData.username || '');
           } else {
-            // אם אין מסמך, יצירת מסמך חדש עם שם משתמש ברירת מחדל
-            const defaultUsername = user.email.split('@')[0]; // שם משתמש מהמייל
+            // If there is no document, create a new document with a default username
+            const defaultUsername = user.email.split('@')[0]; // Username from email
             await setDoc(userDocRef, {
               username: defaultUsername,
               email: user.email,
@@ -71,7 +71,7 @@ export default function UserManagement() {
     return () => unsubscribe();
   }, []);
 
-  // שינוי שם משתמש - עם יצירת מסמך אם לא קיים
+  // Change username - with document creation if it does not exist
   const handleChangeUsername = async () => {
     if (!currentUser || !username.trim()) return;
     
@@ -79,13 +79,13 @@ export default function UserManagement() {
     try {
       const userDocRef = doc(db, 'users', currentUser.email);
       
-      // יצירה או עדכון של המסמך
+      // Create or update the document
       await setDoc(userDocRef, {
         username: username.trim(),
         email: currentUser.email,
         uid: currentUser.uid,
         updatedAt: new Date().toISOString()
-      }, { merge: true }); // merge: true משמר נתונים קיימים ומעדכן רק את הנתונים החדשים
+      }, { merge: true }); // merge: true preserves existing data and updates only new data
       
       setCurrentUsername(username.trim());
       alert('שם המשתמש עודכן בהצלחה');
@@ -97,7 +97,7 @@ export default function UserManagement() {
     }
   };
 
-  // שינוי סיסמא עם אימות
+  // Change password with authentication
   const handleChangePassword = async () => {
     if (!currentUser || !currentPassword || !password || password !== confirmPassword) {
       alert('נא למלא את כל השדות ולוודא שהסיסמאות תואמות');
@@ -109,15 +109,15 @@ export default function UserManagement() {
       const user = auth.currentUser;
       if (!user || !user.email) throw new Error('משתמש לא מחובר');
       
-      // אימות הסיסמא הנוכחית
+      // Authenticate current password
       const credential = EmailAuthProvider.credential(user.email, currentPassword);
       await reauthenticateWithCredential(user, credential);
       
-      // עדכון סיסמא
+      // Update password
       await updatePassword(user, password);
       alert('הסיסמא עודכנה בהצלחה');
       
-      // איפוס השדות
+      // Reset fields
       setCurrentPassword('');
       setPassword('');
       setConfirmPassword('');

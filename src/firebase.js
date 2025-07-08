@@ -6,7 +6,7 @@ import { calculateAvailableSeatsByDay } from './utils/transportUtils';
 import { runTransaction } from "firebase/firestore";
 
 
-// קונפיגורציה ואתחול
+// Configuration and initialization
 const firebaseConfig = {
   apiKey: "AIzaSyByiLjQUyWVEUcApza0f6yXjnkxckBqwoo",
   authDomain: "projectmatey.firebaseapp.com",
@@ -18,7 +18,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);  // חשוב! ייצוא של db
+export const db = getFirestore(app);  // export db
 export const storage = getStorage(app);  // Initialize Firebase Storage
 
 
@@ -31,13 +31,13 @@ export const fetchAllProfiles = async () => {
       ...doc.data(),
     }));
   } catch (error) {
-    console.error("שגיאה בשליפת פרופילים:", error);
+    console.error("Error fetching profiles:", error);
     return [];
   }
 };
 
 
-// פונקציה להוספת פרופיל
+// add profile
 export const addProfile = async (profile) => {
   try {
     const profileRef = doc(db, 'profiles', profile.id);
@@ -52,7 +52,7 @@ export const addProfile = async (profile) => {
 
 export const deleteProfile = async (profileId) => {
   try {
-    await deleteDoc(doc(db, 'profiles', profileId)); // ✅ זה מוחק מ-Firestore
+    await deleteDoc(doc(db, 'profiles', profileId)); // ✅ This deletes from Firestore
     console.log("Deleted user with ID:", profileId);
   } catch (error) {
     console.error("Error deleting profile:", error);
@@ -60,7 +60,7 @@ export const deleteProfile = async (profileId) => {
 };
 
 
-// שמירת נוכחות ליום מסוים
+// Save attendance for a specific day
 export const saveAttendanceForDate = async (dateStr, attendanceList) => {
   try {
     await setDoc(doc(db, 'attendance', dateStr), {
@@ -69,9 +69,9 @@ export const saveAttendanceForDate = async (dateStr, attendanceList) => {
       timestamp: new Date()
     });
 
-    console.log("נוכחות נשמרה לתאריך:", dateStr);
+    console.log("Attendance saved for date:", dateStr);
   } catch (error) {
-    console.error("שגיאה בשמירת נוכחות:", error);
+    console.error("Error saving attendance:", error);
   }
 };
 
@@ -81,36 +81,18 @@ export const fetchAttendanceByDate = async (dateStr) => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return docSnap.data(); // מחזיר את האובייקט עם attendanceList ו־date
+      return docSnap.data(); // returns the object with attendanceList and date
     } else {
-      console.log("אין נוכחות לתאריך הזה");
+      console.log("No attendance for this date");
       return null;
     }
   } catch (error) {
-    console.error("שגיאה בשליפת נוכחות:", error);
+    console.error("Error fetching attendance:", error);
     return null;
   }
 };
 
-// פונקציה לעדכון פרופיל קיים
-export const updateProfile = async (profileId, updatedData) => {
-  try {
-    // יצירת רפרנס למסמך
-    const profileRef = doc(db, 'profiles', profileId);
-    
-    // עדכון המסמך
-    await updateDoc(profileRef, updatedData);
-    
-    console.log('Profile updated successfully');
-    return true;
-  } catch (error) {
-    console.error('Error updating profile: ', error);
-    throw error;
-  }
-};
-
-
-// טען מערכת שעות מהמסמך
+// Fetch schedule from document
 export const fetchSchedule = async () => {
   try {
     const docRef = doc(db, 'schedules', 'weeklySchedule'); // collection 'schedules', doc 'weeklySchedule'
@@ -118,35 +100,35 @@ export const fetchSchedule = async () => {
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
-      return {}; // אם אין מסמך - מחזיר אובייקט ריק
+      return {}; // if no document - returns empty object
     }
   } catch (error) {
-    console.error("שגיאה בשליפת מערכת השעות:", error);
+    console.error("Error fetching schedule:", error);
     return {};
   }
 };
 
-// שמור מערכת שעות למסמך
+// Save schedule to document
 export const saveSchedule = async (schedule) => {
   try {
     const docRef = doc(db, 'schedules', 'weeklySchedule');
     await setDoc(docRef, schedule);
-    console.log("מערכת השעות נשמרה בהצלחה");
+    console.log("Schedule saved successfully");
   } catch (error) {
-    console.error("שגיאה בשמירת מערכת השעות:", error);
+    console.error("Error saving schedule:", error);
   }
 };
 
-// פונקציות עבור הסעות
+// Functions for transports
 export const transportService = {
-  // הבאת כל ההסעות והאזנה לשינויים
+  // Fetch all transports and listen for changes
   subscribeToTransports: (onUpdate, onError) => {
     const transportCollection = collection(db, 'transport');
     return onSnapshot(transportCollection, 
       (snapshot) => {
         const transportList = snapshot.docs.map((doc, index) => ({
           id: doc.id,
-          serialNumber: index + 1,  // מוסיף מספר סידורי
+          serialNumber: index + 1,  // adds serial number
           ...doc.data()
         }));
         onUpdate(transportList);
@@ -162,7 +144,7 @@ export const transportService = {
     try {
       const transportDocRef = doc(db, 'transport', transportId);
       
-      // מביא את המסמך כדי לעדכן את המערך
+      // Fetches the document to update the array
       const transportSnap = await getDoc(transportDocRef);
       if (!transportSnap.exists()) {
         throw new Error("Transport not found");
@@ -171,10 +153,10 @@ export const transportService = {
       const transportData = transportSnap.data();
       const currentReservations = transportData.tempReservations || [];
 
-      // מוסיף את השריון החדש למערך
+      // Adds the new reservation to the array
       const updatedReservations = [...currentReservations, reservation];
 
-      // מעדכן את המסמך עם המערך החדש
+      // Updates the document with the new array
       await updateDoc(transportDocRef, {
         tempReservations: updatedReservations
       });
@@ -186,7 +168,7 @@ export const transportService = {
     }
   },
 
-  // הוספת הסעה חדשה
+  // Add new transport
   addTransport: async (transportData) => {
     try {
       const counterRef = doc(db, 'counters', 'transportIdCounter');
@@ -199,7 +181,7 @@ export const transportService = {
           current = counterSnap.data().current || 0;
           transaction.update(counterRef, { current: current + 1 });
         } else {
-          // יצירת מונה בפעם הראשונה
+          // Create counter for the first time
           transaction.set(counterRef, { current: 1 });
         }
   

@@ -3,28 +3,28 @@ import PDFAbsencePeople from './PDFAbsencePeople';
 import dayjs from 'dayjs';
 
 const PDFDaysLeft = ({ people, selectedMonth }) => {
-  // מיון א"ב
+  // Alphabetical sort
   const sortedPeople = [...people].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
   const todayFormatted = dayjs().format('DD/MM/YYYY');
   const monthFormatted = dayjs(selectedMonth).format('MM/YYYY');
 
-  // עמודות PDF
+  // PDF columns
   const pdfColumns = [
-    { key: 'missedAfterPenalty', header: 'מימי הגעה היעדרות', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
-    { key: 'remaining', header: 'החודש יתרת ימי זכאות', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
-    { key: 'attendedCount', header: 'שנוצלו ימים', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
-    { key: 'eligible', header: 'החודש סה"כ ימי זכאות', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
-    { key: 'name', header: 'שם', defaultValue: '' },
+    { key: 'missedAfterPenalty', header: 'Missed after penalty', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
+    { key: 'remaining', header: 'Remaining days of eligibility', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
+    { key: 'attendedCount', header: 'Days used', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
+    { key: 'eligible', header: 'Total days of eligibility', defaultValue: 0, formatter: v => (v === 0 ? '0' : (v || '0')) },
+    { key: 'name', header: 'Name', defaultValue: '' },
   ];
 
-  // ניקוי שם מתווים בעייתיים
+  // Clean name from problematic characters
   const cleanName = (name) =>
     (name || '')
       .replace(/[\n\r\t\f\v]/g, ' ')
       .replace(/\s+/g, ' ')
       .replace(/^\s+|\s+$/g, '');
 
-  // דאטה ל-PDF
+  // Data for PDF
   const pdfData = sortedPeople.map((person, idx) => ({
     name: cleanName(person.name),
     eligible: typeof person.eligible === 'number' ? person.eligible : 0,
@@ -33,12 +33,12 @@ const PDFDaysLeft = ({ people, selectedMonth }) => {
     missedAfterPenalty: typeof person.missedAfterPenalty === 'number' ? person.missedAfterPenalty : 0,
   }));
 
-  // הגדרות PDF
+  // PDF settings
   const pdfConfig = {
-    title: 'דוח יתרת ימי זכאות',
-    subtitle: `חודש: ${monthFormatted}`,
+    title: 'Remaining days of eligibility',
+    subtitle: `Month: ${monthFormatted}`,
     headerInfo: [
-      `נוצר בתאריך: ${todayFormatted}`
+      `Created on: ${todayFormatted}`
     ],
     customStyles: {
       styles: {
@@ -60,12 +60,12 @@ const PDFDaysLeft = ({ people, selectedMonth }) => {
     <PDFAbsencePeople
       data={pdfData}
       columns={pdfColumns}
-      fileName={`דוח_יתרת_ימי_זכאות_${monthFormatted}.pdf`}
+      fileName={`Remaining_days_of_eligibility_${monthFormatted}.pdf`}
       title={pdfConfig.title}
       subtitle={pdfConfig.subtitle}
       headerInfo={pdfConfig.headerInfo}
       customStyles={pdfConfig.customStyles}
-      buttonText="ייצא ל-PDF"
+      buttonText="Export to PDF"
       buttonProps={{
         disableRipple: true,
         sx: {

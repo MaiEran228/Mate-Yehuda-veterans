@@ -5,7 +5,7 @@ function ProfileCard({ profile, onClick }) {
   return (
     <Box sx={{ 
         position: 'relative', 
-        width: 180,  // הקטנת הרוחב כדי שיכנסו 6 כרטיסים
+        width: 180,  // Reduce width to fit 6 cards
         m: 1,
         mb: 4,
     }}>
@@ -56,7 +56,7 @@ function ProfileCard({ profile, onClick }) {
       <Card
         onClick={() => onClick(profile)}
         sx={{
-          pt: 6,  // הגדלת הריווח העליון כדי לפנות מקום לעיגול הגדול יותר
+          pt: 6,  // Increase top padding to make room for larger circle
           textAlign: 'center',
           height: 120,
           cursor: 'pointer',

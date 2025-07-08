@@ -80,7 +80,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
     };
 
     const isValidIsraeliID = (id) => {
-        // בדיקה שהקלט מכיל רק ספרות ובאורך 9
+        // Check that the input contains only digits and is 9 characters long
         if (!/^\d{9}$/.test(id)) {
             return false;
         }
@@ -94,7 +94,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
             [name]: type === "checkbox" ? checked : value,
         }));
 
-        // בדיקת תקינות תעודת זהות
+        // ID validation
         if (name === "id") {
             if (!value) {
                 setErrors(prev => ({ ...prev, id: "שדה חובה" }));
@@ -107,7 +107,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 }
             }
         } else if (name === "phone") {
-            // בדיקת תקינות מספר טלפון
+            // Main phone number validation
             if (!value) {
                 setErrors(prev => ({ ...prev, phone: "שדה חובה" }));
             } else if (!isValidPhoneNumber(value)) {
@@ -116,7 +116,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 setErrors(prev => ({ ...prev, phone: null }));
             }
         } else if (name === "phone2") {
-            // בדיקת תקינות מספר טלפון נוסף
+            // Additional phone number validation
             if (!value) {
                 setErrors(prev => ({ ...prev, phone2: null }));
             } else if (!isValidPhoneNumber(value)) {
@@ -127,7 +127,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
         } else if (name === "eligibility" && value !== "סיעוד") {
             setFormData((prev) => ({ ...prev, nursingCompany: "" }));
         } else {
-            // איפוס שגיאות רק לשדות שאינם דורשים בדיקת תקינות מיוחדת
+            // Reset errors only for fields that do not require special validation
             setErrors(prev => ({ ...prev, [name]: null }));
         }
     };
@@ -140,14 +140,14 @@ function AddProfileWindow({ open, onClose, onSave }) {
         const requiredFields = ["name", "id", "city", "birthDate", "phone", "transport", "arrivalDays"];
         const newErrors = {};
 
-        // בדיקת שדות חובה
+        // Check required fields
         requiredFields.forEach((field) => {
             if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
                 newErrors[field] = "שדה חובה";
             }
         });
 
-        // בדיקת תקינות תעודת זהות
+        // ID validation
         if (formData.id) {
             if (!isValidIsraeliID(formData.id)) {
                 newErrors.id = "תעודת זהות חייבת להכיל 9 ספרות";
@@ -160,12 +160,12 @@ function AddProfileWindow({ open, onClose, onSave }) {
             }
         }
 
-        // בדיקת תקינות מספר טלפון ראשי
+        // Main phone number validation
         if (formData.phone && !isValidPhoneNumber(formData.phone)) {
             newErrors.phone = "מספר טלפון לא תקין";
         }
 
-        // בדיקת תקינות מספר טלפון נוסף (אם הוזן)
+        // Additional phone number validation (if provided)
         if (formData.phone2 && !isValidPhoneNumber(formData.phone2)) {
             newErrors.phone2 = "מספר טלפון לא תקין";
         }

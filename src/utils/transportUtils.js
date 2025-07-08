@@ -2,30 +2,30 @@ import { collection, getDocs, updateDoc, doc, getDoc, arrayUnion } from 'firebas
 import { db } from '../firebase';
 
 /**
- * מחשב את מספר המקומות הפנויים בהסעה
- * @param {string} type - סוג ההסעה (מיניבוס/מונית)
- * @param {Array} passengers - רשימת הנוסעים
- * @returns {number} - מספר המקומות הפנויים
+ * Calculates the number of available seats in the transport
+ * @param {string} type - Type of transport (Minibus/Taxi)
+ * @param {Array} passengers - List of passengers
+ * @returns {number} - Number of available seats
  */
 const calculateAvailableSeats = (type, passengers = []) => {
   const totalSeats = type === 'מיניבוס' ? 14 : 4;
   const occupiedSeats = passengers.reduce((total, passenger) => {
-    // כל נוסע תופס מקום אחד, ואם יש לו מטפל אז עוד מקום
+    // Each passenger takes one seat, and if they have a caregiver, then one more seat
     return total + (passenger.hasCaregiver ? 2 : 1);
   }, 0);
   return totalSeats - occupiedSeats;
 };
 
 /**
- * מחשב את מספר המקומות הפנויים בהסעה לפי יום
- * @param {string} type - סוג ההסעה (מיניבוס/מונית)
- * @param {Array} passengers - רשימת הנוסעים
- * @param {Array} days - ימי ההסעה
- * @returns {Object} - אובייקט עם מספר המקומות הפנויים לכל יום
+ * Calculates the number of available seats in the transport by day
+ * @param {string} type - Type of transport (Minibus/Taxi)
+ * @param {Array} passengers - List of passengers
+ * @param {Array} days - Transport days
+ * @returns {Object} - Object with the number of available seats for each day
  */
 export const calculateAvailableSeatsByDay = (transportType, passengers, days) => {
-  // מתקן את סוגי ההסעות להתאים לממשק
-  const totalSeats = transportType === 'מונית' ? 4 : 14; // מונית = 4, מיניבוס = 14
+  // Fixes the transport types to match the interface
+  const totalSeats = transportType === 'מונית' ? 4 : 14; // Taxi = 4, Minibus = 14
   const availableSeatsByDay = {};
 
   days.forEach(day => {
@@ -38,11 +38,11 @@ export const calculateAvailableSeatsByDay = (transportType, passengers, days) =>
 };
 
 /**
- * מחפש הסעות מתאימות לפי ימים ועיר
- * @param {string[]} arrivalDays - ימי ההגעה של המשתמש
- * @param {string} city - עיר המגורים
- * @param {string} needsTransport - סוג ההסעה (מיניבוס/מונית)
- * @param {boolean} hasCaregiver - האם יש מטפל
+ * Finds matching transports by days and city
+ * @param {string[]} arrivalDays - User's arrival days
+ * @param {string} city - City of residence
+ * @param {string} needsTransport - Type of transport (Minibus/Taxi)
+ * @param {boolean} hasCaregiver - Whether has a caregiver
  * @returns {Promise<Array<{id: string, cities: string[], days: string[], type: string, passengers: any[]}>>}
  */
 export const findMatchingTransports = async (arrivalDays, city, needsTransport, hasCaregiver = false) => {
@@ -54,30 +54,30 @@ export const findMatchingTransports = async (arrivalDays, city, needsTransport, 
     const transportsRef = collection(db, 'transport');
     const querySnapshot = await getDocs(transportsRef);
     
-    // קודם ממפה את כל ההסעות עם מספר סידורי
+    // First, map all transports with a serial number
     const allTransports = querySnapshot.docs.map((doc, index) => ({
       id: doc.id,
       serialNumber: index + 1,
       ...doc.data()
     }));
     
-    // אז מסנן את ההסעות המתאימות
+    // Then filter the matching transports
     const matchingTransports = allTransports.filter(transport => {
-      // בודק אם סוג ההסעה מתאים
+      // Checks if the transport type matches
       if (transport.type !== needsTransport) {
         return false;
       }
 
-      // בודק שכל ימי ההגעה של הנוסע כלולים בימי ההסעה
+      // Checks that all the passenger's arrival days are included in the transport days
       const allDaysIncluded = arrivalDays.every(day => transport.days.includes(day));
       if (!allDaysIncluded) {
         return false;
       }
 
-      // בודק אם היישוב נמצא במסלול ההסעה
+      // Checks if the city is in the transport route
       const isInRoute = transport.cities.includes(city);
       
-      // בודק אם יש מקום פנוי בהסעה בימים הרלוונטיים
+      // Checks if there is an available seat in the transport on the relevant days
       const hasAvailableSeats = arrivalDays.every(day => {
         const availableSeats = transport.availableSeatsByDay?.[day] ?? transport.seats;
         const seatsNeeded = hasCaregiver ? 2 : 1;
@@ -95,9 +95,9 @@ export const findMatchingTransports = async (arrivalDays, city, needsTransport, 
 };
 
 /**
- * מעדכן הסעה עם נוסע חדש
- * @param {string} transportId - מזהה ההסעה
- * @param {Object} passengerData - פרטי הנוסע
+ * Updates a transport with a new passenger
+ * @param {string} transportId - Transport ID
+ * @param {Object} passengerData - Passenger details
  */
 export const addPassengerToTransport = async (transportId, passengerData) => {
   try {
@@ -110,10 +110,10 @@ export const addPassengerToTransport = async (transportId, passengerData) => {
 
     const transport = transportDoc.data();
     
-    // בודק אם הנוסע כבר קיים בהסעה
+    // Checks if the passenger already exists in the transport
     const existingPassenger = transport.passengers?.find(p => p.id === passengerData.id);
     if (existingPassenger) {
-      // אם הנוסע קיים, מעדכן את הפרטים שלו
+      // If the passenger exists, update their details
       const updatedPassengers = transport.passengers.map(p =>
         p.id === passengerData.id ? { ...p, ...passengerData } : p
       );
@@ -127,7 +127,7 @@ export const addPassengerToTransport = async (transportId, passengerData) => {
         )
       });
     } else {
-      // אם הנוסע חדש, מוסיף אותו להסעה
+      // If the passenger is new, add them to the transport
       await updateDoc(transportRef, {
         passengers: arrayUnion(passengerData),
         availableSeatsByDay: calculateAvailableSeatsByDay(
@@ -144,15 +144,15 @@ export const addPassengerToTransport = async (transportId, passengerData) => {
 };
 
 /**
- * מוחק נוסע מכל ההסעות שהוא משובץ בהן
- * @param {string} passengerId - מזהה הנוסע למחיקה
+ * Removes a passenger from all transports they are assigned to
+ * @param {string} passengerId - Passenger ID to remove
  */
 export const removePassengerFromTransports = async (passengerId) => {
   try {
     const transportsRef = collection(db, 'transport');
     const transportsSnapshot = await getDocs(transportsRef);
     
-    // עובר על כל ההסעות ומחפש את הנוסע
+    // Goes through all transports and looks for the passenger
     const updatePromises = transportsSnapshot.docs
       .filter(doc => {
         const transport = doc.data();
@@ -169,7 +169,7 @@ export const removePassengerFromTransports = async (passengerId) => {
         });
       });
 
-    // מחכה שכל העדכונים יסתיימו
+    // Waits for all updates to finish
     await Promise.all(updatePromises);
   } catch (error) {
     console.error('Error removing passenger from transports:', error);
@@ -178,8 +178,8 @@ export const removePassengerFromTransports = async (passengerId) => {
 };
 
 /**
- * מחזיר את פרטי ההסעה של נוסע מסוים
- * @param {string} passengerId - מזהה הנוסע
+ * Returns the transport details of a specific passenger
+ * @param {string} passengerId - Passenger ID
  * @returns {Promise<{id: string, serialNumber: number, cities: string[]} | null>}
  */
 export const getPassengerTransport = async (passengerId) => {
@@ -187,14 +187,14 @@ export const getPassengerTransport = async (passengerId) => {
     const transportsRef = collection(db, 'transport');
     const querySnapshot = await getDocs(transportsRef);
     
-    // מוסיף מספר סידורי לכל ההסעות
+    // Adds a serial number to all transports
     const transports = querySnapshot.docs.map((doc, index) => ({
       id: doc.id,
       serialNumber: index + 1,
       ...doc.data()
     }));
 
-    // מחפש את ההסעה של הנוסע
+    // Finds the transport of the passenger
     const transport = transports.find(t => t.passengers?.some(p => p.id === passengerId));
     return transport || null;
   } catch (error) {

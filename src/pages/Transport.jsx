@@ -17,7 +17,7 @@ import AddIcon from '@mui/icons-material/Add';
 import dayjs from 'dayjs';
 import AvailableSeatsListDialog from '../components/TransportCompo/AvailableSeatsListDialog';
 
-// מיפוי ימים לעברית
+// Mapping days to Hebrew
 const daysMap = {
   0: "יום א'",
   1: "יום ב'",
@@ -58,7 +58,7 @@ function Transport() {
         setLoading(false);
       }
     );
-    // טען את כל הפרופילים
+    // Load all profiles
     fetchAllProfiles().then(setProfiles);
     return () => unsubscribe();
   }, []);
@@ -113,28 +113,28 @@ function Transport() {
         const lastIndex = updatedTransport.tempReservations.length - 1;
         const lastReservation = updatedTransport.tempReservations[lastIndex];
 
-        // בודק אם השריון האחרון עדיין לא קיבל מזהה
+        // Checks if the last reservation still does not have an ID
         if (lastReservation && !lastReservation.id) {
-          // שולף את כל ה-id הקיימים שהינם מספרים
+          // Retrieves all existing IDs that are numbers
           const existingIds = updatedTransport.tempReservations
             .map(r => Number(r.id))
             .filter(id => !isNaN(id));
 
-          // מחשב את ה-id הבא: מקסימום קיים + 1 או מתחיל מ-0
+          // Calculates the next ID: max existing + 1 or starts from 0
           const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 0;
 
-          // מוסיף את השריון החדש עם id תקין במסד הנתונים
+          // Adds the new reservation with a valid ID to the database
           await transportService.addTemporaryReservation(updatedTransport.id, {
             ...lastReservation,
             id: nextId.toString()
           });
 
-          // מעדכן גם את האובייקט המקומי כדי לשמור על ה-id החדש
+          // Also updates the local object to keep the new ID
           updatedTransport.tempReservations[lastIndex].id = nextId.toString();
         }
       }
 
-      // מעדכן את ההסעה במסד הנתונים עם השריונות המעודכנים
+      // Updates the transport in the database with the updated reservations
       await transportService.updateTransport(updatedTransport.id, updatedTransport);
       handleEditClose();
 
@@ -157,21 +157,21 @@ function Transport() {
     try {
       const transportToDelete = data[deleteDialog.index];
       const passengers = transportToDelete.passengers || [];
-      // עדכון כל הפרופילים של הנוסעים להסיר את השיבוץ
+      // Update all passenger profiles to remove the assignment
       for (const passenger of passengers) {
-        await updateProfile(passenger.id, { transport: '' }); // או "נדרש שיבוץ"
+        await updateProfile(passenger.id, { transport: '' }); // or "Assignment required"
       }
-      // ריקון הנוסעים מההסעה (ליתר ביטחון)
+      // Clear passengers from the transport (just in case)
       if (passengers.length > 0) {
         await transportService.updateTransport(transportToDelete.id, {
           ...transportToDelete,
           passengers: []
         });
       }
-      // מחיקת ההסעה
+      // Delete the transport
       await transportService.deleteTransport(transportToDelete.id);
-      // הודעה מתאימה
-      let text = `ההסעה ${transportToDelete.cities?.join(', ') || ''} נמחקה בהצלחה.\nימים: ${(transportToDelete.days || []).join(', ')}`;
+      // Appropriate message
+      let text = `The transport ${transportToDelete.cities?.join(', ') || ''} was deleted successfully.\nDays: ${(transportToDelete.days || []).join(', ')}`;
       setSuccessMessage({
         open: true,
         message: passengers.length > 0
@@ -182,7 +182,7 @@ function Transport() {
       handleDeleteClose();
     } catch (error) {
       console.error("Error deleting transport:", error);
-      setSuccessMessage({ open: true, message: 'אירעה שגיאה במחיקת ההסעה. אנא נסה שוב.' });
+      setSuccessMessage({ open: true, message: 'An error occurred while deleting the transport. Please try again.' });
     }
   };
 

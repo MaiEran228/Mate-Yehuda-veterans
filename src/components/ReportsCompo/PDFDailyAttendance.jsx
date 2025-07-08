@@ -3,44 +3,44 @@ import PDFAbsencePeople from './PDFAbsencePeople';
 import dayjs from 'dayjs';
 
 const DailyAttendancePDF = ({ attendanceData, profiles, reportDate: reportDateProp }) => {
-  // קביעת היום בשבוע בעברית
+  // Set the day of the week in Hebrew
   const reportDate = attendanceData?.date || reportDateProp || dayjs().format('YYYY-MM-DD');
   const todayWeekday = dayjs(reportDate).format('dddd');
   const todayFormatted = dayjs(reportDate).format('DD/MM/YYYY');
 
-  // פונקציה עוזרת למציאת arrivalDays של משתתף
+  // Helper function to find a participant's arrivalDays
   const getProfileArrivalDays = (person) => {
     const profile = profiles.find(p => p.id === person.id || p.name === person.name);
     return profile && Array.isArray(profile.arrivalDays) ? profile.arrivalDays : [];
   };
 
-  // נוכחים שהיו אמורים להגיע היום (ירוק)
+  // Present who were supposed to arrive today (green)
   const presentExpected = attendanceData.attendanceList.filter(p => {
     if (!p.attended) return false;
     const arrivalDays = getProfileArrivalDays(p);
     return arrivalDays.includes(todayWeekday);
   });
 
-  // נוכחים שהגיעו ביום שלא אמורים (כחול)
+  // Present who arrived on a day they were not supposed to (blue)
   const presentNotExpected = attendanceData.attendanceList.filter(p => {
     if (!p.attended) return false;
     const arrivalDays = getProfileArrivalDays(p);
     return !arrivalDays.includes(todayWeekday);
   });
 
-  // נעדרים שהיו אמורים להגיע היום
+  // Absent who were supposed to arrive today
   const absentMembers = attendanceData.attendanceList.filter(p => {
     if (p.attended !== false) return false;
     const arrivalDays = getProfileArrivalDays(p);
     return arrivalDays.includes(todayWeekday);
   });
 
-  // מיון א"ב לפני יצירת הדאטה ל-PDF
+  // Alphabetical sort before creating the PDF data
   const sortedPresentExpected = [...presentExpected].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
   const sortedPresentNotExpected = [...presentNotExpected].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
   const sortedAbsentMembers = [...absentMembers].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
 
-  // עמודות ודאטה ל-PDF עבור כל קבוצה
+  // Columns and data for PDF for each group
   const pdfColumnsPresent = [
     { key: 'caregiver', header: 'מטפל', defaultValue: '' },
     { key: 'city', header: 'יישוב', defaultValue: 'לא צוין' },

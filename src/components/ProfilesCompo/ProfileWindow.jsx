@@ -28,11 +28,11 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
     const [transportDetails, setTransportDetails] = useState(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    // עדכון הפרופיל והסעה כאשר initialProfile משתנה
+    // Update profile and transport when initialProfile changes
     useEffect(() => {
         if (initialProfile) {
             setProfile(initialProfile);
-            // מביא את פרטי ההסעה של הנוסע
+            // Fetch the transport details of the passenger
             const fetchTransportDetails = async () => {
                 try {
                     const transport = await getPassengerTransport(initialProfile.id);
@@ -51,9 +51,9 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
 
     const confirmDelete = async () => {
         try {
-            // קודם מוחקים את הנוסע מכל ההסעות
+            // First, remove the passenger from all transports
             await removePassengerFromTransports(profile.id);
-            // אחר כך מוחקים את הפרופיל
+            // Then, delete the profile
             await onDelete(profile.id);
             setDeleteDialogOpen(false);
         } catch (error) {
@@ -62,7 +62,7 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
         }
     };
 
-    // פונקציה לשמירת שינויים
+    // Function to save changes
     const handleSave = async (updatedProfile) => {
         try {
             if (onSave) {
@@ -76,13 +76,13 @@ function ProfileWindow({ open, onClose, profile: initialProfile, onSave, onDelet
         }
     };
 
-    // פונקציה לביטול עריכה
+    // Function to cancel editing
     const handleCancelEdit = () => {
         setProfile(initialProfile);
         setIsEditing(false);
     };
 
-    // פונקציות לטיפול בשינויים בעריכה
+    // Functions to handle editing changes
     const handleChange = (field) => (e) => {
         const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
         setProfile({ ...profile, [field]: value });

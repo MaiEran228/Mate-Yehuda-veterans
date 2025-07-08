@@ -31,17 +31,17 @@ export default function SignupModal({ open, onClose }) {
       return;
     }
     try {
-      // יצירת המשתמש ב-Firebase Auth
+      // Create the user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      // שמירת שם המשתמש ב-Firestore עם המייל כ-ID
+      // Save the username in Firestore with the email as ID
       await setDoc(doc(db, 'users', email), {
         username: username.trim(),
         email: email,
         createdAt: new Date().toISOString()
       });
       alert("ההרשמה בוצעה בהצלחה");
-      // איפוס השדות
+      // Reset fields
       setEmail('');
       setPassword('');
       setConfirmPassword('');

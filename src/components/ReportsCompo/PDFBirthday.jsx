@@ -15,7 +15,7 @@ const PDFBirthday = ({ profilesByMonth, selectedMonth }) => {
   ];
   const currentMonthName = hebrewMonths[Number(selectedMonth) - 1];
 
-  // פונקציה להפיכת טקסט עברי למצב RTL נכון
+  // Function to reverse Hebrew text for correct RTL display
   const reverseHebrewText = (text) => {
     if (!text) return text;
     const hebrewRegex = /[\u0590-\u05FF]/;
@@ -23,7 +23,7 @@ const PDFBirthday = ({ profilesByMonth, selectedMonth }) => {
     return text.split('').reverse().join('');
   };
 
-  // פונקציה לעיבוד טקסט מעורב (עברית + מספרים)
+  // Function to process mixed text (Hebrew + numbers)
   const processHebrewText = (text) => {
     if (!text) return text;
     const hebrewRegex = /[\u0590-\u05FF]/;
@@ -75,7 +75,7 @@ const PDFBirthday = ({ profilesByMonth, selectedMonth }) => {
     let y = 50;
 
     for (let i = 0; i < monthProfiles.length; i += cardsPerRow) {
-      const row = monthProfiles.slice(i, i + cardsPerRow).reverse(); // הפוך כל שורה
+      const row = monthProfiles.slice(i, i + cardsPerRow).reverse(); // Reverse each row
       let x = startX;
       row.forEach((profile, idxInRow) => {
         // Draw shadow

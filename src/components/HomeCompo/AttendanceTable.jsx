@@ -16,10 +16,10 @@ const dayMap = {
   'חמישי': 'ה',
 };
 
-// סדר השבוע עבור מיון ימי הגעה
+// Week order for sorting arrival days
 const weekOrder = ['א', 'ב', 'ג', 'ד', 'ה'];
 
-// קומפוננטה לשורה עם Skeleton loading
+// Component for Skeleton loading row
 const SkeletonRow = () => (
     <TableRow>
         <TableCell align="right">
@@ -58,14 +58,14 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
             setLoading(true);
             setError(null);
 
-            // נסה לטעון קודם את נתוני הנוכחות של היום
+            // Try to load attendance data for today first
             const attendanceData = await fetchAttendanceByDate(currentDate);
 
-            // טען את כל הפרופילים
+            // Load all profiles
             const profiles = await fetchAllProfiles();
 
             if (attendanceData && attendanceData.attendanceList?.length) {
-                // מיזוג נתוני הנוכחות עם פרופילים מעודכנים
+                // Merge attendance data with updated profiles
                 const updatedAttendance = attendanceData.attendanceList.map(attendance => {
                     const profile = profiles.find(p => p.id === attendance.id);
                     if (profile) {
@@ -76,10 +76,10 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                             arrivalDays: profile.arrivalDays,
                         };
                     }
-                    return null; // אם הפרופיל לא נמצא, נחזיר null
-                }).filter(Boolean); // הסר את כל ה-null
+                    return null; // If the profile is not found, return null
+                }).filter(Boolean); // Remove all nulls
 
-                // הוספת פרופילים חדשים שלא היו בנוכחות
+                // Add new profiles that were not in attendance
                 const existingIds = updatedAttendance.map(a => a.id);
                 const newProfiles = profiles
                     .filter(p => !existingIds.includes(p.id))
@@ -92,7 +92,7 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
 
                 setRows([...updatedAttendance, ...newProfiles]);
             } else {
-                // אם אין נתוני נוכחות, השתמש בפרופילים
+                // If there is no attendance data, use the profiles
                 const dataWithDefaults = profiles.map(profile => ({
                     ...profile,
                     attended: false,
@@ -112,17 +112,17 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
     useEffect(() => {
         loadData();
 
-        // האזנה לשינויים בפרופילים
+        // Listen for changes in profiles
         const unsubscribeProfiles = onSnapshot(collection(db, 'profiles'), async () => {
             await loadData();
         });
 
-        // האזנה לשינויים בנוכחות של היום
+        // Listen for changes in attendance for today
         const unsubscribeAttendance = onSnapshot(doc(db, 'attendance', currentDate), async () => {
             await loadData();
         });
 
-        // ניקוי ההאזנות בעת סגירת הקומפוננטה
+        // Clean up the listeners when the component is unmounted
         return () => {
             unsubscribeProfiles();
             unsubscribeAttendance();
@@ -413,7 +413,7 @@ export default forwardRef(function AttendanceTable({ onAttendanceChange }, ref) 
                         flexGrow: 1,
                             overflowY: 'auto',
                             direction: 'ltr',
-                        maxHeight: 'calc(100vh - 340px)', // הקטנתי את גובה הטבלה
+                        maxHeight: 'calc(100vh - 340px)', 
                             '&::-webkit-scrollbar': {
                                 width: '8px',
                             },
