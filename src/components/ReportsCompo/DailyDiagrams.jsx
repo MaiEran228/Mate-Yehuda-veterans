@@ -15,21 +15,21 @@ const DailyDiagrams = () => {
     const [profiles, setProfiles] = useState([]);
     const [attendance, setAttendance] = useState(null);
 
-    // חישוב היום הנוכחי לפי אזור זמן ישראל (שיטה ידנית)
+    // Calculate today's date based on Israel time (manual method)
     const now = new Date();
     const israelNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-    // מיפוי ידני של ימי השבוע לעברית
+    // Manual mapping of days of the week to Hebrew
     const daysMap = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
     const todayIndex = israelNow.getDay(); // 0=ראשון, 1=שני, ...
     const todayName = daysMap[todayIndex];
     const todayDate = israelNow.toISOString().slice(0, 10);
 
     useEffect(() => {
-        // טען פרופילים
+        // Load profiles
         const unsubProfiles = onSnapshot(collection(db, 'profiles'), (snap) => {
             setProfiles(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         });
-        // טען נוכחות של היום
+        // Load attendance for today
         const unsubAttendance = onSnapshot(doc(db, 'attendance', todayDate), (snap) => {
             setAttendance(snap.exists() ? snap.data() : null);
         });
@@ -39,14 +39,14 @@ const DailyDiagrams = () => {
         };
     }, [todayDate]);
 
-    // סינון פרופילים שאמורים להגיע היום
+    // Filter profiles that are supposed to arrive today
     const relevantProfiles = profiles.filter(p => Array.isArray(p.arrivalDays) && p.arrivalDays.includes(todayName));
     const relevantNames = relevantProfiles.map(p => p.name);
 
-    // סינון נוכחות רק למי שאמור להגיע (לפי name)
+    // Filter attendance only for those who are supposed to arrive (by name)
     const attendanceList = attendance?.attendanceList?.filter(a => relevantNames.includes(a.name)) || [];
 
-    // חישוב נכון של הגיעו/לא הגיעו לפי name
+    // Correct calculation of attended/absent based on name
     const attended = relevantProfiles.filter(p => {
         const rec = attendanceList.find(a => a.name === p.name);
         return rec && rec.attended === true;
@@ -59,7 +59,7 @@ const DailyDiagrams = () => {
 
     const shouldArrive = relevantProfiles.length;
 
-    // סיבות היעדרות אפשריות
+    // Possible absence reasons
     const absenceReasons = [
         { key: 'מחלה', color: '#90caf9' },
         { key: 'אשפוז', color: '#f48fb1' },
@@ -69,7 +69,7 @@ const DailyDiagrams = () => {
         { key: 'טיפול בית', color: '#ce93d8' },
     ];
 
-    // סינון נעדרים עם סיבה
+    // Filter absentees with a reason
     const absentWithReason = attendanceList.filter(a => a.attended === false && a.reason);
     const totalWithReason = absentWithReason.length;
     const reasonCounts = absenceReasons.map(r => ({
@@ -77,7 +77,7 @@ const DailyDiagrams = () => {
         value: absentWithReason.filter(a => a.reason === r.key).length,
     })).filter(r => r.value > 0);
 
-    // נתונים לגרף עוגה של סיבות היעדרות
+    // Pie chart data for reasons
     const reasonPieData = reasonCounts.map((r, idx) => ({
         id: idx,
         value: r.value,
@@ -86,7 +86,7 @@ const DailyDiagrams = () => {
         color: r.color,
     }));
 
-    // המקרא של סיבות היעדרות תמיד יוצג, גם אם אין נתונים
+    // The reason legend will always be displayed, even if there is no data
     const reasonLegendData = absenceReasons.map((r, idx) => ({
         id: idx,
         value: reasonPieData.find(x => x.displayLabel === r.key)?.value || 0,
@@ -94,13 +94,13 @@ const DailyDiagrams = () => {
         color: r.color,
     }));
 
-    // PieChart data for reasons: אם אין נתונים, עיגול ריק
+    // PieChart data for reasons: if there is no data, the pie is empty
     const hasReasonData = reasonPieData.length > 0 && totalWithReason > 0;
     const emptyReasonPieData = [
         { id: 0, value: 1, label: '', displayLabel: '', color: '#e5f1f8' },
     ];
 
-    // נתונים לגרף עוגה - בפורמט דומה לגרף מטפל
+    // Pie chart data: similar to the patient chart
     const pieData = [
         {
             id: 0,
@@ -118,7 +118,7 @@ const DailyDiagrams = () => {
         },
     ];
 
-    // לוגיקה להצגת עיגול ריק אם אין נתונים
+    // Logic to show empty pie if there is no data
     const hasAttendanceData = attended + absent > 0;
     const emptyAttendancePieData = [
         { id: 0, value: 1, label: '', displayLabel: '', color: '#e5f1f8' },
@@ -152,7 +152,7 @@ const DailyDiagrams = () => {
             </Box>
             <Box sx={{ p: 4 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'center', alignItems: 'flex-start', width: '100%' }}>
-                    {/* דיאגרמת נוכחות יומית */}
+                    {/* Daily attendance chart */}
                     <Box sx={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -205,7 +205,7 @@ const DailyDiagrams = () => {
                             />
                         </Box>
                     </Box>
-                    {/* דיאגרמת סיבות היעדרות */}
+                    {/* Absence reasons chart */}
                     <Box sx={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -222,7 +222,7 @@ const DailyDiagrams = () => {
                             סיבות היעדרות
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, flexWrap: 'nowrap', width: '100%' }}>
-                            {/* מקרא */}
+                            {/* Legend */}
                             <Box sx={{
                                 display: 'flex',
                                 flexDirection: 'column',

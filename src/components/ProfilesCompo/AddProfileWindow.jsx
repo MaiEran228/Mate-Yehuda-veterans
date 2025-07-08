@@ -182,8 +182,6 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 profileImage: formData.profileImage || null // Make sure to include the image URL
             };
 
-            console.log('Saving profile with data:', profileToSave); // For debugging
-
             if (profileToSave.transport === 'פרטי') {
                 profileToSave.isPrivateTransport = true;
                 await onSave(profileToSave);
@@ -326,7 +324,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                             </Alert>
                         )}
 
-                        {/* שדות טקסט */}
+                        {/* Text fields */}
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                             <AddProfileFields
                                 values={formData}
@@ -378,7 +376,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 </DialogActions>
             </Dialog>
 
-            {/* דיאלוג בחירת הסעה */}
+            {/* Transport selection dialog */}
             <CustomDialog
                 open={showTransportDialog}
                 onClose={() => setShowTransportDialog(false)}
@@ -407,7 +405,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 </Box>
             </CustomDialog>
 
-            {/* דיאלוג הודעת הצלחה */}
+            {/* Success dialog */}
             <CustomDialog
                 open={successDialog.open}
                 onClose={handleCloseSuccessDialog}
@@ -439,7 +437,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 {successDialog.message}
             </CustomDialog>
 
-            {/* דיאלוג פרופיל קיים */}
+            {/* Existing profile dialog */}
             <CustomDialog
                 open={existingProfileDialog}
                 onClose={() => setExistingProfileDialog(false)}
@@ -453,7 +451,7 @@ function AddProfileWindow({ open, onClose, onSave }) {
                 איש זה קיים כבר במערכת
             </CustomDialog>
 
-            {/* דיאלוג הודעה על חוסר הסעה */}
+            {/* No transport dialog */}
             <CustomDialog
                 open={noTransportDialogOpen}
                 onClose={() => { setNoTransportDialogOpen(false); onClose(); }}

@@ -42,7 +42,6 @@ export const addProfile = async (profile) => {
   try {
     const profileRef = doc(db, 'profiles', profile.id);
     await setDoc(profileRef, profile);
-    console.log('Profile added successfully');
     return true;
   } catch (error) {
     console.error('Error adding profile: ', error);
@@ -53,7 +52,6 @@ export const addProfile = async (profile) => {
 export const deleteProfile = async (profileId) => {
   try {
     await deleteDoc(doc(db, 'profiles', profileId)); // ✅ This deletes from Firestore
-    console.log("Deleted user with ID:", profileId);
   } catch (error) {
     console.error("Error deleting profile:", error);
   }
@@ -68,8 +66,6 @@ export const saveAttendanceForDate = async (dateStr, attendanceList) => {
       attendanceList: attendanceList,
       timestamp: new Date()
     });
-
-    console.log("Attendance saved for date:", dateStr);
   } catch (error) {
     console.error("Error saving attendance:", error);
   }
@@ -83,7 +79,6 @@ export const fetchAttendanceByDate = async (dateStr) => {
     if (docSnap.exists()) {
       return docSnap.data(); // returns the object with attendanceList and date
     } else {
-      console.log("No attendance for this date");
       return null;
     }
   } catch (error) {
@@ -113,7 +108,6 @@ export const saveSchedule = async (schedule) => {
   try {
     const docRef = doc(db, 'schedules', 'weeklySchedule');
     await setDoc(docRef, schedule);
-    console.log("Schedule saved successfully");
   } catch (error) {
     console.error("Error saving schedule:", error);
   }
@@ -248,8 +242,6 @@ export const transportService = {
   // מחיקת הסעה
   deleteTransport: async (transportId) => {
     try {
-      console.log("Deleting transport with ID:", transportId);
-
       await deleteDoc(doc(db, 'transport', transportId));
       return transportId;
     } catch (error) {
@@ -319,7 +311,6 @@ export const fetchTransportsByDate = async (dateStr) => {
     if (docSnap.exists()) {
       return docSnap.data(); // מחזיר את האובייקט עם transports ו־date
     } else {
-      console.log('אין הסעות לתאריך הזה');
       return null;
     }
   } catch (error) {
@@ -335,7 +326,6 @@ export const saveTransportDate = async (dateStr, transportsList) => {
       transports: transportsList,
       timestamp: new Date()
     });
-    console.log('הסעות נשמרו לתאריך:', dateStr);
   } catch (error) {
     console.error('שגיאה בשמירת הסעות לתאריך:', error);
   }

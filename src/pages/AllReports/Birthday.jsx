@@ -156,7 +156,7 @@ const Birthday = () => {
       <Box sx={{
         position: 'absolute', left: 32, top: 90, zIndex: 10, gap: 2, display: 'flex',mt:5,
         '@media (max-width:600px)': {
-          left: 8, top: 80 // מסכים קטנים
+          left: 8, top: 80 // מיקום קטן
         }
       }}>
         <PDFBirthday 
@@ -226,7 +226,7 @@ const Birthday = () => {
                 fgColor: { argb: 'FFE4ECF1' },
               };
             }
-            // עיצוב שורת כותרת (עכשיו בשורה 2)
+            // עיצוב שורת כותרת (עכשיוי בשורה 2)
             const headerRow = worksheet.getRow(2);
             headerRow.height = 25;
             headerRow.eachCell(cell => {

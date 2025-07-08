@@ -37,7 +37,7 @@ function AddTransportDialog({ open, onClose, onAdd, initialData }) {
   const handleChange = (field) => (event) => {
     const value = event.target.value;
     if (field === 'type') {
-      // עדכון אוטומטי של מספר המקומות לפי סוג ההסעה
+      // Automatic update of the number of seats according to the transport type
       setFormData((prev) => ({
         ...prev,
         [field]: value,

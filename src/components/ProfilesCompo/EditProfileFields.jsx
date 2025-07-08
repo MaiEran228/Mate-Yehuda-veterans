@@ -252,7 +252,7 @@ function EditProfileFields({
         {errors.arrivalDays && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
       </Box>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-        {/* רמת תפקוד */}
+        {/* Function level */}
         <FormControl fullWidth sx={{ maxWidth: '170px' }}>
           <Select
             name="functionLevel"
@@ -297,7 +297,7 @@ function EditProfileFields({
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
-        {/* חברת סיעוד */}
+        {/* Nursing company */}
         <FormControl fullWidth sx={{ maxWidth: '170px' }} disabled={profile.eligibility !== "סיעוד"}>
           <Select
             name="nursingCompany"
@@ -331,7 +331,7 @@ function EditProfileFields({
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
-        {/* חבר ב- */}
+        {/* Membership */}
         <FormControl fullWidth sx={{ maxWidth: '170px' }}>
           <Select
             name="membership"

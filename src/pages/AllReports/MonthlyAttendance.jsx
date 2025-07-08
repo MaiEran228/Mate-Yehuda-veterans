@@ -35,7 +35,7 @@ const MonthlyAttendance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
-  // פונקציה לשלב פרופילים קיימים עם פרופילים שיש להם נתוני נוכחות
+  // פונקציה לשלוף פרופילים קיימים עם פרופילים שיש להם נתוני נוכחות
   const combineProfilesWithAttendance = (existingProfiles, attendanceData) => {
     const combinedProfiles = new Map();
 
@@ -68,11 +68,10 @@ const MonthlyAttendance = () => {
     setLoading(true);
     setError('');
 
-    // טעינת פרופילים באמצעות fetchAllProfiles (כמו בדף Profiles)
+    // טענת פרופילים באמצעות fetchAllProfiles (כמו בדף Profiles)
     const loadProfiles = async () => {
       try {
         const profilesData = await fetchAllProfiles();
-        console.log('Profiles loaded via fetchAllProfiles:', profilesData.length, profilesData);
 
         // שלב עם נתוני הנוכחות הקיימים (אם יש)
         const combinedProfiles = combineProfilesWithAttendance(profilesData, attendanceByDate);
@@ -97,13 +96,11 @@ const MonthlyAttendance = () => {
           attByDate[data.date] = data.attendanceList;
         }
       });
-      console.log('Attendance data loaded:', Object.keys(attByDate).length, 'dates');
       setAttendanceByDate(attByDate);
 
       // שלב את הפרופילים עם נתוני הנוכחות
       const currentProfiles = profiles.length > 0 ? profiles : [];
       const combinedProfiles = combineProfilesWithAttendance(currentProfiles, attByDate);
-      console.log('Combined profiles:', combinedProfiles.length, combinedProfiles);
       setProfiles(combinedProfiles);
 
       setLoading(false);
@@ -123,7 +120,6 @@ const MonthlyAttendance = () => {
     const unsubProfiles = onSnapshot(collection(db, 'profiles'), async (snapshot) => {
       try {
         const profilesData = await fetchAllProfiles();
-        console.log('Profiles updated via onSnapshot:', profilesData.length, profilesData);
 
         // שלב עם נתוני הנוכחות הקיימים
         const combinedProfiles = combineProfilesWithAttendance(profilesData, attendanceByDate);
@@ -206,7 +202,7 @@ const MonthlyAttendance = () => {
                 }
               }));
             
-              // 🟦 הוספת שורת כותרת חודש ושנה בראש האקסל
+              // �� הוספת שורת כותרת חדשה ושנה בראש האקסל
               worksheet.insertRow(1, []);
               const titleCell = worksheet.getCell(1, 1);
               titleCell.value = `דו"ח נוכחות חודשי - ${dayjs(`${year}-${month}-01`).format('MMMM YYYY')}`;
@@ -228,12 +224,12 @@ const MonthlyAttendance = () => {
               }
               // 🟦 עיצוב שורת כותרת
               const headerRow = worksheet.getRow(2);
-              headerRow.height = 25; // הגדלת גובה השורה הראשונה
+              headerRow.height = 25; // הגדרת גובה השורה הראשונית
               headerRow.eachCell(cell => {
                 cell.fill = {
                   type: 'pattern',
                   pattern: 'solid',
-                  fgColor: { argb: 'FFE4ECF1' },
+                  fgColor: { argb: 'FFB0B0B0' },
                 };
                 cell.font = { bold: true };
                 cell.border = {
@@ -281,7 +277,7 @@ const MonthlyAttendance = () => {
                   if (list) {
                     const person = list.find(p => p.id === profile.id);
                     if (person?.attended) {
-                      // בדיקה אם זה יום הגעה רגיל או makeup
+                      // בדיקה אם זה יום הגיעה רגיל או makeup
                       const dayOfWeek = dayObj.day();
                       const hebrewDayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'];
                       const currentHebrewDay = hebrewDayNames[dayOfWeek];
@@ -311,7 +307,7 @@ const MonthlyAttendance = () => {
                 cell.font = { color: { argb: style.color } };
               });
               
-              // הוספת מקרא כגוש נפרד לחלוטין ליד הטבלה
+              // הוספת מקרא כמו שנפרד לחלוטין ליד הטבלה
               const legendStartCol = columns.length + 1; // עמודה צמודה לטבלה
               const legendStartRow = 5; // מתחיל מהשורה החמישית
               
@@ -332,9 +328,9 @@ const MonthlyAttendance = () => {
               };
               legendTitleCell.alignment = { horizontal: 'center' };
               
-              // נוכח ביום הגעה - וי ירוק
+              // נוכח ביום הגיעה - וי ירוק
               const regularCell = worksheet.getCell(legendStartRow + 1, legendStartCol);
-              regularCell.value = '✔️ נוכח ביום הגעה';
+              regularCell.value = '✔️ נוכח ביום הגיעה';
               regularCell.font = { color: { argb: 'FF43A047' }, size: 12 };
               regularCell.border = {
                 top: { style: 'thin', color: { argb: 'FFA0A7AC' } },
@@ -343,9 +339,9 @@ const MonthlyAttendance = () => {
                 right: { style: 'thin', color: { argb: 'FFA0A7AC' } },
               };
               
-              // נוכח לא ביום הגעה - וי כחול
+              // נוכח לא ביום הגיעה - וי כחול
               const makeupCell = worksheet.getCell(legendStartRow + 2, legendStartCol);
-              makeupCell.value = '✔️ נוכח לא ביום הגעה';
+              makeupCell.value = '✔️ נוכח לא ביום הגיעה';
               makeupCell.font = { color: { argb: 'FF1976D2' }, size: 12 };
               makeupCell.border = {
                 top: { style: 'thin', color: { argb: 'FFA0A7AC' } },

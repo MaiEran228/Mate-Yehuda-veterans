@@ -41,12 +41,9 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
       return;
     }
 
-    console.log('Original file:', { name: file.name, size: file.size, type: file.type });
-
     try {
       // Compress the image
       const compressedFile = await compressImage(file);
-      console.log('Compressed file size:', compressedFile.size);
 
       // Read the compressed file
       const reader = new FileReader();
@@ -55,7 +52,6 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
       };
       reader.readAsDataURL(compressedFile);
     } catch (error) {
-      console.error('Error compressing image:', error);
       alert('שגיאה בעיבוד התמונה');
     }
   };
@@ -64,7 +60,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
 
   return (
     <>
-      {/* העלאת תמונה */}
+      {/* Upload image */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative', marginBottom: 16, width: '100%', justifyContent: 'center' }}>
         <input
           accept="image/*"
@@ -118,7 +114,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
         )}
       </div>
 
-      {/* שדות טקסט */}
+      {/* Text fields */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         <TextField
           fullWidth
@@ -175,7 +171,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
           InputProps={{ notched: false }}
         />
 
-        {/* Select: מין */}
+        {/* Select: gender */}
         <FormControl fullWidth sx={{ maxWidth: '170px' }}>
           <Select
             name="gender"
@@ -262,7 +258,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
           InputLabelProps={{ sx: { right: 24, left: 'unset', transformOrigin: 'top right', direction: 'rtl', backgroundColor: 'white', px: 0.5 } }}
         />
 
-        {/* Select: סוג הסעה */}
+        {/* Select: transport type */}
         <FormControl fullWidth sx={{ maxWidth: '170px' }} error={!!errors.transport}>
           <Select
             name="transport"
@@ -288,7 +284,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
         </FormControl>
       </Box>
 
-      {/* ימי הגעה */}
+      {/* Arrival days */}
       <Box sx={{ mt: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="subtitle1" sx={{ mb: 0, whiteSpace: 'nowrap', color: errors.arrivalDays ? 'error.main' : undefined }}>ימי הגעה:</Typography>
@@ -323,7 +319,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
         {errors.arrivalDays && <Typography color="error" fontSize="0.8rem">שדה חובה</Typography>}
       </Box>
 
-      {/* Selectים נוספים */}
+      {/* Additional selects */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         <FormControl fullWidth sx={{ minWidth: '170px', width: '170px' }}>
           <Select
@@ -429,7 +425,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
             <MenuItem value="אחר">אחר</MenuItem>
           </Select>
         </FormControl>
-        {/* ניצול שואה */}
+        {/* Holocaust survivor */}
         <FormControlLabel
           control={
             <Checkbox
@@ -441,7 +437,7 @@ export default function AddProfileFields({ values, errors, onChange, onImageChan
           label="ניצול שואה"
           sx={{ minWidth: '100px', width: '120px', }}
         />
-        {/* מטפל */}
+        {/* Caregiver */}
         <FormControlLabel
           control={
             <Checkbox

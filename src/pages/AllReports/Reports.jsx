@@ -83,9 +83,9 @@ const Reports = () => {
   ];
 
   const reportIcons = [
-    <EventIcon sx={{ mr: 1 }} />, // דו"ח נוכחות יומי
-    <BarChartIcon sx={{ mr: 1 }} />, // דו"ח חסרים יומי
-    <CalendarMonthIcon sx={{ mr: 1 }} />, // דו"ח נוכחות חודשי
+    <EventIcon sx={{ mr: 1 }} />, // דוח נוכחות יומי
+    <BarChartIcon sx={{ mr: 1 }} />, // דוח חסרים יומי
+    <CalendarMonthIcon sx={{ mr: 1 }} />, // דוח נוכחות חודשי
     <CakeIcon sx={{ mr: 1 }} />, // ימי הולדת החודש
     <TimelineIcon sx={{ mr: 1 }} />, // חישוב זכאות לפי ימי השבוע
   ];

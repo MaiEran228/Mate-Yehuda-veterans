@@ -77,7 +77,7 @@ const DaysLeft = () => {
     const monthDates = getMonthDates(month, year);
     const hebrewDaysByIndex = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
     const today = dayjs().format('YYYY-MM-DD');
-    // ימים שהיה אמור להגיע ולא הגיע (עד היום)
+    // ימים שהיו אמור להגיע ולא הגיע (עד היום)
     const missedDates = [];
     // הופעות בימים לא זכאים (עד היום)
     let penalty = 0;
@@ -99,7 +99,7 @@ const DaysLeft = () => {
         }
       }
     }
-    // מספר הימים שלא הגיע, לאחר ניכוי הופעות לא זכאיות
+    // מספר הימים שלא הגיע, לאחר ניקוי הופעות לא זכאיות
     const missedAfterPenalty = Math.max(missedDates.length - penalty, 0);
     return {
       id: profile.id,
@@ -213,7 +213,7 @@ const DaysLeft = () => {
       <Box sx={{
         position: 'absolute', left: 32, top: 90, zIndex: 10, mt: 5,
         '@media (max-width:600px)': {
-          left: 8, top: 80 // מסכים קטנים
+          left: 8, top: 80 // מיקום קטן
         }
       }}>
         <Box sx={{ display: 'flex', gap: 2 }}>

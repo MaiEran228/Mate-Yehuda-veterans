@@ -9,7 +9,7 @@ function ProfileCard({ profile, onClick }) {
         m: 1,
         mb: 4,
     }}>
-      {/* עיגול של הפרופיל - צף מעל הכרטיס */}
+      {/* Profile circle - floats above the card */}
       <div
         style={{
           position: 'absolute',
@@ -52,7 +52,7 @@ function ProfileCard({ profile, onClick }) {
         )}
       </div>
 
-      {/* כרטיס פרופיל */}
+      {/* Profile card */}
       <Card
         onClick={() => onClick(profile)}
         sx={{

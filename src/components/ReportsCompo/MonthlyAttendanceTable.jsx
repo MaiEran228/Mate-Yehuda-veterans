@@ -10,13 +10,13 @@ import dayjs from 'dayjs';
 import ErrorDialog from '../ErrorDialog';
 
 const typeColors = {
-  regular: '#43a047', // ירוק
-  makeup: '#1976d2', // כחול
+  regular: '#43a047', // green
+  makeup: '#1976d2', // blue
 };
 
 const reasonOptions = ['מחלה', 'אשפוז', 'שמחה', 'אבל', 'שיפוי', 'טיפול בית', 'הסעה לא הגיעה'];
 
-// סגנון לאייקון עריכה עדין
+// Edit icon style
 const subtleEditIconSx = {
   position: 'absolute',
   top: '50%',
@@ -49,7 +49,7 @@ const subtleEditIconSx = {
   }
 };
 
-// עדכון ערך ב-Firebase
+// Update value in Firebase
 async function updateAttendanceInFirebase(dateStr, personId, updates) {
   const attendanceDocRef = doc(db, 'attendance', dateStr);
   const attendanceSnap = await getDoc(attendanceDocRef);
@@ -79,25 +79,11 @@ const MonthlyAttendanceTable = ({
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [errorDialog, setErrorDialog] = useState({ open: false, message: '' });
 
-  // אפס מצב עריכה וסטייטים פנימיים בכל שינוי ב-attendanceByDate
+  // Reset edit state and internal states on attendanceByDate change
   useEffect(() => {
     setLocalEditData({});
     setEditDialog({ open: false, profile: null, date: null, values: {} });
   }, [attendanceByDate]);
-
-  // בדיקה וניפוי של הפרופילים
-  useEffect(() => {
-    console.log('MonthlyAttendanceTable received profiles:', profiles.length, profiles);
-    console.log('Profiles with names:', profiles.filter(p => p.name).length);
-    console.log('Profiles without names:', profiles.filter(p => !p.name).length);
-    
-    // בדיקת ימי הגעה
-    profiles.forEach(profile => {
-      if (profile.arrivalDays) {
-        console.log(`Profile ${profile.name} arrival days:`, profile.arrivalDays);
-      }
-    });
-  }, [profiles]);
 
   // עדכון searchTerm כשהשדה המקומי משתנה
   useEffect(() => {
@@ -106,7 +92,7 @@ const MonthlyAttendanceTable = ({
     }
   }, [localSearchTerm, setShowSearch]);
 
-  // סגירת שדה החיפוש כשלוחצים Escape
+  // Close search field when Escape is pressed
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape' && showSearchField) {
@@ -121,7 +107,7 @@ const MonthlyAttendanceTable = ({
     };
   }, [showSearchField]);
 
-  // סגירת שדה החיפוש כשלוחצים מחוץ לטבלה
+  // Close search field when clicking outside the table
   useEffect(() => {
     const handleClickOutside = (event) => {
       const tableContainer = event.target.closest('.MuiTableContainer-root');
@@ -160,7 +146,7 @@ const MonthlyAttendanceTable = ({
   const handleOpenEditDialog = (profile, dateStr) => {
     const today = dayjs().startOf('day');
     const editDay = dayjs(dateStr).startOf('day');
-    // 1. עדכון יום עתידי
+    // 1. Update future day
     if (editDay.isAfter(today)) {
       setErrorDialog({ open: true, message: 'לא ניתן לעדכן יום עתידי. ' });
       return;
@@ -192,7 +178,7 @@ const MonthlyAttendanceTable = ({
 
   const handleSaveEditDialog = async () => {
     const { profile, date, values } = editDialog;
-    // בדיקה: לא ניתן לסמן מטפל בלי שהמשתתף עצמו נוכח
+    // Check: cannot mark caregiver if the participant is not present
     if (values.caregiver && !values.attended) {
       setErrorDialog({ open: true, message: 'לא ניתן לסמן "מטפל" כאשר הפרופיל לא נוכח.' });
       return;
@@ -206,22 +192,22 @@ const MonthlyAttendanceTable = ({
     handleCloseEditDialog();
   };
 
-  // חישוב רוחב העמודות דינמית
+  // Calculate dynamic column widths
   const totalDays = days.length;
-  const availableWidth = 100; // אחוזים
+  const availableWidth = 100; // percentages
   const nameColumnWidth = 14; 
   const totalColumnWidth = 4; 
   const caregiverColumnWidth = 4; 
   const remainingWidth = availableWidth - nameColumnWidth - totalColumnWidth - caregiverColumnWidth;
-  const dayColumnWidth = remainingWidth / totalDays; // חלוקה שווה לכל הימים
+  const dayColumnWidth = remainingWidth / totalDays; // equal division for all days
 
   
   return (
     <>
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-        {/* טבלה */}
+        {/* Table */}
         <Box sx={{ flex: 1 }}>
-          {/* כותרת הטבלה - קבועה */}
+          {/* Table header - fixed */}
           <Table sx={{ 
             width: '100%', 
             direction: 'rtl',
@@ -239,10 +225,10 @@ const MonthlyAttendanceTable = ({
                     borderLeft: '2px solid #888', 
                     borderBottom: '2px solid #888',
                     width: `${nameColumnWidth}%`,
-                    minWidth: 0, // מאפס את ה-minWidth הדיפולטיבי
+                    minWidth: 0, // Reset the default minWidth
                     maxWidth: `${nameColumnWidth}%`,
-                    padding: '4px 2px', // צמצום ה-padding
-                    height: 36, // גובה זהה לשורות הגוף
+                    padding: '4px 2px', // Reduce the padding
+                    height: 36, // Same height as the body rows
                     fontSize: '0.8rem',
                     borderTopLeftRadius: '5px'
                   }}
@@ -251,7 +237,7 @@ const MonthlyAttendanceTable = ({
                     <IconButton 
                       onClick={() => setShowSearchField(s => !s)} 
                       sx={{ 
-                        p: 0.5, // צמצום ה-padding של הכפתור
+                        p: 0.5, // Reduce the padding of the button
                         '&:focus': {
                           outline: 'none',
                           border: 'none'
@@ -304,7 +290,7 @@ const MonthlyAttendanceTable = ({
                     maxWidth: `${totalColumnWidth}%`,
                     minWidth: 0,
                     padding: '4px 2px',
-                    height: 36, // גובה זהה לשורות הגוף
+                    height: 36, // Same height as the body rows
                     fontSize: '0.75rem'
                   }} 
                   align="center"
@@ -321,7 +307,7 @@ const MonthlyAttendanceTable = ({
                     maxWidth: `${caregiverColumnWidth}%`,
                     minWidth: 0,
                     padding: '4px 2px',
-                    height: 36, // גובה זהה לשורות הגוף
+                    height: 36, // Same height as the body rows
                     fontSize: '0.75rem'
                   }} 
                   align="center"
@@ -354,7 +340,7 @@ const MonthlyAttendanceTable = ({
             </TableHead>
           </Table>
 
-          {/* גוף הטבלה - עם גלילה */}
+          {/* Body of the table - with scrolling */}
           <TableContainer 
             component={Paper} 
             sx={{ 
@@ -386,22 +372,22 @@ const MonthlyAttendanceTable = ({
               <TableBody>
                 {profiles
                   .filter(profile => {
-                    // הצג את כל הפרופילים שיש להם id, גם אם אין להם שם
+                    // Show all profiles with id, even if they don't have a name
                     if (!profile.id) return false;
-                    // אם יש searchTerm, בדוק אם השם מכיל אותו
+                    // If there is a searchTerm, check if the name contains it
                     if (localSearchTerm && profile.name) {
                       return profile.name.includes(localSearchTerm);
                     }
                     return true;
                   })
                   .slice().sort((a, b) => {
-                    // מיון לפי שם, אם אין שם - בסוף
+                    // Sort by name, if there is no name - at the end
                     const nameA = a.name || '';
                     const nameB = b.name || '';
                     return nameA.localeCompare(nameB, 'he');
                   })
                   .map(profile => {
-                    // חישוב סך הימים מראש
+                    // Calculate total days from the beginning
                     const totalDays = days.reduce((sum, day) => {
                       const dateStr = day.format('YYYY-MM-DD');
                       const list = attendanceByDate[dateStr];
@@ -413,7 +399,7 @@ const MonthlyAttendanceTable = ({
                       }
                       return sum;
                     }, 0);
-                    // חישוב סך הימים עם מטפל
+                    // Calculate total days with caregiver
                     const totalCaregiver = days.reduce((sum, day) => {
                       const dateStr = day.format('YYYY-MM-DD');
                       const list = attendanceByDate[dateStr];
@@ -490,19 +476,16 @@ const MonthlyAttendanceTable = ({
                           if (list) {
                             const person = list.find(p => p.id === profile.id);
                             if (person && person.attended === true) {
-                              // אם הגיע ביום שאינו יום הגעה רגיל שלו - זה makeup (כחול)
+                              // If the participant arrived on a day that is not a regular arrival day - this is makeup (blue)
                               attType = isRegularDay ? 'regular' : 'makeup';
                               hasCaregiver = !!person.caregiver;
                               attended = true;
-                              
-                              // לוג לדיבוג
-                              console.log(`Profile: ${profile.name}, Day: ${currentHebrewDay}, ArrivalDays: ${JSON.stringify(profile.arrivalDays)}, IsRegular: ${isRegularDay}, AttType: ${attType}`);
                             } else if (person && person.attended === false && person.reason) {
                               absenceReason = person.reason;
                               attended = false;
                             }
                           }
-                          // עדכון הנתונים מהסטייט המקומי
+                          // Update the data from the local state
                           const localData = localEditData[profile.id]?.[dateStr];
                           if (localData) {
                             if (localData.attended !== undefined) {
@@ -549,7 +532,7 @@ const MonthlyAttendanceTable = ({
                                     {absenceReason}
                                   </span>
                                 )}
-                                {/* אייקון עריכה שמופיע רק במעבר עכבר */}
+                                {/* Edit icon that appears only on mouse hover */}
                                 {hoveredCell === profile.id + '-' + dateStr && (
                                   <IconButton size="small" sx={subtleEditIconSx}
                                     onClick={() => handleOpenEditDialog(profile, dateStr)}
@@ -569,7 +552,7 @@ const MonthlyAttendanceTable = ({
           </TableContainer>
         </Box>
         
-        {/* מקרא */}
+        {/* Legend */}
         <Box sx={{ 
           p: 1, 
           bgcolor: ' rgb(228, 236, 241)', 
@@ -601,7 +584,7 @@ const MonthlyAttendanceTable = ({
         </Box>
       </Box>
       
-      {/* דיאלוג עריכה */}
+      {/* Edit dialog */}
       <Dialog
         open={editDialog.open}
         onClose={handleCloseEditDialog}
@@ -636,16 +619,16 @@ const MonthlyAttendanceTable = ({
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* שם ותאריך */}
+            {/* Name and date */}
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 2, bgcolor: '#f8f9fa', borderRadius: 1, mt: 2 }}>
               <Typography variant="h6" fontWeight="bold">
                 {editDialog.profile?.name}
               </Typography>
             </Box>
             
-            {/* אפשרויות עריכה */}
+            {/* Edit options */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {/* הגיע ומטפל - מיושרים לימין */}
+              {/* Arrived and caregiver - aligned to the left */}
               <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Checkbox
@@ -680,7 +663,7 @@ const MonthlyAttendanceTable = ({
                 </Box>
               </Box>
               
-              {/* סיבת היעדרות */}
+              {/* Absence reason */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Typography variant="body1" fontWeight="medium">סיבת היעדרות</Typography>
                 <Select

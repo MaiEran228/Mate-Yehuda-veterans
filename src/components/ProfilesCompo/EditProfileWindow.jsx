@@ -39,7 +39,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
   // Check if the relevant fields for transport have changed
   // More precise comparison of arrivalDays arrays
   const hasTransportFieldsChanged = () => {
-    // השוואה מדויקת יותר של מערכי ימי הגעה
+    // More precise comparison of arrivalDays arrays
     const currentDaysSorted = (initialProfile.arrivalDays || []).slice().sort();
     const originalDaysSorted = (originalTransportData.arrivalDays || []).slice().sort();
 
@@ -191,8 +191,6 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
 
   const handleTransportSelect = async (transport) => {
     try {
-      console.log('Selecting transport:', transport.serialNumber); // Debug log
-
       // First remove the passenger from the previous transport (double check)
       await removePassengerFromTransports(initialProfile.id);
 
@@ -215,7 +213,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       });
       setTransportDialog({ open: false, transports: [] });
 
-      // עדכון הנתונים המקוריים לאחר שיבוץ מוצלח
+      // Update the original data after successful assignment
       setOriginalTransportData({
         city: initialProfile.city,
         transport: initialProfile.transport,
@@ -359,12 +357,12 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
       return;
     }
 
-    console.log('Original file:', { name: file.name, size: file.size, type: file.type });
+  
 
     try {
       // Compress the image
       const compressedFile = await compressImage(file);
-      console.log('Compressed file size:', compressedFile.size);
+    
 
       // Read the compressed file
       const reader = new FileReader();
@@ -526,7 +524,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         </DialogContent>
       </Dialog>
 
-      {/* דיאלוג בחירת הסעה */}
+      {/* Transport selection dialog */}
       <Dialog
         open={transportDialog.open}
         onClose={() => setTransportDialog({ open: false, transports: [] })}
@@ -590,7 +588,7 @@ function EditProfileWindow({ profile: initialProfile, handleChange, handleDayCha
         {successDialog.message}
       </CustomDialog>
 
-      {/* דיאלוג הודעה על חוסר הסעה */}
+      {/* No transport dialog */}
       <Dialog
         open={noTransportDialogOpen}
         onClose={() => { setNoTransportDialogOpen(false); handleCancelEdit(); }}

@@ -39,7 +39,7 @@ export default function Login({ onLogin }) {
 
     useEffect(() => {
         const unsub = onAuthStateChanged(auth, user => {
-            if (user) console.log('Logged-in:', user.email);
+            
         });
         return unsub;
     }, []);

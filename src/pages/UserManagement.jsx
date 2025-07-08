@@ -451,7 +451,7 @@ export default function UserManagement() {
         </TabPanel>
       </Paper>
 
-      {/* דיאלוג אישור מחיקה */}
+      {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>אישור מחיקת משתמש</DialogTitle>
         <DialogContent>
@@ -499,12 +499,12 @@ export default function UserManagement() {
         </DialogActions>
       </Dialog>
 
-      {/* מודל שכחתי סיסמא */}
+      {/* Forgot password model */}
       {showForgotPassword && (
         <ForgotPasswordModal onClose={() => setShowForgotPassword(false)} />
       )}
 
-      {/* דיאלוג שגיאה */}
+      {/* Error dialog */}
       <ErrorDialog
         open={errorDialog.open}
         onClose={() => setErrorDialog({ open: false, message: '' })}

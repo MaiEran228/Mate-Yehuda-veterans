@@ -37,7 +37,6 @@ const SchedulePage = () => {
     const loadSchedule = async () => {
       try {
         const data = await fetchSchedule();
-        console.log("Loaded schedule from Firebase:", data);
         setActivities(data || {});  // no data
       } catch (err) {
         console.error("Error loading schedule:", err);

@@ -124,7 +124,7 @@ const AbsencePeople = () => {
       if (person.attended !== false) return false;
       // חפש את הפרופיל המתאים
       const profile = profiles.find(p => p.id === person.id || p.name === person.name);
-      // בדוק אם יש לו arrivalDays והאם היום נמצא שם
+      // בדוק אם יש לו arrivalDays ואם היום נמצא שם
       return profile && Array.isArray(profile.arrivalDays) && profile.arrivalDays.includes(todayWeekday);
     })
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));

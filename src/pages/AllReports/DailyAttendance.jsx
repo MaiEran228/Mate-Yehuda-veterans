@@ -60,7 +60,6 @@ const DailyAttendance = () => {
     if (!selectedDate || !isValidDate) return;
     const loadAttendance = async () => {
       setLoading(true);
-      console.log('מביא נתונים לתאריך:', selectedDate);
       const data = await fetchAttendanceByDate(selectedDate);
       if (data && data.attendanceList) {
         setAttendanceData(data);
@@ -127,7 +126,7 @@ const DailyAttendance = () => {
     );
   }
 
-  // קביעת היום בשבוע בעברית
+  // קביעת היום בשבוע בעבור העברית
   const todayWeekday = dayjs(dataToShow.date || selectedDate).format('dddd');
 
   // פונקציה עוזרת למציאת arrivalDays של משתתף
@@ -136,7 +135,7 @@ const DailyAttendance = () => {
     return profile && Array.isArray(profile.arrivalDays) ? profile.arrivalDays : [];
   };
 
-  // נוכחים שהיו אמורים להגיע היום (ירוק)
+  // נוכחים שהיו אמורים להגיע ולא הגיעו (ירוק)
   const presentExpected = dataToShow.attendanceList.filter(p => {
     if (!p.attended) return false;
     const arrivalDays = getProfileArrivalDays(p);
